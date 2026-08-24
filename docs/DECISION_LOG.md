@@ -163,3 +163,12 @@ Statuses: `CONFIRMED`, `PROVISIONAL`, `SUPERSEDED`. Never delete superseded hist
 **Consequences:** ARCH-008 can safely capture exact current slices and return `next_index=end_index`, while persistent cursor/session and history-retention semantics remain separate reviewed work.  
 **Supersedes:** Implicit full-list capture, queue draining, or permanent-history assumptions.  
 **Superseded By:** None.
+
+## D-019 — Pending-event capture cursors are caller-owned coordinate checkpoints
+**Status:** CONFIRMED  
+**Date:** 2026-08-24  
+**Decision:** Sequential pending-event capture uses an immutable caller-owned cursor containing only the next list index and next runtime sequence. Every capture still requires a caller-supplied explicit end index and a bridge config whose start sequence matches the cursor.  
+**Reason:** Sequential trace slices need deterministic index/sequence continuity without moving lifecycle state into the simulator or assuming the pending-event list is permanent history.  
+**Consequences:** Successful captures return a new cursor advanced by exactly the captured count; a cursor beyond current list length is rejected as stale, but arbitrary truncate/refill history cannot be inferred when current length still satisfies the cursor.  
+**Supersedes:** Hidden current-end capture, simulator-owned cursor persistence, or inferred queue-history identity.  
+**Superseded By:** None.

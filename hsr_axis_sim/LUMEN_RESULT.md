@@ -1,4 +1,4 @@
-# HSR-RUNTIME-ARCH-008 — Explicit BattleState Pending-Event Slice Trace Capture
+# HSR-RUNTIME-ARCH-009 — Explicit Pending-Event Capture Cursor Contract
 
 ## Status
 
@@ -6,64 +6,63 @@ PASS — proceed
 
 ## Implementation summary
 
-- Added downstream package `hsr_axis_sim.runtime_state_captures`.
-- Added immutable `BattleStatePendingEventSliceCaptureConfig` containing an accepted ARCH-007 `LegacyEventTraceBridgeConfig` plus explicit non-negative `start_index` and `end_index`.
-- Capture requires `start_index <= end_index <= len(state.pending_events)` at capture time.
-- Added `capture_battle_state_pending_event_slice`, which records the current pending-event count, snapshots exactly `tuple(state.pending_events[start_index:end_index])`, and delegates that snapshot once to accepted ARCH-007 `build_legacy_event_trace_artifact`.
-- Capture never drains, clears, reorders, removes, writes back to, or otherwise mutates `BattleState.pending_events` or its source `Event` values.
-- Added immutable `BattleStatePendingEventSliceCaptureResult` preserving the exact capture config, capture-time pending-event count, and complete ARCH-007 bridge result.
-- Result construction validates end-index bounds, bridge-config identity, and trace-record-count/slice-length alignment.
-- Derived `next_index` is exactly the explicit `end_index`; ARCH-008 does not persist or automatically advance a cursor and does not claim `pending_events` is permanent history.
-- Added decision D-018: pending-event capture is an explicit non-mutating current-list slice.
+- Added downstream package `hsr_axis_sim.runtime_capture_cursors`.
+- Added immutable `PendingEventCaptureCursor` with explicit non-negative `pending_event_index` and `next_runtime_sequence` coordinates.
+- Added immutable `PendingEventCursorCaptureRequest` containing one cursor, caller-supplied explicit `end_index`, and accepted ARCH-007 `LegacyEventTraceBridgeConfig`.
+- Requests require `end_index >= cursor.pending_event_index` and `bridge_config.start_sequence == cursor.next_runtime_sequence`.
+- Added `capture_battle_state_pending_events_from_cursor`, which rejects a cursor whose index is beyond the current pending-event list length, constructs exactly one ARCH-008 `[cursor.pending_event_index:end_index)` capture, and delegates exactly once to ARCH-008.
+- Added immutable `PendingEventCursorCaptureResult` preserving the exact request, complete ARCH-008 capture result, and next cursor.
+- Successful next cursor is exactly `(end_index, previous next_runtime_sequence + captured_event_count)`.
+- Empty accepted captures therefore leave both coordinates unchanged when `end_index == cursor.pending_event_index`.
+- No cursor is persisted or mutated inside `BattleState`; the caller owns the returned checkpoint.
+- Added decision D-019: pending-event capture cursors are caller-owned coordinate checkpoints.
 
 ## Files added
 
-- `LUMEN_TASK_HSR_RUNTIME_ARCH_008.md`
-- `docs/runtime/BATTLE_STATE_PENDING_EVENT_SLICE_CAPTURE_V1.md`
-- `hsr_axis_sim/runtime_state_captures/__init__.py`
-- `hsr_axis_sim/runtime_state_captures/model.py`
-- `hsr_axis_sim/runtime_state_captures/pending_events.py`
-- `hsr_axis_sim/tests/test_runtime_battle_state_event_slice_capture.py`
-- `hsr_axis_sim/tests/test_runtime_arch_008_preservation.py`
+- `LUMEN_TASK_HSR_RUNTIME_ARCH_009.md`
+- `docs/runtime/PENDING_EVENT_CAPTURE_CURSOR_V1.md`
+- `hsr_axis_sim/runtime_capture_cursors/__init__.py`
+- `hsr_axis_sim/runtime_capture_cursors/model.py`
+- `hsr_axis_sim/runtime_capture_cursors/capture.py`
+- `hsr_axis_sim/tests/test_runtime_pending_event_capture_cursor.py`
+- `hsr_axis_sim/tests/test_runtime_arch_009_preservation.py`
 
 ## Files modified
 
 - `docs/DECISION_LOG.md`
 - `hsr_axis_sim/LUMEN_RESULT.md`
 
-No existing simulator, runtime contract, adapter, exporter, bridge, loader, comparator, divergence, Golden Replay, regression, search, binding, data, or fixture executable behavior was modified.
+No existing simulator, runtime contract, adapter, exporter, trace bridge, state-capture, loader, comparator, divergence, Golden Replay, regression, search, binding, data, or fixture executable behavior was modified.
 
 ## Tests added
 
-Capture behavior tests cover:
-- exact middle-slice capture in current list order;
-- explicit end index excluding later current events;
-- no pending-event mutation on success;
-- immutable trace snapshot after later source `Event.data` mutation and later state append;
-- no pending-event mutation when delegated ARCH-007 adaptation fails;
-- unknown-event preserve/reject policy delegation;
-- empty-slice ALLOW/REJECT behavior through accepted export policy;
-- invalid negative/bool/reversed indexes;
-- end index beyond current list length;
-- invalid state/config/pending-event container shape;
-- frozen config/result models and strict result alignment.
+Cursor behavior tests cover:
+- two sequential captures preserving explicit list-index boundaries and runtime sequence continuity;
+- caller-selected trace configs for separate slices while sequence coordinates remain continuous;
+- empty accepted capture with unchanged cursor coordinates;
+- explicit stale-cursor rejection when cursor index exceeds current list length;
+- caller end index beyond current list remaining rejected by ARCH-008;
+- bridge start-sequence mismatch rejection before capture;
+- delegated adapter failure leaving state and original cursor unchanged;
+- unknown-event preserve policy delegation through ARCH-008/ARCH-007;
+- invalid cursor/request coordinate and type validation;
+- invalid state/request/pending-event container shape;
+- frozen cursor/request/result models and strict next-cursor alignment.
 
 Preservation tests confirm:
-- accepted upstream packages do not import `runtime_state_captures`;
-- capture delegates only through ARCH-007 rather than calling lower adapter/exporter layers directly;
-- no action/replay execution hook, queue draining/clearing, implicit current-end selection, cursor persistence, file I/O, Golden Replay logic, or gameplay semantics were added;
+- accepted upstream packages do not import `runtime_capture_cursors`;
+- state capture is delegated only through ARCH-008 rather than lower adapter/export layers;
+- no implicit current-end capture, simulator cursor persistence, queue mutation, action/replay hook, or gameplay behavior was added;
 - production LIFO compatibility behavior remains unchanged.
-
-Before PR creation, two test assertions were corrected from nonexistent `payload["legacy_type"]` to the accepted ARCH-002 field `payload["adapter"]["legacy_event_type"]`. Production capture code was unchanged by this correction.
 
 ## Exact validation commands and real results
 
-GitHub Actions workflow: `HSR Axis Sim Validation`, PR #12, run #42, job `validate` (`97341447097`).
+GitHub Actions workflow: `HSR Axis Sim Validation`, PR #13, run #46, job `validate` (`97342638847`).
 
 1. `python -m compileall -q hsr_axis_sim`
    - PASS.
 2. `python -m pytest -q`
-   - PASS: `934 passed in 7.54s`.
+   - PASS: `952 passed in 7.19s`.
 3. `python -m hsr_axis_sim.regression.runner --manifest hsr_axis_sim/data/regression_manifest.json --format text`
    - PASS 20/20 total checks:
      - 12/12 golden replays;
@@ -77,30 +76,30 @@ GitHub Actions workflow: `HSR Axis Sim Validation`, PR #12, run #42, job `valida
 ## Warnings / errors
 
 - No compile, test, or regression errors.
-- Existing GitHub Actions platform warning remains: `actions/checkout@v4` and `actions/setup-python@v5` target Node.js 20 and are currently forced onto Node.js 24. This is unrelated to ARCH-008 correctness and is nonblocking.
+- Existing GitHub Actions platform warning remains: `actions/checkout@v4` and `actions/setup-python@v5` target Node.js 20 and are currently forced onto Node.js 24. This is unrelated to ARCH-009 correctness and is nonblocking.
 
 ## Acceptance review
 
-- Capture indexes are caller-explicit; there is no hidden current-end default.
-- The exact current list slice is snapshotted without source-state mutation.
-- Both success and delegated failure leave the source list unchanged.
-- Runtime trace immutability is established by the accepted ARCH-007/ARCH-002 contracts; later mutable source changes cannot alter the returned artifact.
-- Unknown and ambiguous event semantics remain delegated to accepted adapter policy.
-- `next_index` is only a returned boundary and carries no automatic lifecycle behavior.
-- `pending_events` is not upgraded to permanent-history semantics.
-- No simulator execution hook, new event mapping, trace-schema change, Golden Replay change, file I/O, new HSR mechanic, or FIFO/LIFO change was introduced.
+- Cursor state is explicit, immutable, and caller-owned.
+- Runtime sequence continuity is enforced before capture rather than inferred afterward.
+- List-index advancement is exactly the caller-selected end boundary; there is no hidden current-end default.
+- Stale detection is intentionally limited to the observable condition `cursor.pending_event_index > len(state.pending_events)`.
+- The contract does not claim it can detect arbitrary external truncate/refill cycles that restore a satisfying list length.
+- ARCH-008 remains authoritative for actual slice capture and current end-bound validation.
+- Source simulator state is never drained, cleared, rewritten, or assigned cursor metadata.
+- No action/replay auto-hook, file I/O, trace-schema change, Golden Replay change, new event mapping, new HSR mechanic, or FIFO/LIFO change was introduced.
 - Existing production LIFO behavior remains unchanged.
 
 ## Unresolved issues
 
-None blocking HSR-RUNTIME-ARCH-008 acceptance.
+None blocking HSR-RUNTIME-ARCH-009 acceptance.
 
-`BattleState.pending_events` retention remains an implementation detail rather than a guaranteed permanent-history contract. Any reusable cursor/session must explicitly handle list growth/truncation and runtime sequence continuity without mutating the simulator queue.
+ARCH-009 creates deterministic sequential capture segments but does not yet combine multiple segment artifacts into one full actual runtime trace artifact. That composition should remain explicit and preserve RuntimeEvent identity/order without re-adapting source legacy events.
 
 Existing unresolved HSR game semantics remain tracked separately and were not changed.
 
 ## Suggested next milestone
 
-`HSR-RUNTIME-ARCH-009 — Explicit Pending-Event Capture Cursor Contract`
+`HSR-RUNTIME-ARCH-010 — Deterministic Captured Trace Segment Stitcher`
 
-ARCH-009 should add an immutable caller-owned cursor/checkpoint for sequential ARCH-008 captures. It should explicitly carry the next pending-event index and next runtime sequence, require a caller-supplied end index for each capture, detect incompatible/truncated current lists, and derive the next bridge start sequence without clearing or modifying simulator state. It must not introduce automatic action/replay hooks or claim permanent-history semantics.
+ARCH-010 should accept an explicit ordered tuple of completed ARCH-009 capture results, require cursor-chain and runtime-sequence continuity, preserve accepted RuntimeEvent identity/order, and build one deterministic final runtime trace artifact through the existing exporter without re-adapting legacy events. It should not execute simulator actions, auto-capture current state, modify source segments, or perform Golden Replay validation.

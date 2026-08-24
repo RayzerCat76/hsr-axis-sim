@@ -28,6 +28,7 @@ PASS — proceed
 ## Files modified
 
 - `docs/DECISION_LOG.md`
+- `docs/HSR_AXIS_SIM_MASTER_BIBLE.md`
 - `hsr_axis_sim/LUMEN_RESULT.md`
 
 No existing simulator, capture, stitcher, loader, comparator, divergence, Golden Replay, regression, search, binding, data, or fixture executable behavior was modified.
@@ -52,12 +53,12 @@ Preservation tests confirm:
 
 ## Exact validation commands and real results
 
-GitHub Actions workflow: `HSR Axis Sim Validation`, PR #15, run #54, job `validate` (`97345463261`).
+Final validated head: GitHub Actions workflow `HSR Axis Sim Validation`, PR #15, run #56, job `validate` (`97345844469`).
 
 1. `python -m compileall -q hsr_axis_sim`
    - PASS.
 2. `python -m pytest -q`
-   - PASS: `975 passed in 7.73s`.
+   - PASS: `975 passed in 5.69s`.
 3. `python -m hsr_axis_sim.regression.runner --manifest hsr_axis_sim/data/regression_manifest.json --format text`
    - PASS 20/20 total checks:
      - 12/12 golden replays;

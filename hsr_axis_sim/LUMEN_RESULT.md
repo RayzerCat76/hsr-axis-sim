@@ -1,4 +1,4 @@
-# HSR-RUNTIME-ARCH-006 — First Divergence Reporter
+# HSR-AXIS-001B — Deterministic Golden Replay Validator
 
 ## Status
 
@@ -6,34 +6,25 @@ PASS — proceed
 
 ## Implementation summary
 
-- Added a standard-library-only `hsr_axis_sim.runtime_divergence` downstream sidecar.
-- Added mechanical first-divergence selection over an existing
-  `RuntimeTraceComparisonResult`.
-- Selection uses the first non-`MATCH` record in existing ARCH-005 tuple order.
-- For `MISMATCH`, selection uses the first already-ordered ARCH-005 field
-  difference without re-sorting or recomputing it.
-- `EXPECTED_ONLY` and `ACTUAL_ONLY` are reported directly without fabricated
-  field differences.
-- Added frozen structured report models preserving trace provenance, record
-  counts, total mismatch count, record index/status, expected/actual record
-  references, sequence, event ID/type, first field difference, and per-record
-  difference count.
-- Added deterministic text rendering with fixed line ordering and canonical JSON
-  values.
-- Added explicit `ABSENT` rendering so missing values remain distinguishable
-  from present JSON `null`.
-- Added no comparison logic, tolerance, realignment, repair, simulator wiring,
-  Golden Replay orchestration, or HSR semantic changes.
+- Added the standard-library-only downstream sidecar `hsr_axis_sim.runtime_golden_replays`.
+- Added immutable `GoldenReplayValidationConfig` and `GoldenReplayValidationResult` models.
+- Expected golden canonical bytes are loaded with the existing strict loader and `TraceDigestPolicy.REQUIRE_MATCH` against a pinned SHA-256.
+- Actual canonical bytes are loaded with the existing strict loader without a pre-known digest; their computed SHA-256 is retained as provenance.
+- Record comparison is delegated only to ARCH-005 `compare_runtime_trace_documents`.
+- First-divergence selection is delegated only to ARCH-006 `build_first_divergence_report`.
+- Added deterministic replay-level text that embeds the accepted ARCH-006 text report rather than reimplementing divergence logic.
+- Added a first Golden Replay test constructed manually from explicit `RuntimeEvent` values; it contains contract-only fixture identifiers and no inferred hidden HSR values.
+- Added decision D-011: golden expected artifacts are digest-pinned.
 
 ## Files added
 
-- `hsr_axis_sim/runtime_divergence/__init__.py`
-- `hsr_axis_sim/runtime_divergence/model.py`
-- `hsr_axis_sim/runtime_divergence/report.py`
-- `hsr_axis_sim/tests/test_runtime_first_divergence_reporter.py`
-- `hsr_axis_sim/tests/test_runtime_arch_006_preservation.py`
-- `docs/runtime/RUNTIME_TRACE_FIRST_DIVERGENCE_V1.md`
-- `LUMEN_TASK_HSR_RUNTIME_ARCH_006.md`
+- `LUMEN_TASK_HSR_AXIS_001B.md`
+- `docs/runtime/GOLDEN_REPLAY_VALIDATOR_V1.md`
+- `hsr_axis_sim/runtime_golden_replays/__init__.py`
+- `hsr_axis_sim/runtime_golden_replays/model.py`
+- `hsr_axis_sim/runtime_golden_replays/validate.py`
+- `hsr_axis_sim/tests/test_runtime_golden_replay_validator.py`
+- `hsr_axis_sim/tests/test_hsr_axis_001b_preservation.py`
 
 ## Files modified
 
@@ -41,42 +32,36 @@ PASS — proceed
 - `docs/HSR_AXIS_SIM_MASTER_BIBLE.md`
 - `hsr_axis_sim/LUMEN_RESULT.md`
 
-No production simulator, runtime contract, adapter, exporter, loader, comparator,
-regression, search, binding, data, fixture, or accepted runtime reference file
-was modified.
+No existing production simulator, runtime contract, adapter, exporter, loader, comparator, first-divergence reporter, regression, search, binding, data, or locked fixture executable behavior was modified.
 
 ## Tests added
 
-Reporter tests cover:
-
-- fully matching comparison and stable MATCH text;
-- first divergence after preceding matching records;
-- later divergences do not replace the first divergence;
-- first field difference preserves ARCH-005 comparator ordering;
-- EXPECTED_ONLY reporting without fabricated fields;
-- ACTUAL_ONLY reporting without fabricated fields;
-- missing-vs-present-null distinction;
-- deterministic canonical nested JSON and Unicode rendering;
-- frozen report and divergence models;
-- invalid input rejection;
-- read-only repeatable reporting.
+Golden Replay tests cover:
+- manually constructed deterministic matching replay;
+- mismatch propagation through the accepted first-divergence report;
+- expected SHA-256 mismatch rejection;
+- noncanonical expected input rejection;
+- noncanonical actual input rejection;
+- strict config validation;
+- frozen config and result models;
+- repeatable deterministic text;
+- expected/actual artifact SHA-256 provenance;
+- invalid validator/renderer input rejection.
 
 Preservation tests cover:
-
-- no protected upstream area imports `runtime_divergence`;
-- reporter source does not call `compare_runtime_trace_documents`;
-- prior trace-pipeline contracts remain present;
+- no protected upstream area imports `runtime_golden_replays`;
+- validator source composes accepted loader/comparator/reporter APIs without selecting field differences itself;
+- prior trace-pipeline contract documents remain present;
 - production LIFO compatibility behavior remains unchanged.
 
 ## Exact validation commands and real results
 
-GitHub Actions workflow: `HSR Axis Sim Validation`, PR #4, run #9,
-job `validate` (`97329068220`).
+GitHub Actions workflow: `HSR Axis Sim Validation`, PR #5, run #13, job `validate` (`97330636238`).
 
 1. `python -m compileall -q hsr_axis_sim`
    - PASS.
 2. `python -m pytest -q`
-   - PASS: `819 passed in 7.18s`.
+   - PASS: `831 passed in 7.29s`.
 3. `python -m hsr_axis_sim.regression.runner --manifest hsr_axis_sim/data/regression_manifest.json --format text`
    - PASS 20/20 total checks:
      - 12/12 golden replays;
@@ -89,46 +74,28 @@ job `validate` (`97329068220`).
 
 ## Warnings / errors
 
-- No test, compile, or regression errors.
-- GitHub-hosted Actions emitted the existing platform deprecation warning that
-  `actions/checkout@v4` and `actions/setup-python@v5` target Node.js 20 and are
-  currently forced to run on Node.js 24. This is unrelated to simulator or
-  reporter correctness and did not fail validation.
+- No compile, test, or regression errors.
+- Existing GitHub Actions platform warning remains: `actions/checkout@v4` and `actions/setup-python@v5` target Node.js 20 and are currently forced onto Node.js 24. This is unrelated to Golden Replay correctness and is nonblocking.
 
 ## Acceptance review
 
-- Reporter consumes a validated ARCH-005 comparison result instead of
-  recomputing comparison.
-- First record selection preserves existing comparison tuple order exactly.
-- First field selection preserves existing difference order exactly.
-- No semantic priority ranking was introduced.
-- Later divergences remain represented by `total_mismatch_count`; the reporter
-  does not imply that the first divergence is the only divergence.
-- Missing and present JSON null values remain distinct in structured and text
-  output.
-- Text rendering is deterministic, fixed-order, and canonical for JSON values.
-- Structured report models are immutable.
-- No fuzzy equality, tolerance, normalization, repair, deduplication,
-  renumbering, event-ID/sequence/edit-distance realignment, or semantic guessing
-  is present.
-- Existing comparator, trace schema v1, loader/exporter contracts, and
-  production simulator behavior are unchanged.
-- Existing production LIFO behavior is unchanged.
-- Actual HSR same-priority FIFO/LIFO semantics remain unresolved and were not
-  altered.
-- Golden Replay orchestration was not implemented early.
+- Golden expected bytes cannot drift silently because the expected loader requires an exact pinned SHA-256.
+- Actual bytes remain strict canonical input and are not repaired, normalized, or pre-pinned.
+- Comparison and first-divergence semantics are reused rather than duplicated.
+- The result is immutable and preserves loader, comparator, reporter, and digest provenance.
+- Matching/diverged text is deterministic.
+- The first replay is manually constructed and deterministic.
+- No automatic video extraction, tolerance, realignment, repair, simulator auto-wiring, new HSR mechanics, damage expansion, or FIFO/LIFO change was introduced.
+- Existing production LIFO behavior remains unchanged.
 
 ## Unresolved issues
 
-None blocking ARCH-006 acceptance.
+None blocking HSR-AXIS-001B acceptance.
 
-The existing project-level unresolved HSR semantic questions remain tracked in
-`docs/runtime/UNRESOLVED_SEMANTICS_V1.json` and are outside this milestone.
+Existing unresolved HSR game semantics remain tracked separately and were not changed.
 
 ## Suggested next milestone
 
-`Deterministic Golden Replay Validator`
+`HSR-AXIS-001C — File-backed Golden Replay Case Runner`
 
-This next milestone is READY / NOT STARTED. Its first replay must be manually
-constructed and deterministic; automatic video-to-trace extraction remains out
-of scope.
+This should add an explicit reviewed case definition and exact file-path handoff around the accepted in-memory validator without adding batch discovery or simulator auto-wiring.

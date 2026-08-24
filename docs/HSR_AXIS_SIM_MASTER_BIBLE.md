@@ -27,22 +27,25 @@ Never invent hidden game values or semantics. **Unknown > Guess.**
 ## 4. Confirmed Current Baseline
 ```text
 Latest completed milestone:
-HSR-RUNTIME-ARCH-017 — PASS
+HSR-RUNTIME-ARCH-018 — PASS
 
 Complete pytest:
-1037 / 1037 passed
+1052 / 1052 passed
 
-Locked regression:
+Legacy locked regression:
 20 / 20 passed
 
 Trace evidence:
 2 / 2 passed
 
+Runtime action-session Golden regression:
+1 / 1 passed
+
 Current blocker:
 None
 
 Next milestone:
-HSR-RUNTIME-ARCH-018 — Reviewed Static End-to-End Golden Fixture Regression Integration — READY / NOT STARTED
+Not yet assigned — inspect the post-ARCH-018 runtime frontier before defining the next exact task ID.
 ```
 
 Current governance milestone:
@@ -64,6 +67,7 @@ runtime_action_sessions                 explicit ordered multi-action capture se
 runtime_session_stitching               exact successful-session capture provenance -> accepted trace stitch
 runtime_session_golden_validation       exact successful-session stitch provenance -> accepted ARCH-011 Golden validation
 runtime_action_session_validation       explicit caller-controlled ARCH-013 -> ARCH-014 -> ARCH-015 orchestration
+runtime_action_session_regression       separate locked reviewed production-action-session Golden regression lane
 runtime_loaders                         strict schema-v1 loading/integrity validation
 runtime_comparators                     strict expected-vs-actual trace comparison
 runtime_divergence                      first-divergence selection/text reporting
@@ -74,7 +78,7 @@ runtime_golden_manifests                strict canonical Golden Replay manifest 
 runtime_golden_manifest_files           explicit base-bounded Golden Replay manifest file loading
 runtime_golden_manifest_runs            manifest-backed deterministic Golden Replay batch execution
 data/runtime_golden_fixtures            reviewed static non-circular runtime Golden expectations
-regression                              locked regression runner
+regression                              locked legacy regression runner
 search                                  existing search/evaluator tools
 real_bindings                           reviewed partial real-game bindings
 ```
@@ -149,7 +153,10 @@ Explicit Successful Session Golden Validation Handoff. One completed ARCH-014 re
 Explicit End-to-End Action Session Validation Orchestrator. One caller-controlled entry point preflights directly checkable input and then composes accepted ARCH-013, ARCH-014, and ARCH-015 exactly once each. Exact returned stage objects are preserved through the chain. No exception wrapping, retry, rollback, direct lower-layer call, turn/action selection, or new simulator/Golden semantics are added. ARCH-013/014/015 failures propagate unchanged; Golden mismatch remains a completed result with accepted first-divergence provenance.
 
 ### HSR-RUNTIME-ARCH-017 — PASS
-Reviewed Static End-to-End Golden Action Session Fixture. The first production-Action -> ARCH-016 Golden expectation is an independently reviewed compact canonical runtime-trace file rather than a runtime-generated oracle. Its exact 3013 bytes and SHA-256 `f672ffaac9ef9296e4982a6fb61f4d0257b5c0506412bcf54eb1768334118c66` are pinned. A matching two-action production session passes against the static artifact, while a deliberate second-action ID change returns the accepted first divergence at record index 2. The fixture is intentionally not yet part of the locked regression manifest.
+Reviewed Static End-to-End Golden Action Session Fixture. The first production-Action -> ARCH-016 Golden expectation is an independently reviewed compact canonical runtime-trace file rather than a runtime-generated oracle. Its exact 3013 bytes and SHA-256 `f672ffaac9ef9296e4982a6fb61f4d0257b5c0506412bcf54eb1768334118c66` are pinned. A matching two-action production session passes against the static artifact, while a deliberate second-action ID change returns the accepted first divergence at record index 2. The fixture was deliberately kept outside the legacy regression manifest.
+
+### HSR-RUNTIME-ARCH-018 — PASS
+Reviewed Static End-to-End Golden Fixture Regression Integration. The accepted ARCH-017 fixture is now a locked repeatable runtime regression through a separate downstream `runtime_action_session_regression` package, strict manifest, and CI step. The lane reconstructs only explicitly declared simple no-target/no-effect production Actions and delegates each case once to accepted ARCH-016. Legacy `hsr_axis_sim.regression/**` and its manifest remain unchanged at 20/20; the new runtime lane is reported separately at 1/1. A rejected direct integration into the legacy runner was fully reverted after preservation and research-pin failures exposed that boundary.
 
 ## 7. Trace Pipeline
 ```text
@@ -210,9 +217,11 @@ reviewed static expected runtime trace
 + explicit production Action session
 -> ARCH-016
 -> independent Golden PASS / first divergence
+-> ARCH-017 reviewed non-circular fixture proof
+-> ARCH-018 standalone locked runtime action-session regression lane
 
 [CURRENT FRONTIER]
--> HSR-RUNTIME-ARCH-018 Reviewed Static End-to-End Golden Fixture Regression Integration
+-> inspect accepted post-ARCH-018 runtime semantics before assigning the next exact milestone ID
 ```
 
 ## 8. Determinism Rules
@@ -252,6 +261,8 @@ ARCH-016 preflights only directly checkable caller inputs before state mutation,
 
 ARCH-017 end-to-end expected bytes are independent reviewed static artifacts. Tests may read and strict-load them but must not generate the authoritative expected bytes from the simulator, adapter, exporter, or trace builders at test runtime. Any accepted fixture byte change requires explicit review and a matching digest update.
 
+ARCH-018 runtime regression is a distinct locked lane. It preserves the legacy 20/20 regression identity, uses its own strict manifest and CI step, and may reconstruct only the reviewed minimal simple Action schema before delegating to ARCH-016. Runtime Golden cases are not silently reclassified as legacy replay checks.
+
 ## 9. Evidence Classification
 - `CONFIRMED`
 - `PARTIAL`
@@ -262,7 +273,8 @@ Separate visible observation, source/game data, inferred semantic rule, and impl
 ## 10. Locked / Protected Behaviour
 Until an explicit accepted milestone changes them:
 - production simulator behavior is protected;
-- locked regressions are protected;
+- legacy locked regressions and their 20/20 identity are protected;
+- the standalone runtime action-session regression lane is independently protected;
 - existing production LIFO extra-turn behavior is protected;
 - actual HSR same-priority FIFO/LIFO semantics are separate from compatibility behavior;
 - accepted trace schema v1 is protected;
@@ -323,7 +335,7 @@ Codex is optional and used only when it materially helps.
 | HSR-RUNTIME-ARCH-015 Explicit Successful Session Golden Validation Handoff | PASS |
 | HSR-RUNTIME-ARCH-016 Explicit End-to-End Action Session Validation Orchestrator | PASS |
 | HSR-RUNTIME-ARCH-017 Reviewed Static End-to-End Golden Action Session Fixture | PASS |
-| HSR-RUNTIME-ARCH-018 Reviewed Static End-to-End Golden Fixture Regression Integration | READY / NOT STARTED |
+| HSR-RUNTIME-ARCH-018 Reviewed Static End-to-End Golden Fixture Regression Integration | PASS |
 
 ## 14. Acceptance
 A milestone is not accepted because code looks plausible. Review changed files, tests, regression output, warnings/errors, protected files, unresolved issues, and reference integrity where relevant.
@@ -334,6 +346,7 @@ python -m compileall -q hsr_axis_sim
 python -m pytest -q
 python -m hsr_axis_sim.regression.runner --manifest hsr_axis_sim/data/regression_manifest.json --format text
 python -m hsr_axis_sim.regression.runner --manifest hsr_axis_sim/data/regression_manifest.json --only trace_evidence --format text
+python -m hsr_axis_sim.runtime_action_session_regression.runner --manifest hsr_axis_sim/data/runtime_action_session_regression_manifest.json --format text
 ```
 
 Decision is exactly one of:
@@ -345,7 +358,7 @@ Unless explicitly unlocked: full automatic Bilibili/video-to-trace extraction, s
 Golden Replay expected traces remain explicitly reviewed artifacts. Automatic video-to-golden generation is not authorized.
 
 ## 16. Near-Term Roadmap
-`HSR-RUNTIME-ARCH-018 inspect the accepted regression runner/manifest schema first, then promote the proven ARCH-017 non-circular static fixture into a locked repeatable regression path using the smallest compatible mechanism; preserve the fixture bytes/digest and existing legacy 20/20 checks.`
+ARCH-018 is complete. Before assigning the next exact task ID, inspect the accepted runtime frontier and choose the smallest reviewed semantics or regression case that materially increases coverage. Prefer another independently reviewed case over generalizing the runtime regression manifest. Do not add targets/effects or new HSR mechanics merely to make the regression schema more generic.
 
 Later: broader validated semantics, manual trace authoring improvements, then video assistance.
 

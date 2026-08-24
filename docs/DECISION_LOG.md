@@ -136,3 +136,12 @@ Statuses: `CONFIRMED`, `PROVISIONAL`, `SUPERSEDED`. Never delete superseded hist
 **Consequences:** Absolute/noncanonical paths, traversal, symlink escape, non-files, and missing targets are rejected at the file boundary; exact manifest bytes remain governed only by HSR-AXIS-001E.  
 **Supersedes:** Ambient or unbounded Golden Replay manifest file lookup.  
 **Superseded By:** None.
+
+## D-016 — Manifest-backed batches share one resolved base directory
+**Status:** CONFIRMED  
+**Date:** 2026-08-24  
+**Decision:** Manifest-backed Golden Replay execution first loads one reviewed manifest through HSR-AXIS-001F, then executes exactly its reconstructed HSR-AXIS-001D plan using the same resolved base directory returned by the manifest-file load.  
+**Reason:** Manifest location and replay-file location need one explicit portable root; recomputing or changing the base between load and execution would make reviewed paths ambiguous.  
+**Consequences:** The composition result must preserve the complete manifest load and batch result, and must reject any plan or base-directory misalignment; no lower-level semantics are duplicated.  
+**Supersedes:** Multi-root or implicitly recomputed manifest-backed batch execution.  
+**Superseded By:** None.

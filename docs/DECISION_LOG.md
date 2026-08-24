@@ -145,3 +145,12 @@ Statuses: `CONFIRMED`, `PROVISIONAL`, `SUPERSEDED`. Never delete superseded hist
 **Consequences:** The composition result must preserve the complete manifest load and batch result, and must reject any plan or base-directory misalignment; no lower-level semantics are duplicated.  
 **Supersedes:** Multi-root or implicitly recomputed manifest-backed batch execution.  
 **Superseded By:** None.
+
+## D-017 — Legacy-event trace bridging is explicit and source-owned
+**Status:** CONFIRMED  
+**Date:** 2026-08-24  
+**Decision:** The first runtime integration bridge accepts a caller-supplied legacy `Event` iterable and composes the accepted legacy adapter with the accepted runtime trace exporter; it does not inspect, drain, clear, or hook simulator event queues/state.  
+**Reason:** Event adaptation/export semantics are already validated, but the lifecycle and retention semantics of simulator event queues are a separate integration decision that must not be guessed.  
+**Consequences:** ARCH-007 can produce deterministic runtime trace artifacts from explicit observations while leaving simulator capture lifecycle untouched for a later milestone.  
+**Supersedes:** Implicit simulator-event capture as part of the first trace bridge.  
+**Superseded By:** None.

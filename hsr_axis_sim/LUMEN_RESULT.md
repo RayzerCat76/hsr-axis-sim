@@ -1,142 +1,123 @@
-# HSR-RUNTIME-ARCH-004 — Trace Document Loader and Integrity Validator
+# HSR-RUNTIME-ARCH-005 — Expected vs Actual Trace Comparator
 
 ## Status
 
-BLOCKED
-
-Implementation, strict reference/tamper validation, compilation, preservation,
-round-trip checks, and regressions pass. Final PASS is blocked because `python`
-and pytest are unavailable and the workspace has no Git metadata. No dependency
-was installed.
+PASS — proceed
 
 ## Implementation summary
 
-- Added a standard-library-only `hsr_axis_sim.runtime_loaders` sidecar.
-- Added mandatory canonical-form and digest policies plus frozen config/result
-  models and controlled loader-specific errors.
-- Added strict JSON decoding with nested duplicate-key and non-finite rejection.
-- Added exact schema-v1 reconstruction for RuntimeEvent, RuntimeTraceRecord,
-  RuntimeTraceDocument, and RuntimeTraceArtifact.
-- Added independent sequence, identity, count, boundary, projection, and
-  semantic-gap integrity validation.
-- Added ordered digest, UTF-8/BOM, JSON, schema, integrity, and canonicality
-  checks while retaining exact source bytes.
-- Added explicit bounded read-only file loading, deterministic schema/docs, and
-  six focused test files.
+- Added a standard-library-only `hsr_axis_sim.runtime_comparators` sidecar.
+- Added exact position-by-position comparison for two `RuntimeTraceDocument`
+  record streams.
+- Added deterministic recursive field differences using the existing canonical
+  data projection.
+- Added strict JSON-type comparison, so values such as `1` and `1.0` remain
+  distinct.
+- Added stable JSON-pointer-style difference paths with `~0` / `~1` escaping.
+- Added explicit `MATCH`, `MISMATCH`, `EXPECTED_ONLY`, and `ACTUAL_ONLY`
+  outcomes.
+- Added frozen comparison result/record/difference models and deep-frozen
+  captured difference values.
+- Kept `trace_id` and metadata as provenance rather than independent trace
+  equality axes; loader/exporter invariants remain responsible for document
+  wrapper integrity.
+- Added no heuristic realignment, repair, tolerance, simulator integration, or
+  first-divergence reporting.
 
 ## Files added
 
-- `hsr_axis_sim/runtime_loaders/__init__.py`
-- `hsr_axis_sim/runtime_loaders/enums.py`
-- `hsr_axis_sim/runtime_loaders/model.py`
-- `hsr_axis_sim/runtime_loaders/json_decode.py`
-- `hsr_axis_sim/runtime_loaders/validation.py`
-- `hsr_axis_sim/runtime_loaders/trace_load.py`
-- `hsr_axis_sim/runtime_loaders/files.py`
-- `docs/runtime/RUNTIME_TRACE_LOAD_VALIDATE_V1.md`
-- `docs/runtime/RUNTIME_TRACE_LOAD_SCHEMA_V1.json`
-- `docs/runtime/research/REFERENCE_RUNTIME_TRACE_LOAD_VALIDATE_HSR_RUNTIME_ARCH_004.md`
-- `docs/runtime/research/REFERENCE_RUNTIME_TRACE_LOAD_VALIDATE_HSR_RUNTIME_ARCH_004.json`
-- `hsr_axis_sim/tests/test_runtime_trace_loader_model.py`
-- `hsr_axis_sim/tests/test_runtime_trace_loader_json.py`
-- `hsr_axis_sim/tests/test_runtime_trace_loader_validation.py`
-- `hsr_axis_sim/tests/test_runtime_trace_loader_bytes.py`
-- `hsr_axis_sim/tests/test_runtime_trace_loader_file.py`
-- `hsr_axis_sim/tests/test_runtime_arch_004_preservation.py`
+- `hsr_axis_sim/runtime_comparators/__init__.py`
+- `hsr_axis_sim/runtime_comparators/enums.py`
+- `hsr_axis_sim/runtime_comparators/model.py`
+- `hsr_axis_sim/runtime_comparators/compare.py`
+- `hsr_axis_sim/tests/test_runtime_trace_comparator.py`
+- `hsr_axis_sim/tests/test_runtime_arch_005_preservation.py`
+- `docs/runtime/RUNTIME_TRACE_COMPARE_V1.md`
+- `LUMEN_TASK_HSR_RUNTIME_ARCH_005.md`
 
-The two supplied reference files were already at their final paths and were
-retained byte-for-byte without rewriting.
+## Files modified
 
-## File modified
+- `docs/HSR_AXIS_SIM_MASTER_BIBLE.md`
+- `hsr_axis_sim/LUMEN_RESULT.md`
 
-- `hsr_axis_sim/LUMEN_RESULT.md` only.
+No production simulator, runtime contract, adapter, exporter, loader, regression,
+search, binding, data, fixture, or accepted runtime reference file was modified.
 
 ## Tests added
 
-- Exact enums, mandatory/coherent config, digest syntax, max-byte validation,
-  frozen config/result, and result consistency.
-- Strict JSON roots, malformed JSON, all non-finite constants, and duplicate
-  keys at top-level and nested levels.
-- Exact document/record/event fields, schema/version/enums/primitives,
-  projection constraints, sequences, duplicate IDs, counts, boundaries, and
-  semantic-gap integrity.
-- Digest-policy matrix, compact/pretty policy matrix, noncanonical rejection,
-  size/type/UTF-8/BOM behavior, source-byte identity, and exporter round-trip.
-- Explicit read-only compact/pretty file loading, missing/directory/overflow
-  errors, config-first behavior, byte preservation, and no sidecars.
-- Exact ARCH-004 reference hashes, all prior docs, unchanged accepted sidecar
-  hashes, no protected imports, and unchanged LIFO behavior.
+Comparator tests cover:
 
-## Commands and real results
+- identical record streams;
+- differing document provenance with identical records;
+- event-field mismatch paths;
+- nested missing keys and JSON-pointer escaping;
+- strict integer-vs-float differences;
+- expected-only and actual-only tail records;
+- no middle-record repair/realignment;
+- deep immutability of captured values and frozen results;
+- empty traces;
+- invalid input types;
+- deterministic repeated comparisons and field ordering.
+
+Preservation tests cover:
+
+- no existing runtime/production area imports `runtime_comparators`;
+- prior trace-pipeline documentation remains present;
+- production LIFO compatibility behavior remains unchanged.
+
+## Exact validation commands and real results
+
+GitHub Actions workflow: `HSR Axis Sim Validation`, PR #3, run #5,
+job `validate` (`97325780443`).
 
 1. `python -m compileall -q hsr_axis_sim`
-   - BLOCKED: `zsh: command not found: python`.
-2. `python3 -m compileall -q hsr_axis_sim`
-   - PASS, no output, `0.12s real` on final run.
-3. Focused pytest command for all six ARCH-004 test files
-   - BLOCKED before collection: `python` is unavailable.
-4. `python3 -m pytest -q` with all six focused files
-   - BLOCKED before collection: `/usr/local/bin/python3: No module named pytest`.
-5. Complete `python -m pytest -q`
-   - BLOCKED before collection: `python` is unavailable.
-6. Supplied reference canonical/tamper harness
-   - PASS 2/2 canonical samples and PASS 19/19 tamper cases with their exact
-     expected controlled error classes.
-7. Direct digest/canonical/file/exporter-round-trip harness
-   - PASS: all digest modes, canonical policies, size/type ordering, bounded
-     read-only files, exact source bytes, and reconstructed content.
-8. `python3 -m hsr_axis_sim.regression.runner --manifest hsr_axis_sim/data/regression_manifest.json --format text`
-   - PASS 20/20 in `0.11s real`: 12/12 replays, 2/2 manual, 2/2 scenarios,
-     2/2 action-sequence, and 2/2 trace-evidence checks.
-9. `python3 -m hsr_axis_sim.regression.runner --manifest hsr_axis_sim/data/regression_manifest.json --only trace_evidence --format text`
-   - PASS 2/2 in `0.07s real`.
-10. Required ARCH-004 reference `sha256sum`
-    - PASS; exact hashes below.
-11. `git diff --check`
-    - BLOCKED: workspace is not a Git repository.
-12. Preservation/static harness
-    - PASS: 14/14 accepted contract/adapter/export source hashes unchanged,
-      13/13 prior ARCH documents present, zero protected imports of
-      `runtime_loaders`, and 15 new files passed whitespace/conflict checks.
+   - PASS.
+2. `python -m pytest -q`
+   - PASS: `805 passed in 5.17s`.
+3. `python -m hsr_axis_sim.regression.runner --manifest hsr_axis_sim/data/regression_manifest.json --format text`
+   - PASS 20/20 total checks:
+     - 12/12 golden replays;
+     - 2/2 manual checks;
+     - 2/2 search scenarios;
+     - 2/2 action-sequence trace checks;
+     - 2/2 trace-evidence checks.
+4. `python -m hsr_axis_sim.regression.runner --manifest hsr_axis_sim/data/regression_manifest.json --only trace_evidence --format text`
+   - PASS 2/2 trace-evidence checks.
 
-Focused and complete pytest totals/timings are unavailable because collection
-could not start. The supplied independent starting baseline is 766/766; it is
-not reported as a new local execution.
+## Warnings / errors
 
-## Reference and sample hashes
+- No test, compile, or regression errors.
+- GitHub-hosted Actions emitted a platform deprecation warning that
+  `actions/checkout@v4` and `actions/setup-python@v5` target Node.js 20 and are
+  currently forced to run on Node.js 24. This is unrelated to simulator or
+  comparator correctness and did not fail validation.
 
-- `REFERENCE_RUNTIME_TRACE_LOAD_VALIDATE_HSR_RUNTIME_ARCH_004.md`:
-  `09734938828c8cc44e0d9cd776b9ec8738ae39dd7a4d62a0df714c646bce5241`
-- `REFERENCE_RUNTIME_TRACE_LOAD_VALIDATE_HSR_RUNTIME_ARCH_004.json`:
-  `548313a263f05891b432b51d5833009341f481291f8a30d3a96108f24fcef4f4`
-- Valid compact sample:
-  `d9a123ccc03b1eec9a816ec0d55bf024998d3b656b27fa4f807439d7e34ad6bd`
-- Valid pretty sample:
-  `71fa9c77239c30c2aa694a2a8e16f84538b37e3191db4318cf20c09154834d8f`
+## Acceptance review
 
-## Contract and preservation confirmation
-
-- Duplicate JSON keys at every depth, non-finite constants, BOM, invalid UTF-8,
-  unknown schemas/enums, and equivalent but noncanonical JSON are rejected.
-- Only exact `hsr_runtime_trace` schema version `1.0` is accepted.
-- Source bytes are retained unchanged in the reconstructed artifact; no hash is
-  embedded or rewritten.
-- Schema-v1 contexts remain null and numeric values/notes remain empty.
-- No repair, normalization, migration, renumbering, deduplication, comparison,
-  divergence reporting, future-version compatibility, JSONL, append, automatic
-  discovery/observation, simulator access, context reconstruction, numeric
-  extraction, lifecycle binding, or FIFO/LIFO change was introduced.
-- No existing production, runtime contract, adapter, exporter, test,
-  documentation, manifest, fixture, README, or 002Q-FIX file changed.
-- All prior ARCH-001/002/003 accepted documents remain present.
+- Comparison is deterministic and read-only.
+- Every runtime record field is compared strictly at its existing tuple
+  position.
+- Missing nested values preserve explicit presence flags, so missing and JSON
+  null are not conflated.
+- Difference ordering is deterministic.
+- No tolerance, normalization, repair, deduplication, renumbering, edit-distance
+  alignment, event-ID alignment, or semantic guessing is present.
+- Document provenance differences do not create false combat-trace divergence.
+- Existing trace schema v1 and loader/exporter contracts are unchanged.
+- Existing production LIFO behavior is unchanged.
+- Actual HSR same-priority FIFO/LIFO semantics remain unresolved and were not
+  altered.
+- ARCH-006 first-divergence selection/reporting was not implemented early.
 
 ## Unresolved issues
 
-- Focused and complete pytest require an environment that provides pytest.
-- `git diff --check` requires the missing Git metadata.
+None blocking ARCH-005 acceptance.
+
+The existing project-level unresolved HSR semantic questions remain tracked in
+`docs/runtime/UNRESOLVED_SEMANTICS_V1.json` and are outside this milestone.
 
 ## Suggested next milestone
 
-`HSR-RUNTIME-ARCH-005 — Expected vs Actual Trace Comparator`
+`HSR-RUNTIME-ARCH-006 — First Divergence Reporter`
 
-ARCH-005 was not started.
+ARCH-006 is READY / NOT STARTED.

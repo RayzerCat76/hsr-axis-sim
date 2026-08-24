@@ -235,3 +235,12 @@ Statuses: `CONFIRMED`, `PROVISIONAL`, `SUPERSEDED`. Never delete superseded hist
 **Consequences:** ARCH-013 failures stop later stages and propagate unchanged; ARCH-014/015 failures after completed actions also propagate unchanged with no rollback; Golden mismatch remains a completed result; ARCH-016 does not catch/retry lower failures or call ARCH-012/010/011/lower layers directly.  
 **Supersedes:** Ad hoc end-to-end composition that could defer obvious input errors until after state mutation or bypass accepted stage boundaries.  
 **Superseded By:** None.
+
+## D-027 — End-to-end Golden expectations are reviewed static artifacts, not simulator-generated test oracles
+**Status:** CONFIRMED  
+**Date:** 2026-08-24  
+**Decision:** ARCH-017's first end-to-end Golden expectation is a manually constructed compact canonical runtime-trace file, stored separately under `data/runtime_golden_fixtures`, with exact byte size and SHA-256 pinned in tests and documentation.  
+**Reason:** Generating expected bytes with the same simulator/adapter/export pipeline under test would make an end-to-end PASS circular and unable to detect shared output drift.  
+**Consequences:** Tests may strictly load and compare the static expected bytes but may not generate them at runtime; any fixture-byte change requires explicit review and digest update. ARCH-017 does not promote the fixture into the locked regression manifest; that remains a separate milestone.  
+**Supersedes:** Runtime-generated expected artifacts as the authority for end-to-end action-session validation tests.  
+**Superseded By:** None.

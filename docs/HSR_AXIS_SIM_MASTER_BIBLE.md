@@ -27,10 +27,10 @@ Never invent hidden game values or semantics. **Unknown > Guess.**
 ## 4. Confirmed Current Baseline
 ```text
 Latest completed milestone:
-HSR-RUNTIME-ARCH-011 — PASS
+HSR-RUNTIME-ARCH-012 — PASS
 
 Complete pytest:
-975 / 975 passed
+986 / 986 passed
 
 Locked regression:
 20 / 20 passed
@@ -42,7 +42,7 @@ Current blocker:
 None
 
 Next milestone:
-HSR-RUNTIME-ARCH-012 — Explicit Single-Action Event Capture Orchestrator — READY / NOT STARTED
+HSR-RUNTIME-ARCH-013 — Explicit Multi-Action Capture Session — READY / NOT STARTED
 ```
 
 Current governance milestone:
@@ -59,6 +59,7 @@ runtime_state_captures                  explicit non-mutating BattleState pendin
 runtime_capture_cursors                 caller-owned sequential pending-event index/sequence checkpoints
 runtime_trace_stitching                 deterministic composition of captured runtime trace segments
 runtime_stitched_golden_validation      exact-byte handoff from stitched actual trace to Golden validation
+runtime_action_captures                 explicit non-transactional single production Action capture
 runtime_loaders                         strict schema-v1 loading/integrity validation
 runtime_comparators                     strict expected-vs-actual trace comparison
 runtime_divergence                      first-divergence selection/text reporting
@@ -127,6 +128,9 @@ Deterministic Captured Trace Segment Stitcher. An explicit ordered non-empty tup
 ### HSR-RUNTIME-ARCH-011 — PASS
 Explicit Stitched Actual Trace Golden Validation Handoff. One completed ARCH-010 stitch result is passed into accepted HSR-AXIS-001B using the stitched artifact's exact existing `payload_bytes` as actual bytes. The immutable wrapper preserves complete stitch and Golden validation provenance and rejects any Golden actual bytes/SHA/document that differ from the stitched artifact. No validation semantics are reimplemented.
 
+### HSR-RUNTIME-ARCH-012 — PASS
+Explicit Single-Action Event Capture Orchestrator. A caller-owned pending-event cursor must be aligned exactly to the current list end before exactly one caller-supplied production `Action.execute` call. After successful action execution, exactly the newly appended event window is captured through accepted ARCH-009/ARCH-008 semantics. The boundary is explicitly non-transactional: action or post-action capture failures propagate without rollback, retry, queue cleanup, or fake result construction, and `sim/**` remains unchanged.
+
 ## 7. Trace Pipeline
 ```text
 caller-supplied legacy simulator Event stream
@@ -156,8 +160,15 @@ caller-owned ARCH-009 cursor
 -> ARCH-011 exact-byte Golden validation handoff
 -> accepted Golden PASS / first divergence
 
+caller-selected production Action
++ BattleState
++ aligned caller-owned ARCH-009 cursor
+-> ARCH-012 execute exactly one Action
+-> capture exactly newly appended pending-event window
+-> completed ARCH-009 segment result
+
 [CURRENT FRONTIER]
--> HSR-RUNTIME-ARCH-012 Explicit Single-Action Event Capture Orchestrator
+-> HSR-RUNTIME-ARCH-013 Explicit Multi-Action Capture Session
 ```
 
 ## 8. Determinism Rules
@@ -184,6 +195,8 @@ ARCH-009 cursor state is immutable and caller-owned. Runtime sequence continuity
 ARCH-010 stitching preserves declared capture-segment order and existing RuntimeEvent object identity. All segments must share one legacy adapter source contract; final trace identity/metadata come from an explicit final export config rather than segment-local artifact metadata.
 
 ARCH-011 passes the exact stitched artifact bytes unchanged into accepted Golden validation. The wrapper does not create a second actual-trace serialization or validation semantics boundary.
+
+ARCH-012 requires the caller cursor to equal the current pending-event list end before production action execution. The action call is not transactional: failures preserve real simulator mutation/event state and do not advance or repair caller cursor state automatically.
 
 ## 9. Evidence Classification
 - `CONFIRMED`
@@ -250,7 +263,8 @@ Codex is optional and used only when it materially helps.
 | HSR-RUNTIME-ARCH-009 Explicit Pending-Event Capture Cursor Contract | PASS |
 | HSR-RUNTIME-ARCH-010 Deterministic Captured Trace Segment Stitcher | PASS |
 | HSR-RUNTIME-ARCH-011 Explicit Stitched Actual Trace Golden Validation Handoff | PASS |
-| HSR-RUNTIME-ARCH-012 Explicit Single-Action Event Capture Orchestrator | READY / NOT STARTED |
+| HSR-RUNTIME-ARCH-012 Explicit Single-Action Event Capture Orchestrator | PASS |
+| HSR-RUNTIME-ARCH-013 Explicit Multi-Action Capture Session | READY / NOT STARTED |
 
 ## 14. Acceptance
 A milestone is not accepted because code looks plausible. Review changed files, tests, regression output, warnings/errors, protected files, unresolved issues, and reference integrity where relevant.
@@ -272,7 +286,7 @@ Unless explicitly unlocked: full automatic Bilibili/video-to-trace extraction, s
 Golden Replay expected traces remain explicitly reviewed artifacts. Automatic video-to-golden generation is not authorized.
 
 ## 16. Near-Term Roadmap
-`HSR-RUNTIME-ARCH-012 explicit one-action execution/capture boundary -> reviewed multi-action/replay orchestration only after its state-mutating failure contract is validated`.
+`HSR-RUNTIME-ARCH-013 explicit caller-controlled multi-action capture session -> stitch/Golden validation composition only after session failure boundaries are validated`.
 
 Later: broader validated semantics, manual trace authoring improvements, then video assistance.
 

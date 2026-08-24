@@ -199,3 +199,12 @@ Statuses: `CONFIRMED`, `PROVISIONAL`, `SUPERSEDED`. Never delete superseded hist
 **Consequences:** Action or post-action capture exceptions propagate unchanged, all mutations remain as production execution left them, the caller-owned cursor is not mutated in place, and successful results prove the exact pre/post event-window boundaries.  
 **Supersedes:** Implicit rollback, auto-retry, or silently capturing pre-existing events around one action.  
 **Superseded By:** None.
+
+## D-023 — Multi-action sessions stop at first failure and preserve only confirmed capture boundaries
+**Status:** CONFIRMED  
+**Date:** 2026-08-24  
+**Decision:** ARCH-013 executes caller-supplied action steps strictly in declared order through accepted ARCH-012, advances only from completed result cursors, and stops at the first failed action/capture step. The controlled session failure preserves prior completed results and the last successful cursor while chaining the original exception.  
+**Reason:** Repeated state-mutating action capture needs inspectable partial-session provenance without pretending failed steps are transactional or recoverable.  
+**Consequences:** Later actions are never executed after failure; no rollback/retry/cursor repair occurs; `last_successful_cursor` is a confirmed historical boundary only and is not automatically safe for resume because the failed step may already have mutated state or appended uncaptured events.  
+**Supersedes:** Implicit continuation after failed action capture, silent partial-session success, or treating the last completed cursor as guaranteed recovery state.  
+**Superseded By:** None.

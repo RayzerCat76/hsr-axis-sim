@@ -27,10 +27,10 @@ Never invent hidden game values or semantics. **Unknown > Guess.**
 ## 4. Confirmed Current Baseline
 ```text
 Latest completed milestone:
-HSR-RUNTIME-ARCH-007 — PASS
+HSR-RUNTIME-ARCH-008 — PASS
 
 Complete pytest:
-916 / 916 passed
+934 / 934 passed
 
 Locked regression:
 20 / 20 passed
@@ -42,7 +42,7 @@ Current blocker:
 None
 
 Next milestone:
-HSR-RUNTIME-ARCH-008 — Explicit BattleState Pending-Event Slice Trace Capture — READY / NOT STARTED
+HSR-RUNTIME-ARCH-009 — Explicit Pending-Event Capture Cursor Contract — READY / NOT STARTED
 ```
 
 Current governance milestone:
@@ -55,6 +55,7 @@ runtime_contracts                       immutable runtime/event/trace contracts
 runtime_adapters                        manual legacy Event -> RuntimeEvent bridge
 runtime_exports                         deterministic trace export
 runtime_trace_bridges                   explicit legacy Event stream -> runtime trace artifact composition
+runtime_state_captures                  explicit non-mutating BattleState pending-event slice capture
 runtime_loaders                         strict schema-v1 loading/integrity validation
 runtime_comparators                     strict expected-vs-actual trace comparison
 runtime_divergence                      first-divergence selection/text reporting
@@ -111,6 +112,9 @@ Manifest-backed Golden Replay Batch Runner. One reviewed manifest is loaded thro
 ### HSR-RUNTIME-ARCH-007 — PASS
 Explicit Legacy Event Stream -> Runtime Trace Artifact Bridge. A caller-owned legacy `Event` iterable is explicitly adapted once through ARCH-002 and exported through ARCH-003 into a deterministic runtime trace artifact. Bridge configuration and result provenance are immutable. No simulator event queue/state is inspected, drained, cleared, or automatically hooked.
 
+### HSR-RUNTIME-ARCH-008 — PASS
+Explicit BattleState Pending-Event Slice Trace Capture. A caller-selected `[start_index:end_index)` slice of the current `BattleState.pending_events` list is snapshotted without mutation and delegated once through ARCH-007. The immutable result preserves capture-time list count and returns `next_index = end_index` only as an explicit boundary. The contract does not claim permanent-history semantics and does not persist or advance a cursor.
+
 ## 7. Trace Pipeline
 ```text
 caller-supplied legacy simulator Event stream
@@ -127,8 +131,13 @@ caller-supplied legacy simulator Event stream
 -> HSR-AXIS-001F Base-bounded Golden Replay Manifest File Loader
 -> HSR-AXIS-001G Manifest-backed Golden Replay Batch Runner
 
+BattleState.pending_events
+-> ARCH-008 explicit non-mutating [start:end) snapshot
+-> ARCH-007 explicit bridge
+-> deterministic runtime trace artifact
+
 [CURRENT FRONTIER]
--> HSR-RUNTIME-ARCH-008 Explicit BattleState Pending-Event Slice Trace Capture
+-> HSR-RUNTIME-ARCH-009 Explicit Pending-Event Capture Cursor Contract
 ```
 
 ## 8. Determinism Rules
@@ -147,6 +156,8 @@ Golden manifest files use one explicit canonical relative POSIX path under an ex
 Manifest-backed batch execution uses the same resolved base directory for the manifest and all replay case files. Plan/base identity is explicit and checked.
 
 ARCH-007 trace bridging is explicitly invoked over a caller-owned legacy event iterable. It does not assign history semantics to simulator queues or mutate their lifecycle.
+
+ARCH-008 capture requires explicit slice boundaries against the current `BattleState.pending_events` list. It never drains or clears that list, never chooses an implicit end index, and treats returned `next_index` only as a caller-visible boundary rather than a persisted cursor.
 
 ## 9. Evidence Classification
 - `CONFIRMED`
@@ -209,7 +220,8 @@ Codex is optional and used only when it materially helps.
 | HSR-AXIS-001F Base-bounded Golden Replay Manifest File Loader | PASS |
 | HSR-AXIS-001G Manifest-backed Golden Replay Batch Runner | PASS |
 | HSR-RUNTIME-ARCH-007 Explicit Legacy Event Stream -> Runtime Trace Artifact Bridge | PASS |
-| HSR-RUNTIME-ARCH-008 Explicit BattleState Pending-Event Slice Trace Capture | READY / NOT STARTED |
+| HSR-RUNTIME-ARCH-008 Explicit BattleState Pending-Event Slice Trace Capture | PASS |
+| HSR-RUNTIME-ARCH-009 Explicit Pending-Event Capture Cursor Contract | READY / NOT STARTED |
 
 ## 14. Acceptance
 A milestone is not accepted because code looks plausible. Review changed files, tests, regression output, warnings/errors, protected files, unresolved issues, and reference integrity where relevant.
@@ -231,7 +243,7 @@ Unless explicitly unlocked: full automatic Bilibili/video-to-trace extraction, s
 Golden Replay expected traces remain explicitly reviewed artifacts. Automatic video-to-golden generation is not authorized.
 
 ## 16. Near-Term Roadmap
-`ARCH-008 explicit non-mutating pending-event slice capture -> reviewed capture cursor/session semantics`.
+`HSR-RUNTIME-ARCH-009 explicit caller-owned pending-event capture cursor/checkpoint -> reviewed sequential capture orchestration`.
 
 Later: broader validated semantics, manual trace authoring improvements, then video assistance.
 

@@ -190,3 +190,12 @@ Statuses: `CONFIRMED`, `PROVISIONAL`, `SUPERSEDED`. Never delete superseded hist
 **Consequences:** ARCH-011 adds no loader/comparator/divergence semantics; expected Golden validation errors propagate, and any returned wrapper must prove the Golden actual bytes/SHA/document match the stitched artifact exactly.  
 **Supersedes:** Reserializing or reconstructing stitched actual traces before Golden validation.  
 **Superseded By:** None.
+
+## D-022 — Single-action capture is explicit and non-transactional
+**Status:** CONFIRMED  
+**Date:** 2026-08-24  
+**Decision:** ARCH-012 executes exactly one caller-supplied production `Action` only when the caller-owned pending-event cursor is aligned to the current list end, then captures exactly the newly appended event window through accepted ARCH-009 semantics. No rollback, retry, queue cleanup, or synthetic result is attempted on failure.  
+**Reason:** `Action.execute` mutates simulator state and may emit events before raising; pretending this boundary is transactional would hide real partial state and create false deterministic provenance.  
+**Consequences:** Action or post-action capture exceptions propagate unchanged, all mutations remain as production execution left them, the caller-owned cursor is not mutated in place, and successful results prove the exact pre/post event-window boundaries.  
+**Supersedes:** Implicit rollback, auto-retry, or silently capturing pre-existing events around one action.  
+**Superseded By:** None.

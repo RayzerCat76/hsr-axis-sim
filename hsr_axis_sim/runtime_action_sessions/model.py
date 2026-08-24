@@ -37,7 +37,11 @@ class MultiActionCaptureSessionFailure(RuntimeActionSessionError):
         completed_results: tuple[SingleActionEventCaptureResult, ...],
         last_successful_cursor: PendingEventCaptureCursor,
     ) -> None:
-        if not isinstance(failed_action_index, int) or isinstance(failed_action_index, bool) or failed_action_index < 0:
+        if (
+            not isinstance(failed_action_index, int)
+            or isinstance(failed_action_index, bool)
+            or failed_action_index < 0
+        ):
             raise RuntimeActionSessionInputError(
                 "failed_action_index must be a non-negative integer"
             )
@@ -60,7 +64,10 @@ class MultiActionCaptureSessionFailure(RuntimeActionSessionError):
             raise RuntimeActionSessionInputError(
                 "last_successful_cursor has an invalid type"
             )
-        if completed_results and completed_results[-1].next_cursor != last_successful_cursor:
+        if (
+            completed_results
+            and completed_results[-1].next_cursor != last_successful_cursor
+        ):
             raise RuntimeActionSessionInputError(
                 "last_successful_cursor must equal the final completed result next_cursor"
             )
@@ -82,7 +89,17 @@ class ExplicitActionCaptureStep:
     def __post_init__(self) -> None:
         if not isinstance(self.action, Action):
             raise RuntimeActionSessionInputError("action has an invalid type")
-        if self.turn_context is not None and not isinstance(self.turn_context, TurnContext):
+        if not isinstance(self.action.id, str) or not self.action.id.strip():
+            raise RuntimeActionSessionInputError(
+                "action.id must be a non-empty string"
+            )
+        if not isinstance(self.action.actor_id, str) or not self.action.actor_id.strip():
+            raise RuntimeActionSessionInputError(
+                "action.actor_id must be a non-empty string"
+            )
+        if self.turn_context is not None and not isinstance(
+            self.turn_context, TurnContext
+        ):
             raise RuntimeActionSessionInputError(
                 "turn_context must be TurnContext or None"
             )
@@ -153,7 +170,10 @@ class MultiActionCaptureSessionResult:
         for index, (step, export_config, result) in enumerate(
             zip(self.steps, self.config.segment_export_configs, self.results)
         ):
-            if result.action_id != step.action.id or result.actor_id != step.action.actor_id:
+            if (
+                result.action_id != step.action.id
+                or result.actor_id != step.action.actor_id
+            ):
                 raise RuntimeActionSessionInputError(
                     f"results[{index}] action identity must match steps[{index}]"
                 )
@@ -179,7 +199,10 @@ class MultiActionCaptureSessionResult:
                 raise RuntimeActionSessionInputError(
                     f"results[{index}] pretty flag must match session config"
                 )
-            if step.turn_context is not None and result.turn_context is not step.turn_context:
+            if (
+                step.turn_context is not None
+                and result.turn_context is not step.turn_context
+            ):
                 raise RuntimeActionSessionInputError(
                     f"results[{index}] must preserve caller TurnContext identity"
                 )

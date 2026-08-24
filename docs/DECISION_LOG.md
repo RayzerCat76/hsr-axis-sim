@@ -127,3 +127,12 @@ Statuses: `CONFIRMED`, `PROVISIONAL`, `SUPERSEDED`. Never delete superseded hist
 **Consequences:** Manifest SHA-256 identifies exact reviewed bytes; case order is preserved; any schema evolution requires an explicit versioned milestone rather than permissive parsing.  
 **Supersedes:** Permissive or formatting-insensitive Golden Replay manifest parsing.  
 **Superseded By:** None.
+
+## D-015 — Golden manifest files are explicit and base-directory bounded
+**Status:** CONFIRMED  
+**Date:** 2026-08-24  
+**Decision:** A Golden Replay manifest file is addressed by one canonical relative POSIX path under an explicit base directory; the resolved target must remain inside that base after symlink resolution before any bytes are loaded.  
+**Reason:** Manifest artifact identity and filesystem location are separate contracts, and reviewed manifests must not depend on ambient working-directory lookup or permit path escape.  
+**Consequences:** Absolute/noncanonical paths, traversal, symlink escape, non-files, and missing targets are rejected at the file boundary; exact manifest bytes remain governed only by HSR-AXIS-001E.  
+**Supersedes:** Ambient or unbounded Golden Replay manifest file lookup.  
+**Superseded By:** None.

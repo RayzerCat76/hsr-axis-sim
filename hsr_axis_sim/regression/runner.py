@@ -442,7 +442,6 @@ def _check_trace_evidence(entry: RegressionManifestEntry) -> RegressionCheckResu
             details=details,
             error=str(exc),
         )
-
 def _selected_groups(only: str | None) -> list[str]:
     if only is None:
         return list(REPORT_GROUPS)

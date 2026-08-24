@@ -27,10 +27,10 @@ Never invent hidden game values or semantics. **Unknown > Guess.**
 ## 4. Confirmed Current Baseline
 ```text
 Latest completed runtime milestone:
-HSR-RUNTIME-ARCH-005 — PASS
+HSR-RUNTIME-ARCH-006 — PASS
 
 Complete pytest:
-805 / 805 passed
+819 / 819 passed
 
 Locked regression:
 20 / 20 passed
@@ -41,8 +41,8 @@ Trace evidence:
 Current blocker:
 None
 
-Next runtime milestone:
-HSR-RUNTIME-ARCH-006 — READY / NOT STARTED
+Next milestone:
+Deterministic Golden Replay Validator — READY / NOT STARTED
 ```
 
 Current governance milestone:
@@ -56,6 +56,7 @@ runtime_adapters              manual legacy Event -> RuntimeEvent bridge
 runtime_exports               deterministic trace export
 runtime_loaders               strict schema-v1 loading/integrity validation
 runtime_comparators           strict expected-vs-actual trace comparison
+runtime_divergence            first-divergence selection/text reporting
 regression                    locked regression runner
 search                        existing search/evaluator tools
 real_bindings                 reviewed partial real-game bindings
@@ -79,6 +80,9 @@ Strict trace loader/integrity validator. Reject invalid/tampered/noncanonical sc
 ### ARCH-005 — PASS
 Strict expected-vs-actual comparator over ordered `RuntimeTraceRecord` streams. Exact positional comparison, deterministic field differences, no repair or heuristic realignment, and no first-divergence reporting.
 
+### ARCH-006 — PASS
+Read-only first-divergence reporter over an existing ARCH-005 comparison result. Selects the first existing non-MATCH record and first already-ordered field difference without recomparison, reprioritization, or realignment; exposes immutable structured output and deterministic text.
+
 ## 7. Trace Pipeline
 ```text
 legacy simulator Event
@@ -86,9 +90,9 @@ legacy simulator Event
 -> RuntimeTraceDocument / deterministic artifact
 -> strict loader + integrity validation
 -> ARCH-005 Expected vs Actual Comparator
--> [CURRENT FRONTIER]
 -> ARCH-006 First Divergence Reporter
--> Golden Replay Validator
+-> [CURRENT FRONTIER]
+-> Deterministic Golden Replay Validator
 ```
 
 ## 8. Determinism Rules
@@ -147,8 +151,8 @@ Codex is optional and used only when it materially helps.
 | HSR-RUNTIME-ARCH-004 | PASS |
 | HSR-GOV-001 | PASS |
 | HSR-RUNTIME-ARCH-005 | PASS |
-| HSR-RUNTIME-ARCH-006 | READY / NOT STARTED |
-| Golden Replay Validator | PLANNED |
+| HSR-RUNTIME-ARCH-006 | PASS |
+| Deterministic Golden Replay Validator | READY / NOT STARTED |
 
 ## 14. Acceptance
 A milestone is not accepted because code looks plausible. Review changed files, tests, regression output, warnings/errors, protected files, unresolved issues, and reference integrity where relevant.
@@ -170,7 +174,7 @@ Unless explicitly unlocked: full automatic Bilibili/video-to-trace extraction, s
 The first Golden Replay must remain manually constructed and deterministic.
 
 ## 16. Near-Term Roadmap
-`ARCH-006 -> deterministic Golden Replay Validator`.
+`deterministic Golden Replay Validator`.
 
 Later: incremental universal runtime integration, broader validated semantics, manual trace authoring improvements, then video assistance.
 

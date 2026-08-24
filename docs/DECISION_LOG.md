@@ -82,3 +82,12 @@ Statuses: `CONFIRMED`, `PROVISIONAL`, `SUPERSEDED`. Never delete superseded hist
 **Consequences:** `PASTE_THIS_IN_CODEX_*` is not required for future milestones.  
 **Supersedes:** Codex-as-default workflow.  
 **Superseded By:** None.
+
+## D-010 — First divergence consumes comparator order without reprioritization
+**Status:** CONFIRMED  
+**Date:** 2026-08-24  
+**Decision:** ARCH-006 selects the first non-`MATCH` record and, for a `MISMATCH`, the first already-ordered ARCH-005 field difference.  
+**Reason:** A reporter must expose comparator truth rather than introduce a second hidden ordering or semantic priority.  
+**Consequences:** First-divergence reporting does not recompare, re-sort, realign, or guess which difference is more important.  
+**Supersedes:** None.  
+**Superseded By:** None.

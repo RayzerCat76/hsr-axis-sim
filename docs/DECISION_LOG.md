@@ -181,3 +181,12 @@ Statuses: `CONFIRMED`, `PROVISIONAL`, `SUPERSEDED`. Never delete superseded hist
 **Consequences:** Final trace identity/metadata come from one explicit final `TraceExportConfig`; mixed legacy stream IDs/policies, broken segment chains, sorting, realignment, renumbering, or source legacy-event rereads are rejected or excluded.  
 **Supersedes:** Re-adapting captured segments or silently merging different legacy observation streams into one actual trace.  
 **Superseded By:** None.
+
+## D-021 — Stitched actual Golden validation passes exact artifact bytes unchanged
+**Status:** CONFIRMED  
+**Date:** 2026-08-24  
+**Decision:** Golden validation of an ARCH-010 stitched actual trace passes the exact `stitch_result.artifact.payload_bytes` directly to the accepted HSR-AXIS-001B validator and preserves the complete stitch and Golden validation results together.  
+**Reason:** The stitched artifact's byte identity/SHA is already the accepted actual-trace provenance; rebuilding or reserializing it at the validation handoff would create an unnecessary second identity boundary.  
+**Consequences:** ARCH-011 adds no loader/comparator/divergence semantics; expected Golden validation errors propagate, and any returned wrapper must prove the Golden actual bytes/SHA/document match the stitched artifact exactly.  
+**Supersedes:** Reserializing or reconstructing stitched actual traces before Golden validation.  
+**Superseded By:** None.

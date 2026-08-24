@@ -27,10 +27,10 @@ Never invent hidden game values or semantics. **Unknown > Guess.**
 ## 4. Confirmed Current Baseline
 ```text
 Latest completed milestone:
-HSR-RUNTIME-ARCH-013 — PASS
+HSR-RUNTIME-ARCH-014 — PASS
 
 Complete pytest:
-998 / 998 passed
+1007 / 1007 passed
 
 Locked regression:
 20 / 20 passed
@@ -42,7 +42,7 @@ Current blocker:
 None
 
 Next milestone:
-HSR-RUNTIME-ARCH-014 — Explicit Successful Session Trace Stitch Handoff — READY / NOT STARTED
+HSR-RUNTIME-ARCH-015 — Explicit Successful Session Golden Validation Handoff — READY / NOT STARTED
 ```
 
 Current governance milestone:
@@ -61,6 +61,7 @@ runtime_trace_stitching                 deterministic composition of captured ru
 runtime_stitched_golden_validation      exact-byte handoff from stitched actual trace to Golden validation
 runtime_action_captures                 explicit non-transactional single production Action capture
 runtime_action_sessions                 explicit ordered multi-action capture session orchestration
+runtime_session_stitching               exact successful-session capture provenance -> accepted trace stitch
 runtime_loaders                         strict schema-v1 loading/integrity validation
 runtime_comparators                     strict expected-vs-actual trace comparison
 runtime_divergence                      first-divergence selection/text reporting
@@ -135,6 +136,9 @@ Explicit Single-Action Event Capture Orchestrator. A caller-owned pending-event 
 ### HSR-RUNTIME-ARCH-013 — PASS
 Explicit Multi-Action Capture Session. A non-empty caller-supplied tuple of production actions and optional caller-owned turn contexts is executed strictly in declared order through repeated accepted ARCH-012 calls. Cursor advancement comes only from completed capture results. Successful sessions preserve exact per-step trace configuration and final cursor provenance. The first failed step stops the session and raises controlled partial-session provenance chained from the original exception; the last successful cursor is explicitly not claimed retry-safe because failed state-mutating work may have appended uncaptured events.
 
+### HSR-RUNTIME-ARCH-014 — PASS
+Explicit Successful Session Trace Stitch Handoff. A completed successful ARCH-013 result is read without re-executing actions or touching simulator state. The accepted ARCH-009 `capture_result` from every completed ARCH-012 result is extracted in exact session order and delegated once to accepted ARCH-010 under one caller-supplied stitch config. The immutable wrapper preserves complete session + stitch provenance and requires every stitched segment to be the exact same Python object as the corresponding session capture result. Partial/failure session provenance is not a valid input.
+
 ## 7. Trace Pipeline
 ```text
 caller-supplied legacy simulator Event stream
@@ -177,8 +181,14 @@ caller-declared ordered action steps
 -> ARCH-013 repeated ARCH-012 calls in declared order
 -> complete ordered action-capture session OR explicit first-failure provenance
 
+successful ARCH-013 session result
++ caller-supplied final stitch config
+-> ARCH-014 extract exact completed ARCH-009 capture objects in session order
+-> accepted ARCH-010 stitch exactly once
+-> deterministic stitched actual trace artifact
+
 [CURRENT FRONTIER]
--> HSR-RUNTIME-ARCH-014 Explicit Successful Session Trace Stitch Handoff
+-> HSR-RUNTIME-ARCH-015 Explicit Successful Session Golden Validation Handoff
 ```
 
 ## 8. Determinism Rules
@@ -209,6 +219,8 @@ ARCH-011 passes the exact stitched artifact bytes unchanged into accepted Golden
 ARCH-012 requires the caller cursor to equal the current pending-event list end before production action execution. The action call is not transactional: failures preserve real simulator mutation/event state and do not advance or repair caller cursor state automatically.
 
 ARCH-013 preserves caller-declared action order and advances only from completed ARCH-012 results. Session failure stops at the first failed step, retains confirmed completed-result provenance, and never treats the last completed cursor as proof that retry/resume is safe after a state-mutating failure.
+
+ARCH-014 is read-only over a successful ARCH-013 result. It preserves exact accepted ARCH-009 capture object identity/order when delegating to ARCH-010 and does not reconstruct, re-adapt, sort, renumber, or execute any simulator work.
 
 ## 9. Evidence Classification
 - `CONFIRMED`
@@ -277,7 +289,8 @@ Codex is optional and used only when it materially helps.
 | HSR-RUNTIME-ARCH-011 Explicit Stitched Actual Trace Golden Validation Handoff | PASS |
 | HSR-RUNTIME-ARCH-012 Explicit Single-Action Event Capture Orchestrator | PASS |
 | HSR-RUNTIME-ARCH-013 Explicit Multi-Action Capture Session | PASS |
-| HSR-RUNTIME-ARCH-014 Explicit Successful Session Trace Stitch Handoff | READY / NOT STARTED |
+| HSR-RUNTIME-ARCH-014 Explicit Successful Session Trace Stitch Handoff | PASS |
+| HSR-RUNTIME-ARCH-015 Explicit Successful Session Golden Validation Handoff | READY / NOT STARTED |
 
 ## 14. Acceptance
 A milestone is not accepted because code looks plausible. Review changed files, tests, regression output, warnings/errors, protected files, unresolved issues, and reference integrity where relevant.
@@ -299,7 +312,7 @@ Unless explicitly unlocked: full automatic Bilibili/video-to-trace extraction, s
 Golden Replay expected traces remain explicitly reviewed artifacts. Automatic video-to-golden generation is not authorized.
 
 ## 16. Near-Term Roadmap
-`HSR-RUNTIME-ARCH-014 successful ARCH-013 session -> accepted ARCH-010 stitch handoff -> later explicit ARCH-011 Golden validation composition`.
+`HSR-RUNTIME-ARCH-015 successful ARCH-014 stitch result -> accepted ARCH-011 exact-byte Golden validation handoff; no replay/action selection automation`.
 
 Later: broader validated semantics, manual trace authoring improvements, then video assistance.
 

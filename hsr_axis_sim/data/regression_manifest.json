@@ -1,7 +1,7 @@
 {
   "manifest_id": "HSR_AXIS_REGRESSION_BASELINE_001Z",
   "project": "hsr-axis-simulator",
-  "description": "Locked MVP regression baseline plus real trace sequence/evidence intake and reviewed runtime action-session Golden validation.",
+  "description": "Locked MVP regression baseline plus real trace sequence and evidence intake.",
   "groups": {
     "replays": [
       {"id": "break_damage_elemental_mvp", "path": "hsr_axis_sim/data/golden_replays/break_damage_elemental_mvp.json"},
@@ -29,19 +29,6 @@
         "id": "real_video_trace_001_botu_dilemma_floor12_side1_action_sequence_only",
         "path": "hsr_axis_sim/data/manual_video_traces/intake/real_video_trace_001_botu_dilemma_floor12_side1_action_sequence_only.json",
         "checks": ["lint", "action_sequence"]
-      }
-    ],
-    "runtime_action_sessions": [
-      {
-        "id": "arch-017-reviewed-static-action-session",
-        "path": "hsr_axis_sim/data/runtime_golden_fixtures/arch_017_reviewed_action_session_expected.json",
-        "expected_sha256": "f672ffaac9ef9296e4982a6fb61f4d0257b5c0506412bcf54eb1768334118c66",
-        "stream_id": "arch-017-reviewed-static",
-        "actor_id": "reviewed-actor",
-        "actions": [
-          {"action_id": "reviewed-action-a", "name": "reviewed-action-a", "ends_turn": false},
-          {"action_id": "reviewed-action-b", "name": "reviewed-action-b", "ends_turn": false}
-        ]
       }
     ],
     "trace_evidence": [

@@ -27,10 +27,10 @@ Never invent hidden game values or semantics. **Unknown > Guess.**
 ## 4. Confirmed Current Baseline
 ```text
 Latest completed milestone:
-HSR-RUNTIME-ARCH-009 — PASS
+HSR-RUNTIME-ARCH-010 — PASS
 
 Complete pytest:
-952 / 952 passed
+964 / 964 passed
 
 Locked regression:
 20 / 20 passed
@@ -42,7 +42,7 @@ Current blocker:
 None
 
 Next milestone:
-HSR-RUNTIME-ARCH-010 — Deterministic Captured Trace Segment Stitcher — READY / NOT STARTED
+HSR-RUNTIME-ARCH-011 — Explicit Stitched Actual Trace Golden Validation Handoff — READY / NOT STARTED
 ```
 
 Current governance milestone:
@@ -57,6 +57,7 @@ runtime_exports                         deterministic trace export
 runtime_trace_bridges                   explicit legacy Event stream -> runtime trace artifact composition
 runtime_state_captures                  explicit non-mutating BattleState pending-event slice capture
 runtime_capture_cursors                 caller-owned sequential pending-event index/sequence checkpoints
+runtime_trace_stitching                 deterministic composition of captured runtime trace segments
 runtime_loaders                         strict schema-v1 loading/integrity validation
 runtime_comparators                     strict expected-vs-actual trace comparison
 runtime_divergence                      first-divergence selection/text reporting
@@ -119,6 +120,9 @@ Explicit BattleState Pending-Event Slice Trace Capture. A caller-selected `[star
 ### HSR-RUNTIME-ARCH-009 — PASS
 Explicit Pending-Event Capture Cursor Contract. Sequential ARCH-008 capture uses an immutable caller-owned cursor containing the next pending-event index and next runtime sequence. Each capture still requires a caller-supplied explicit end index and bridge config with matching start sequence. Successful capture returns a new cursor advanced by exactly the captured event count; stale detection is limited to cursor index beyond the current list length and does not infer arbitrary truncate/refill history identity.
 
+### HSR-RUNTIME-ARCH-010 — PASS
+Deterministic Captured Trace Segment Stitcher. An explicit ordered non-empty tuple of completed ARCH-009 results is validated for exact cursor-chain continuity, contiguous RuntimeEvent sequences, and one common ARCH-002 legacy adapter source contract. Existing adapted RuntimeEvent objects are flattened in declared order and exported through ARCH-003 under one explicit final trace config without re-adaptation, sorting, renumbering, repair, or simulator access.
+
 ## 7. Trace Pipeline
 ```text
 caller-supplied legacy simulator Event stream
@@ -143,9 +147,11 @@ BattleState.pending_events
 caller-owned ARCH-009 cursor
 -> repeated explicit ARCH-008 captures
 -> ordered runtime trace segment artifacts
+-> ARCH-010 deterministic segment stitch
+-> one deterministic actual runtime trace artifact
 
 [CURRENT FRONTIER]
--> HSR-RUNTIME-ARCH-010 Deterministic Captured Trace Segment Stitcher
+-> HSR-RUNTIME-ARCH-011 Explicit Stitched Actual Trace Golden Validation Handoff
 ```
 
 ## 8. Determinism Rules
@@ -168,6 +174,8 @@ ARCH-007 trace bridging is explicitly invoked over a caller-owned legacy event i
 ARCH-008 capture requires explicit slice boundaries against the current `BattleState.pending_events` list. It never drains or clears that list, never chooses an implicit end index, and treats returned `next_index` only as a caller-visible boundary rather than a persisted cursor.
 
 ARCH-009 cursor state is immutable and caller-owned. Runtime sequence continuity is explicit, list-index advancement equals the caller-selected end boundary, and no simulator-owned cursor/history identity is inferred.
+
+ARCH-010 stitching preserves declared capture-segment order and existing RuntimeEvent object identity. All segments must share one legacy adapter source contract; final trace identity/metadata come from an explicit final export config rather than segment-local artifact metadata.
 
 ## 9. Evidence Classification
 - `CONFIRMED`
@@ -232,7 +240,8 @@ Codex is optional and used only when it materially helps.
 | HSR-RUNTIME-ARCH-007 Explicit Legacy Event Stream -> Runtime Trace Artifact Bridge | PASS |
 | HSR-RUNTIME-ARCH-008 Explicit BattleState Pending-Event Slice Trace Capture | PASS |
 | HSR-RUNTIME-ARCH-009 Explicit Pending-Event Capture Cursor Contract | PASS |
-| HSR-RUNTIME-ARCH-010 Deterministic Captured Trace Segment Stitcher | READY / NOT STARTED |
+| HSR-RUNTIME-ARCH-010 Deterministic Captured Trace Segment Stitcher | PASS |
+| HSR-RUNTIME-ARCH-011 Explicit Stitched Actual Trace Golden Validation Handoff | READY / NOT STARTED |
 
 ## 14. Acceptance
 A milestone is not accepted because code looks plausible. Review changed files, tests, regression output, warnings/errors, protected files, unresolved issues, and reference integrity where relevant.
@@ -254,7 +263,7 @@ Unless explicitly unlocked: full automatic Bilibili/video-to-trace extraction, s
 Golden Replay expected traces remain explicitly reviewed artifacts. Automatic video-to-golden generation is not authorized.
 
 ## 16. Near-Term Roadmap
-`HSR-RUNTIME-ARCH-010 deterministic captured trace segment stitching -> explicit actual-trace validation handoff -> only then consider action/replay capture hooks`.
+`HSR-RUNTIME-ARCH-011 explicit stitched actual-trace Golden validation handoff -> only then consider reviewed action/replay capture hooks`.
 
 Later: broader validated semantics, manual trace authoring improvements, then video assistance.
 

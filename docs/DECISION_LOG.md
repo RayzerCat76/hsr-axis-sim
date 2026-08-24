@@ -172,3 +172,12 @@ Statuses: `CONFIRMED`, `PROVISIONAL`, `SUPERSEDED`. Never delete superseded hist
 **Consequences:** Successful captures return a new cursor advanced by exactly the captured count; a cursor beyond current list length is rejected as stale, but arbitrary truncate/refill history cannot be inferred when current length still satisfies the cursor.  
 **Supersedes:** Hidden current-end capture, simulator-owned cursor persistence, or inferred queue-history identity.  
 **Superseded By:** None.
+
+## D-020 — Captured trace stitching preserves adapted event identity and source stream
+**Status:** CONFIRMED  
+**Date:** 2026-08-24  
+**Decision:** Stitching completed ARCH-009 capture segments requires declared segment order, exact cursor-chain/runtime-sequence continuity, and one common ARCH-002 `LegacyEventAdapterConfig`; the stitcher reuses the existing adapted `RuntimeEvent` objects and never re-adapts or renumbers them.  
+**Reason:** A final actual trace should preserve the observation stream and runtime event identities already established by accepted capture layers, while allowing segment-local trace artifact metadata to remain local.  
+**Consequences:** Final trace identity/metadata come from one explicit final `TraceExportConfig`; mixed legacy stream IDs/policies, broken segment chains, sorting, realignment, renumbering, or source legacy-event rereads are rejected or excluded.  
+**Supersedes:** Re-adapting captured segments or silently merging different legacy observation streams into one actual trace.  
+**Superseded By:** None.

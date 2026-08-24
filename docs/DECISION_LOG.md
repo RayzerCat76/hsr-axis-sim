@@ -226,3 +226,12 @@ Statuses: `CONFIRMED`, `PROVISIONAL`, `SUPERSEDED`. Never delete superseded hist
 **Consequences:** ARCH-015 preserves the complete ARCH-014 and ARCH-011 results, requires exact stitch-object identity across the handoff, leaves Golden mismatches as completed validation results, and propagates ARCH-011 input/operational errors unchanged without direct lower-layer validation logic.  
 **Supersedes:** Rebuilding, restitching, or independently revalidating the actual trace between successful session stitching and accepted ARCH-011.  
 **Superseded By:** None.
+
+## D-026 — End-to-end action-session validation composes accepted stages without transaction semantics
+**Status:** CONFIRMED  
+**Date:** 2026-08-24  
+**Decision:** ARCH-016 preflights directly checkable caller input, then composes accepted ARCH-013 -> ARCH-014 -> ARCH-015 exactly once each and passes each exact returned stage object unchanged to the next stage.  
+**Reason:** A single explicit validation entry point is useful only if it preserves the already-reviewed state-mutation, capture, stitch, and Golden boundaries rather than creating new hidden semantics.  
+**Consequences:** ARCH-013 failures stop later stages and propagate unchanged; ARCH-014/015 failures after completed actions also propagate unchanged with no rollback; Golden mismatch remains a completed result; ARCH-016 does not catch/retry lower failures or call ARCH-012/010/011/lower layers directly.  
+**Supersedes:** Ad hoc end-to-end composition that could defer obvious input errors until after state mutation or bypass accepted stage boundaries.  
+**Superseded By:** None.

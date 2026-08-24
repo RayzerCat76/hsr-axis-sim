@@ -109,3 +109,12 @@ Statuses: `CONFIRMED`, `PROVISIONAL`, `SUPERSEDED`. Never delete superseded hist
 **Consequences:** Absolute paths, parent traversal, noncanonical relative spellings, and symlink escape are rejected before validation.  
 **Supersedes:** Unbounded or ambient-path Golden Replay file lookup.  
 **Superseded By:** None.
+
+## D-013 — Golden batches preserve declared case order and fail fast on operational errors
+**Status:** CONFIRMED  
+**Date:** 2026-08-24  
+**Decision:** A Golden Replay batch executes unique replay IDs exactly once in declared tuple order. Replay mismatches remain completed results and do not stop later cases; any exception that prevents a case result propagates immediately and no partial batch result is returned.  
+**Reason:** Comparison failure and inability to perform validation are different states and must not be conflated.  
+**Consequences:** Batch output is always complete when returned, preserves declared order, and does not hide file/config/loader failures behind partial summaries.  
+**Supersedes:** Implicit sorting, silent partial batch success, or swallowed operational errors.  
+**Superseded By:** None.

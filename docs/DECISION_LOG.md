@@ -208,3 +208,12 @@ Statuses: `CONFIRMED`, `PROVISIONAL`, `SUPERSEDED`. Never delete superseded hist
 **Consequences:** Later actions are never executed after failure; no rollback/retry/cursor repair occurs; `last_successful_cursor` is a confirmed historical boundary only and is not automatically safe for resume because the failed step may already have mutated state or appended uncaptured events.  
 **Supersedes:** Implicit continuation after failed action capture, silent partial-session success, or treating the last completed cursor as guaranteed recovery state.  
 **Superseded By:** None.
+
+## D-024 — Successful-session stitch handoff preserves exact accepted capture objects
+**Status:** CONFIRMED  
+**Date:** 2026-08-24  
+**Decision:** ARCH-014 accepts only a completed successful ARCH-013 result, extracts each completed ARCH-012 result's accepted ARCH-009 `capture_result` in exact session order, and delegates that exact tuple once to accepted ARCH-010 stitching.  
+**Reason:** A successful session already contains reviewed capture provenance; rebuilding, re-adapting, reordering, or replacing those segments would introduce an unnecessary second trace-source identity boundary.  
+**Consequences:** The ARCH-014 wrapper preserves the complete session and stitch results and requires every stitched segment to be the exact same Python object as the corresponding session capture result. Failed/partial session objects are not valid inputs, and ARCH-010 errors propagate unchanged.  
+**Supersedes:** Reconstructing session segments or implicitly stitching partial-session provenance.  
+**Superseded By:** None.

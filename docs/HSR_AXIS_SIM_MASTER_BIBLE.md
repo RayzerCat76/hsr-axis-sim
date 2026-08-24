@@ -26,11 +26,11 @@ Never invent hidden game values or semantics. **Unknown > Guess.**
 
 ## 4. Confirmed Current Baseline
 ```text
-Latest completed runtime milestone:
-HSR-RUNTIME-ARCH-006 — PASS
+Latest completed milestone:
+HSR-AXIS-001B — PASS
 
 Complete pytest:
-819 / 819 passed
+831 / 831 passed
 
 Locked regression:
 20 / 20 passed
@@ -42,7 +42,7 @@ Current blocker:
 None
 
 Next milestone:
-Deterministic Golden Replay Validator — READY / NOT STARTED
+HSR-AXIS-001C — File-backed Golden Replay Case Runner — READY / NOT STARTED
 ```
 
 Current governance milestone:
@@ -57,6 +57,7 @@ runtime_exports               deterministic trace export
 runtime_loaders               strict schema-v1 loading/integrity validation
 runtime_comparators           strict expected-vs-actual trace comparison
 runtime_divergence            first-divergence selection/text reporting
+runtime_golden_replays        digest-pinned deterministic Golden Replay validation
 regression                    locked regression runner
 search                        existing search/evaluator tools
 real_bindings                 reviewed partial real-game bindings
@@ -83,6 +84,9 @@ Strict expected-vs-actual comparator over ordered `RuntimeTraceRecord` streams. 
 ### ARCH-006 — PASS
 Read-only first-divergence reporter over an existing ARCH-005 comparison result. Selects the first existing non-MATCH record and first already-ordered field difference without recomparison, reprioritization, or realignment; exposes immutable structured output and deterministic text.
 
+### HSR-AXIS-001B — PASS
+Deterministic Golden Replay Validator. Expected golden canonical bytes are integrity-pinned by SHA-256; actual canonical bytes are strictly loaded without a pre-known digest. Validation composes the accepted loader, comparator, and first-divergence reporter without duplicating their semantics. The first replay test is manually constructed from explicit runtime events.
+
 ## 7. Trace Pipeline
 ```text
 legacy simulator Event
@@ -91,12 +95,15 @@ legacy simulator Event
 -> strict loader + integrity validation
 -> ARCH-005 Expected vs Actual Comparator
 -> ARCH-006 First Divergence Reporter
+-> HSR-AXIS-001B Deterministic Golden Replay Validator
 -> [CURRENT FRONTIER]
--> Deterministic Golden Replay Validator
+-> HSR-AXIS-001C File-backed Golden Replay Case Runner
 ```
 
 ## 8. Determinism Rules
 Preserve explicit ordering and identifiers. Reject invalid duplicates instead of rewriting them. Use canonical JSON where required. Exact-byte SHA-256 protects trace artifacts. Display rounding must not feed state. Strict invalid ownership/SP/energy transitions are rejected, not silently clamped.
+
+Golden expected artifacts are digest-pinned. Changing accepted golden bytes requires an explicit expected-digest change. Actual validation output is strictly canonical-loaded and its computed SHA-256 is retained as provenance.
 
 ## 9. Evidence Classification
 - `CONFIRMED`
@@ -152,7 +159,8 @@ Codex is optional and used only when it materially helps.
 | HSR-GOV-001 | PASS |
 | HSR-RUNTIME-ARCH-005 | PASS |
 | HSR-RUNTIME-ARCH-006 | PASS |
-| Deterministic Golden Replay Validator | READY / NOT STARTED |
+| HSR-AXIS-001B Deterministic Golden Replay Validator | PASS |
+| HSR-AXIS-001C File-backed Golden Replay Case Runner | READY / NOT STARTED |
 
 ## 14. Acceptance
 A milestone is not accepted because code looks plausible. Review changed files, tests, regression output, warnings/errors, protected files, unresolved issues, and reference integrity where relevant.
@@ -171,10 +179,10 @@ Decision is exactly one of:
 ## 15. Scope Exclusions
 Unless explicitly unlocked: full automatic Bilibili/video-to-trace extraction, scraping, unrelated formula expansion, full character DB, AI combat optimization, unrelated UI expansion, or premature runtime migration.
 
-The first Golden Replay must remain manually constructed and deterministic.
+Golden Replay expected traces remain explicitly reviewed artifacts. Automatic video-to-golden generation is not authorized.
 
 ## 16. Near-Term Roadmap
-`deterministic Golden Replay Validator`.
+`HSR-AXIS-001C File-backed Golden Replay Case Runner -> deterministic batch replay manifest runner`.
 
 Later: incremental universal runtime integration, broader validated semantics, manual trace authoring improvements, then video assistance.
 

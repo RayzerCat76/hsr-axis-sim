@@ -74,7 +74,7 @@ def test_captures_exact_middle_slice_in_current_list_order_without_mutating_stat
         "legacy:state-capture:20",
         "legacy:state-capture:21",
     ]
-    assert [record.event.payload["legacy_type"] for record in records] == [
+    assert [record.event.payload["adapter"]["legacy_event_type"] for record in records] == [
         "action_started",
         "action_finished",
     ]
@@ -90,7 +90,7 @@ def test_explicit_end_index_leaves_later_current_events_outside_snapshot():
     assert result.pending_event_count_at_capture == 4
     assert result.captured_event_count == 2
     assert result.next_index == 2
-    assert [record.event.payload["legacy_type"] for record in result.bridge_result.artifact.document.records] == [
+    assert [record.event.payload["adapter"]["legacy_event_type"] for record in result.bridge_result.artifact.document.records] == [
         "turn_started",
         "action_started",
     ]
@@ -185,7 +185,7 @@ def test_config_rejects_invalid_explicit_slice_indexes(start, end):
 def test_capture_rejects_end_index_beyond_current_pending_event_count():
     state = _state()
     state.emit_event(Event("turn_started", {"actor_id": "ally", "is_extra_turn": False}))
-    with pytest.raises(RuntimeStateCaptureInputError, match="len\(state.pending_events\)"):
+    with pytest.raises(RuntimeStateCaptureInputError, match="len\\(state.pending_events\\)"):
         capture_battle_state_pending_event_slice(
             state,
             config=BattleStatePendingEventSliceCaptureConfig(_bridge_config(), 0, 2),

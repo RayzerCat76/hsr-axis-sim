@@ -7,31 +7,14 @@ from typing import Any
 
 
 SUPPORTED_GROUPS = {
-    "replays",
-    "manual",
-    "scenarios",
-    "action_sequence_traces",
-    "runtime_action_sessions",
-    "trace_evidence",
+    "replays", "manual", "scenarios", "action_sequence_traces", "trace_evidence"
 }
 ORDERED_GROUPS = [
-    "replays",
-    "manual",
-    "scenarios",
-    "action_sequence_traces",
-    "runtime_action_sessions",
-    "trace_evidence",
+    "replays", "manual", "scenarios", "action_sequence_traces", "trace_evidence"
 ]
 SUPPORTED_ACTION_SEQUENCE_CHECKS = {"lint", "action_sequence"}
 SUPPORTED_TRACE_EVIDENCE_CHECKS = {"semantic_map", "frame_anchors"}
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-
-
-@dataclass(frozen=True)
-class RuntimeActionSessionRegressionAction:
-    action_id: str
-    name: str
-    ends_turn: bool
 
 
 @dataclass
@@ -41,10 +24,6 @@ class RegressionManifestEntry:
     checks: list[str] = field(default_factory=list)
     check: str | None = None
     source_trace_path: Path | None = None
-    expected_sha256: str | None = None
-    stream_id: str | None = None
-    actor_id: str | None = None
-    actions: list[RuntimeActionSessionRegressionAction] = field(default_factory=list)
 
 
 @dataclass
@@ -134,14 +113,8 @@ def _entries_from_list(
                 )
         elif entry_checks:
             raise ValueError(f"{label}.checks is only supported for action_sequence_traces.")
-
         entry_check: str | None = None
         source_trace_path: Path | None = None
-        expected_sha256: str | None = None
-        stream_id: str | None = None
-        actor_id: str | None = None
-        actions: list[RuntimeActionSessionRegressionAction] = []
-
         if group == "trace_evidence":
             _require_fields(entry_data, ["source_trace_path", "check"], label)
             entry_check = entry_data["check"]
@@ -157,34 +130,6 @@ def _entries_from_list(
                 raise ValueError(
                     f"Manifest source trace path does not exist: {source_trace_path}"
                 )
-        elif group == "runtime_action_sessions":
-            required = ["expected_sha256", "stream_id", "actor_id", "actions"]
-            _require_fields(entry_data, required, label)
-            allowed_fields = {"id", "path", *required}
-            unknown_fields = sorted(set(entry_data) - allowed_fields)
-            if unknown_fields:
-                raise ValueError(f"{label} has unsupported field(s): {unknown_fields}.")
-
-            expected_sha256 = entry_data["expected_sha256"]
-            stream_id = entry_data["stream_id"]
-            actor_id = entry_data["actor_id"]
-            actions_data = entry_data["actions"]
-
-            if not _is_lower_sha256(expected_sha256):
-                raise ValueError(
-                    f"{label}.expected_sha256 must be exactly 64 lowercase hexadecimal characters."
-                )
-            if not isinstance(stream_id, str) or not stream_id:
-                raise ValueError(f"{label}.stream_id must be a non-empty string.")
-            if not isinstance(actor_id, str) or not actor_id:
-                raise ValueError(f"{label}.actor_id must be a non-empty string.")
-            if not isinstance(actions_data, list) or not actions_data:
-                raise ValueError(f"{label}.actions must be a non-empty list.")
-            actions = [
-                _runtime_action_from_dict(action_data, f"{label}.actions[{action_index}]")
-                for action_index, action_data in enumerate(actions_data)
-            ]
-
         if entry_id in seen_ids:
             raise ValueError(f"Duplicate manifest id {entry_id!r} in group {group!r}.")
         seen_ids.add(entry_id)
@@ -199,47 +144,9 @@ def _entries_from_list(
                 checks=list(entry_checks),
                 check=entry_check,
                 source_trace_path=source_trace_path,
-                expected_sha256=expected_sha256,
-                stream_id=stream_id,
-                actor_id=actor_id,
-                actions=actions,
             )
         )
     return entries
-
-
-def _runtime_action_from_dict(
-    data: Any,
-    label: str,
-) -> RuntimeActionSessionRegressionAction:
-    if not isinstance(data, dict):
-        raise ValueError(f"{label} must be an object.")
-    required = {"action_id", "name", "ends_turn"}
-    missing = sorted(required - set(data))
-    if missing:
-        raise ValueError(f"{label} missing required field(s): {missing}.")
-    unknown = sorted(set(data) - required)
-    if unknown:
-        raise ValueError(f"{label} has unsupported field(s): {unknown}.")
-
-    action_id = data["action_id"]
-    name = data["name"]
-    ends_turn = data["ends_turn"]
-    if not isinstance(action_id, str) or not action_id:
-        raise ValueError(f"{label}.action_id must be a non-empty string.")
-    if not isinstance(name, str) or not name:
-        raise ValueError(f"{label}.name must be a non-empty string.")
-    if type(ends_turn) is not bool:
-        raise ValueError(f"{label}.ends_turn must be a boolean.")
-    return RuntimeActionSessionRegressionAction(action_id, name, ends_turn)
-
-
-def _is_lower_sha256(value: object) -> bool:
-    return (
-        isinstance(value, str)
-        and len(value) == 64
-        and all(character in "0123456789abcdef" for character in value)
-    )
 
 
 def _resolve_manifest_fixture_path(value: str) -> Path:

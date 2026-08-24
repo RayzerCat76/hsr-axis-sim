@@ -47,3 +47,9 @@ jobs:
             --manifest hsr_axis_sim/data/regression_manifest.json \
             --only trace_evidence \
             --format text
+
+      - name: Run locked runtime action-session regression
+        run: |
+          python -m hsr_axis_sim.runtime_action_session_regression.runner \
+            --manifest hsr_axis_sim/data/runtime_action_session_regression_manifest.json \
+            --format text

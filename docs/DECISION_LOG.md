@@ -244,3 +244,12 @@ Statuses: `CONFIRMED`, `PROVISIONAL`, `SUPERSEDED`. Never delete superseded hist
 **Consequences:** Tests may strictly load and compare the static expected bytes but may not generate them at runtime; any fixture-byte change requires explicit review and digest update. ARCH-017 does not promote the fixture into the locked regression manifest; that remains a separate milestone.  
 **Supersedes:** Runtime-generated expected artifacts as the authority for end-to-end action-session validation tests.  
 **Superseded By:** None.
+
+## D-028 — Reviewed runtime action-session Golden checks use a separate locked regression lane
+**Status:** CONFIRMED  
+**Date:** 2026-08-24  
+**Decision:** ARCH-018 promotes reviewed production-action-session Golden validation through a dedicated downstream `runtime_action_session_regression` package and separate strict manifest/CI step. The legacy `hsr_axis_sim.regression` runner, its manifest, category meanings, and 20/20 baseline remain unchanged.  
+**Reason:** Directly importing runtime sidecars into the legacy regression package violated accepted sidecar-preservation boundaries and invalidated research/reference pins over the legacy runner/manifest bytes and counts. Those failures exposed an architecture boundary rather than a test suite to weaken.  
+**Consequences:** Locked validation now reports two distinct baselines: legacy regression `20/20` and runtime action-session Golden regression `1/1`. Future runtime cases may extend the dedicated lane only under explicit reviewed contracts; they must not be silently folded into the legacy replay categories or broaden the minimal action schema into arbitrary targets/effects.  
+**Supersedes:** Direct runtime-sidecar integration into the legacy regression runner or treating the accepted baseline as one combined `21/21` count.  
+**Superseded By:** None.

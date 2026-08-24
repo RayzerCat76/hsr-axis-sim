@@ -1,4 +1,4 @@
-# HSR-AXIS-001B — Deterministic Golden Replay Validator
+# HSR-AXIS-001C — File-backed Golden Replay Case Runner
 
 ## Status
 
@@ -6,25 +6,25 @@ PASS — proceed
 
 ## Implementation summary
 
-- Added the standard-library-only downstream sidecar `hsr_axis_sim.runtime_golden_replays`.
-- Added immutable `GoldenReplayValidationConfig` and `GoldenReplayValidationResult` models.
-- Expected golden canonical bytes are loaded with the existing strict loader and `TraceDigestPolicy.REQUIRE_MATCH` against a pinned SHA-256.
-- Actual canonical bytes are loaded with the existing strict loader without a pre-known digest; their computed SHA-256 is retained as provenance.
-- Record comparison is delegated only to ARCH-005 `compare_runtime_trace_documents`.
-- First-divergence selection is delegated only to ARCH-006 `build_first_divergence_report`.
-- Added deterministic replay-level text that embeds the accepted ARCH-006 text report rather than reimplementing divergence logic.
-- Added a first Golden Replay test constructed manually from explicit `RuntimeEvent` values; it contains contract-only fixture identifiers and no inferred hidden HSR values.
-- Added decision D-011: golden expected artifacts are digest-pinned.
+- Added the standard-library-only downstream package `hsr_axis_sim.runtime_golden_cases`.
+- Added immutable `GoldenReplayFileCase` and `GoldenReplayFileRunResult` models.
+- File cases use canonical relative POSIX expected/actual paths under one explicit base directory.
+- Absolute paths, parent traversal, backslash separators, noncanonical spellings, and resolved symlink escape are rejected.
+- Both case files must resolve to regular files inside the base directory.
+- Reads are bounded by the accepted `GoldenReplayValidationConfig.max_bytes` limit.
+- All trace loading, digest, comparison, and first-divergence semantics are delegated to HSR-AXIS-001B `validate_golden_replay_bytes`.
+- Added deterministic file-case text rendering with resolved path provenance followed by the accepted 001B report.
+- Added decision D-012: file-backed Golden Replay cases are base-directory bounded.
 
 ## Files added
 
-- `LUMEN_TASK_HSR_AXIS_001B.md`
-- `docs/runtime/GOLDEN_REPLAY_VALIDATOR_V1.md`
-- `hsr_axis_sim/runtime_golden_replays/__init__.py`
-- `hsr_axis_sim/runtime_golden_replays/model.py`
-- `hsr_axis_sim/runtime_golden_replays/validate.py`
-- `hsr_axis_sim/tests/test_runtime_golden_replay_validator.py`
-- `hsr_axis_sim/tests/test_hsr_axis_001b_preservation.py`
+- `LUMEN_TASK_HSR_AXIS_001C.md`
+- `docs/runtime/GOLDEN_REPLAY_FILE_CASE_V1.md`
+- `hsr_axis_sim/runtime_golden_cases/__init__.py`
+- `hsr_axis_sim/runtime_golden_cases/model.py`
+- `hsr_axis_sim/runtime_golden_cases/run.py`
+- `hsr_axis_sim/tests/test_runtime_golden_file_case_runner.py`
+- `hsr_axis_sim/tests/test_hsr_axis_001c_preservation.py`
 
 ## Files modified
 
@@ -32,36 +32,35 @@ PASS — proceed
 - `docs/HSR_AXIS_SIM_MASTER_BIBLE.md`
 - `hsr_axis_sim/LUMEN_RESULT.md`
 
-No existing production simulator, runtime contract, adapter, exporter, loader, comparator, first-divergence reporter, regression, search, binding, data, or locked fixture executable behavior was modified.
+No existing production simulator, runtime contract, adapter, exporter, loader, comparator, divergence reporter, Golden Replay validator, regression, search, binding, data, or locked fixture executable behavior was modified.
 
 ## Tests added
 
-Golden Replay tests cover:
-- manually constructed deterministic matching replay;
-- mismatch propagation through the accepted first-divergence report;
-- expected SHA-256 mismatch rejection;
-- noncanonical expected input rejection;
-- noncanonical actual input rejection;
-- strict config validation;
-- frozen config and result models;
-- repeatable deterministic text;
-- expected/actual artifact SHA-256 provenance;
-- invalid validator/renderer input rejection.
+File-case tests cover:
+- matching file case with resolved absolute path provenance;
+- diverged case preserving the accepted first divergence;
+- deterministic text wrapping the 001B report;
+- canonical relative POSIX path validation;
+- missing base directory and missing file failures;
+- symlink escape rejection;
+- bounded read forwarding size enforcement to the accepted strict validator;
+- frozen case/result models;
+- invalid runner/renderer input rejection.
 
 Preservation tests cover:
-- no protected upstream area imports `runtime_golden_replays`;
-- validator source composes accepted loader/comparator/reporter APIs without selecting field differences itself;
-- prior trace-pipeline contract documents remain present;
+- no protected upstream package imports `runtime_golden_cases`;
+- file runner delegates trace semantics only through `validate_golden_replay_bytes`;
+- no comparator or divergence logic is duplicated in the file runner;
 - production LIFO compatibility behavior remains unchanged.
 
 ## Exact validation commands and real results
 
-GitHub Actions workflow: `HSR Axis Sim Validation`, PR #5, run #13, job `validate` (`97330636238`).
+GitHub Actions workflow: `HSR Axis Sim Validation`, PR #6, run #17, job `validate` (`97331493850`).
 
 1. `python -m compileall -q hsr_axis_sim`
    - PASS.
 2. `python -m pytest -q`
-   - PASS: `831 passed in 7.29s`.
+   - PASS: `843 passed in 5.20s`.
 3. `python -m hsr_axis_sim.regression.runner --manifest hsr_axis_sim/data/regression_manifest.json --format text`
    - PASS 20/20 total checks:
      - 12/12 golden replays;
@@ -75,27 +74,26 @@ GitHub Actions workflow: `HSR Axis Sim Validation`, PR #5, run #13, job `validat
 ## Warnings / errors
 
 - No compile, test, or regression errors.
-- Existing GitHub Actions platform warning remains: `actions/checkout@v4` and `actions/setup-python@v5` target Node.js 20 and are currently forced onto Node.js 24. This is unrelated to Golden Replay correctness and is nonblocking.
+- Existing GitHub Actions platform warning remains: `actions/checkout@v4` and `actions/setup-python@v5` target Node.js 20 and are currently forced onto Node.js 24. This is unrelated to file-case correctness and is nonblocking.
 
 ## Acceptance review
 
-- Golden expected bytes cannot drift silently because the expected loader requires an exact pinned SHA-256.
-- Actual bytes remain strict canonical input and are not repaired, normalized, or pre-pinned.
-- Comparison and first-divergence semantics are reused rather than duplicated.
-- The result is immutable and preserves loader, comparator, reporter, and digest provenance.
-- Matching/diverged text is deterministic.
-- The first replay is manually constructed and deterministic.
-- No automatic video extraction, tolerance, realignment, repair, simulator auto-wiring, new HSR mechanics, damage expansion, or FIFO/LIFO change was introduced.
+- File identity is explicit and portable relative to one supplied base directory.
+- Path traversal and symlink escape are rejected before trace validation.
+- File reads are bounded and do not introduce normalization or repair.
+- Runtime trace semantics are reused from the accepted 001B validator rather than duplicated.
+- Resolved path, digest, comparison, and first-divergence provenance remain inspectable.
+- No directory scanning, batch manifest, simulator auto-run, CLI/UI, automatic video extraction, fuzzy comparison, repair/realignment, new HSR mechanics, or FIFO/LIFO change was introduced.
 - Existing production LIFO behavior remains unchanged.
 
 ## Unresolved issues
 
-None blocking HSR-AXIS-001B acceptance.
+None blocking HSR-AXIS-001C acceptance.
 
 Existing unresolved HSR game semantics remain tracked separately and were not changed.
 
 ## Suggested next milestone
 
-`HSR-AXIS-001C — File-backed Golden Replay Case Runner`
+`HSR-AXIS-001D — Deterministic Golden Replay Batch Runner`
 
-This should add an explicit reviewed case definition and exact file-path handoff around the accepted in-memory validator without adding batch discovery or simulator auto-wiring.
+001D should execute an explicit immutable ordered tuple of already-validated `GoldenReplayFileCase` definitions under one base directory. It should not add JSON manifest loading or directory discovery yet.

@@ -100,3 +100,12 @@ Statuses: `CONFIRMED`, `PROVISIONAL`, `SUPERSEDED`. Never delete superseded hist
 **Consequences:** Changing golden bytes requires an explicit digest change; actual artifact SHA-256 is retained as provenance after loading.  
 **Supersedes:** Filename- or trace-ID-only golden identity.  
 **Superseded By:** None.
+
+## D-012 — Golden file cases are base-directory bounded
+**Status:** CONFIRMED  
+**Date:** 2026-08-24  
+**Decision:** File-backed Golden Replay cases use canonical relative POSIX paths under one explicit base directory, and resolved targets must remain inside that base after symlink resolution.  
+**Reason:** Reviewed file identity must be portable and must not depend on implicit working-directory traversal or path escape.  
+**Consequences:** Absolute paths, parent traversal, noncanonical relative spellings, and symlink escape are rejected before validation.  
+**Supersedes:** Unbounded or ambient-path Golden Replay file lookup.  
+**Superseded By:** None.

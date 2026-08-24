@@ -27,10 +27,10 @@ Never invent hidden game values or semantics. **Unknown > Guess.**
 ## 4. Confirmed Current Baseline
 ```text
 Latest completed milestone:
-HSR-AXIS-001F — PASS
+HSR-AXIS-001G — PASS
 
 Complete pytest:
-892 / 892 passed
+903 / 903 passed
 
 Locked regression:
 20 / 20 passed
@@ -42,7 +42,7 @@ Current blocker:
 None
 
 Next milestone:
-HSR-AXIS-001G — Manifest-backed Golden Replay Batch Runner — READY / NOT STARTED
+HSR-RUNTIME-ARCH-007 — Explicit Legacy Event Stream -> Runtime Trace Artifact Bridge — READY / NOT STARTED
 ```
 
 Current governance milestone:
@@ -62,6 +62,7 @@ runtime_golden_cases                    explicit base-bounded file-backed Golden
 runtime_golden_batches                  explicit deterministic ordered Golden Replay batches
 runtime_golden_manifests                strict canonical Golden Replay manifest artifacts
 runtime_golden_manifest_files           explicit base-bounded Golden Replay manifest file loading
+runtime_golden_manifest_runs            manifest-backed deterministic Golden Replay batch execution
 regression                              locked regression runner
 search                                  existing search/evaluator tools
 real_bindings                           reviewed partial real-game bindings
@@ -103,6 +104,9 @@ Strict Golden Replay Manifest Artifact. A fixed v1 schema serializes an accepted
 ### HSR-AXIS-001F — PASS
 Base-bounded Golden Replay Manifest File Loader. One reviewed canonical relative POSIX manifest path is resolved under an explicit base directory, must remain inside that base after symlink resolution, and must be a regular file. Bounded raw bytes are delegated unchanged to HSR-AXIS-001E. The result preserves resolved file provenance and does not execute the reconstructed batch.
 
+### HSR-AXIS-001G — PASS
+Manifest-backed Golden Replay Batch Runner. One reviewed manifest is loaded through HSR-AXIS-001F and exactly its reconstructed HSR-AXIS-001D batch plan is executed under the same resolved base directory. The immutable result preserves complete manifest-file and batch provenance and rejects plan/base misalignment without duplicating lower-level semantics.
+
 ## 7. Trace Pipeline
 ```text
 legacy simulator Event
@@ -116,8 +120,9 @@ legacy simulator Event
 -> HSR-AXIS-001D Deterministic Golden Replay Batch Runner
 -> HSR-AXIS-001E Strict Golden Replay Manifest Artifact
 -> HSR-AXIS-001F Base-bounded Golden Replay Manifest File Loader
--> [CURRENT FRONTIER]
 -> HSR-AXIS-001G Manifest-backed Golden Replay Batch Runner
+-> [CURRENT FRONTIER]
+-> HSR-RUNTIME-ARCH-007 Explicit Legacy Event Stream -> Runtime Trace Artifact Bridge
 ```
 
 ## 8. Determinism Rules
@@ -132,6 +137,8 @@ Golden batches preserve declared tuple order. Replay mismatch and inability to p
 Golden manifest v1 has one accepted compact canonical JSON byte representation. Schema/version changes require explicit versioned work; permissive extension or normalization is not accepted.
 
 Golden manifest files use one explicit canonical relative POSIX path under an explicit base directory. Resolved symlink escape and non-file targets are rejected before exact bytes are delegated to the strict manifest loader.
+
+Manifest-backed batch execution uses the same resolved base directory for the manifest and all replay case files. Plan/base identity is explicit and checked.
 
 ## 9. Evidence Classification
 - `CONFIRMED`
@@ -192,7 +199,8 @@ Codex is optional and used only when it materially helps.
 | HSR-AXIS-001D Deterministic Golden Replay Batch Runner | PASS |
 | HSR-AXIS-001E Strict Golden Replay Manifest Artifact | PASS |
 | HSR-AXIS-001F Base-bounded Golden Replay Manifest File Loader | PASS |
-| HSR-AXIS-001G Manifest-backed Golden Replay Batch Runner | READY / NOT STARTED |
+| HSR-AXIS-001G Manifest-backed Golden Replay Batch Runner | PASS |
+| HSR-RUNTIME-ARCH-007 Explicit Legacy Event Stream -> Runtime Trace Artifact Bridge | READY / NOT STARTED |
 
 ## 14. Acceptance
 A milestone is not accepted because code looks plausible. Review changed files, tests, regression output, warnings/errors, protected files, unresolved issues, and reference integrity where relevant.
@@ -214,9 +222,9 @@ Unless explicitly unlocked: full automatic Bilibili/video-to-trace extraction, s
 Golden Replay expected traces remain explicitly reviewed artifacts. Automatic video-to-golden generation is not authorized.
 
 ## 16. Near-Term Roadmap
-`HSR-AXIS-001G Manifest-backed Golden Replay Batch Runner`.
+`HSR-RUNTIME-ARCH-007 explicit legacy-event-stream trace artifact bridge -> explicit simulator capture lifecycle milestone`.
 
-Later: incremental universal runtime integration, broader validated semantics, manual trace authoring improvements, then video assistance.
+Later: broader validated semantics, manual trace authoring improvements, then video assistance.
 
 ## 17. Governance Rule
 After HSR-GOV-001 merges, normal development uses Git branches, PRs, and CI. ZIP/Finder folder replacement is retired as the normal workflow.

@@ -198,11 +198,12 @@ def test_changed_second_production_action_reports_first_divergence_against_same_
     assert divergence.first_field_difference.actual_value == "reviewed-action-c"
 
 
-def test_fixture_is_not_promoted_into_locked_regression_manifest():
+def test_fixture_is_promoted_into_distinct_locked_runtime_action_session_group():
     manifest_text = REGRESSION_MANIFEST.read_text()
-    assert FIXTURE_ID not in manifest_text
-    assert EXPECTED_PATH.name not in manifest_text
-    assert "runtime_golden_fixtures" not in manifest_text
+    assert FIXTURE_ID in manifest_text
+    assert EXPECTED_PATH.name in manifest_text
+    assert EXPECTED_SHA256 in manifest_text
+    assert '"runtime_action_sessions"' in manifest_text
 
 
 def test_arch_017_test_source_has_no_runtime_expected_generation_path():

@@ -27,10 +27,10 @@ Never invent hidden game values or semantics. **Unknown > Guess.**
 ## 4. Confirmed Current Baseline
 ```text
 Latest completed milestone:
-HSR-RUNTIME-ARCH-016 — PASS
+HSR-RUNTIME-ARCH-017 — PASS
 
 Complete pytest:
-1029 / 1029 passed
+1037 / 1037 passed
 
 Locked regression:
 20 / 20 passed
@@ -42,7 +42,7 @@ Current blocker:
 None
 
 Next milestone:
-HSR-RUNTIME-ARCH-017 — Reviewed Static End-to-End Golden Action Session Fixture — READY / NOT STARTED
+HSR-RUNTIME-ARCH-018 — Reviewed Static End-to-End Golden Fixture Regression Integration — READY / NOT STARTED
 ```
 
 Current governance milestone:
@@ -73,6 +73,7 @@ runtime_golden_batches                  explicit deterministic ordered Golden Re
 runtime_golden_manifests                strict canonical Golden Replay manifest artifacts
 runtime_golden_manifest_files           explicit base-bounded Golden Replay manifest file loading
 runtime_golden_manifest_runs            manifest-backed deterministic Golden Replay batch execution
+data/runtime_golden_fixtures            reviewed static non-circular runtime Golden expectations
 regression                              locked regression runner
 search                                  existing search/evaluator tools
 real_bindings                           reviewed partial real-game bindings
@@ -147,6 +148,9 @@ Explicit Successful Session Golden Validation Handoff. One completed ARCH-014 re
 ### HSR-RUNTIME-ARCH-016 — PASS
 Explicit End-to-End Action Session Validation Orchestrator. One caller-controlled entry point preflights directly checkable input and then composes accepted ARCH-013, ARCH-014, and ARCH-015 exactly once each. Exact returned stage objects are preserved through the chain. No exception wrapping, retry, rollback, direct lower-layer call, turn/action selection, or new simulator/Golden semantics are added. ARCH-013/014/015 failures propagate unchanged; Golden mismatch remains a completed result with accepted first-divergence provenance.
 
+### HSR-RUNTIME-ARCH-017 — PASS
+Reviewed Static End-to-End Golden Action Session Fixture. The first production-Action -> ARCH-016 Golden expectation is an independently reviewed compact canonical runtime-trace file rather than a runtime-generated oracle. Its exact 3013 bytes and SHA-256 `f672ffaac9ef9296e4982a6fb61f4d0257b5c0506412bcf54eb1768334118c66` are pinned. A matching two-action production session passes against the static artifact, while a deliberate second-action ID change returns the accepted first divergence at record index 2. The fixture is intentionally not yet part of the locked regression manifest.
+
 ## 7. Trace Pipeline
 ```text
 caller-supplied legacy simulator Event stream
@@ -202,8 +206,13 @@ ARCH-016 single explicit caller-controlled composition
 -> ARCH-015
 -> complete end-to-end result OR unchanged accepted operational failure
 
+reviewed static expected runtime trace
++ explicit production Action session
+-> ARCH-016
+-> independent Golden PASS / first divergence
+
 [CURRENT FRONTIER]
--> HSR-RUNTIME-ARCH-017 Reviewed Static End-to-End Golden Action Session Fixture
+-> HSR-RUNTIME-ARCH-018 Reviewed Static End-to-End Golden Fixture Regression Integration
 ```
 
 ## 8. Determinism Rules
@@ -240,6 +249,8 @@ ARCH-014 is read-only over a successful ARCH-013 result. It preserves exact acce
 ARCH-015 preserves the exact ARCH-014 stitch Python object when delegating to ARCH-011. It does not restitch, reserialize actual trace bytes, or invoke lower Golden loader/comparator/divergence layers directly; mismatch remains a completed accepted result rather than an operational error.
 
 ARCH-016 preflights only directly checkable caller inputs before state mutation, then calls accepted ARCH-013 -> ARCH-014 -> ARCH-015 without exception wrapping. Expected-Golden digest/content semantics remain in the accepted Golden path and can still fail after completed actions; no rollback is implied.
+
+ARCH-017 end-to-end expected bytes are independent reviewed static artifacts. Tests may read and strict-load them but must not generate the authoritative expected bytes from the simulator, adapter, exporter, or trace builders at test runtime. Any accepted fixture byte change requires explicit review and a matching digest update.
 
 ## 9. Evidence Classification
 - `CONFIRMED`
@@ -311,7 +322,8 @@ Codex is optional and used only when it materially helps.
 | HSR-RUNTIME-ARCH-014 Explicit Successful Session Trace Stitch Handoff | PASS |
 | HSR-RUNTIME-ARCH-015 Explicit Successful Session Golden Validation Handoff | PASS |
 | HSR-RUNTIME-ARCH-016 Explicit End-to-End Action Session Validation Orchestrator | PASS |
-| HSR-RUNTIME-ARCH-017 Reviewed Static End-to-End Golden Action Session Fixture | READY / NOT STARTED |
+| HSR-RUNTIME-ARCH-017 Reviewed Static End-to-End Golden Action Session Fixture | PASS |
+| HSR-RUNTIME-ARCH-018 Reviewed Static End-to-End Golden Fixture Regression Integration | READY / NOT STARTED |
 
 ## 14. Acceptance
 A milestone is not accepted because code looks plausible. Review changed files, tests, regression output, warnings/errors, protected files, unresolved issues, and reference integrity where relevant.
@@ -333,9 +345,9 @@ Unless explicitly unlocked: full automatic Bilibili/video-to-trace extraction, s
 Golden Replay expected traces remain explicitly reviewed artifacts. Automatic video-to-golden generation is not authorized.
 
 ## 16. Near-Term Roadmap
-`HSR-RUNTIME-ARCH-017 add one manually reviewed static canonical expected runtime-trace artifact and use ARCH-016 to validate an explicit production Action session against it without generating expected bytes from the simulator under test at test runtime; do not yet alter the locked regression manifest`.
+`HSR-RUNTIME-ARCH-018 inspect the accepted regression runner/manifest schema first, then promote the proven ARCH-017 non-circular static fixture into a locked repeatable regression path using the smallest compatible mechanism; preserve the fixture bytes/digest and existing legacy 20/20 checks.`
 
-Later: promote reviewed non-circular end-to-end fixtures into locked regression in a separate milestone, then broader validated semantics and manual trace authoring improvements.
+Later: broader validated semantics, manual trace authoring improvements, then video assistance.
 
 ## 17. Governance Rule
 After HSR-GOV-001 merges, normal development uses Git branches, PRs, and CI. ZIP/Finder folder replacement is retired as the normal workflow.

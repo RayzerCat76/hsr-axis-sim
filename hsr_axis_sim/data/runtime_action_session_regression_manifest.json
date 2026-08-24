@@ -1,0 +1,26 @@
+{
+  "schema": "hsr_runtime_action_session_regression",
+  "version": "1.0",
+  "manifest_id": "HSR_RUNTIME_ACTION_SESSION_REGRESSION_001",
+  "cases": [
+    {
+      "id": "arch-017-reviewed-static-action-session",
+      "expected_path": "hsr_axis_sim/data/runtime_golden_fixtures/arch_017_reviewed_action_session_expected.json",
+      "expected_sha256": "f672ffaac9ef9296e4982a6fb61f4d0257b5c0506412bcf54eb1768334118c66",
+      "stream_id": "arch-017-reviewed-static",
+      "actor_id": "reviewed-actor",
+      "actions": [
+        {
+          "action_id": "reviewed-action-a",
+          "name": "reviewed-action-a",
+          "ends_turn": false
+        },
+        {
+          "action_id": "reviewed-action-b",
+          "name": "reviewed-action-b",
+          "ends_turn": false
+        }
+      ]
+    }
+  ]
+}

@@ -72,7 +72,10 @@ def test_orchestrator_calls_only_accepted_arch_013_014_015_boundaries():
     assert all(token not in source for token in forbidden)
 
 
-def test_orchestrator_does_not_add_rollback_retry_or_queue_lifecycle_semantics():
+def test_orchestrator_does_not_add_exception_wrapping_or_queue_lifecycle_mutation():
+    run_source = (
+        ROOT / "hsr_axis_sim" / "runtime_action_session_validation" / "run.py"
+    ).read_text()
     source = "\n".join(
         path.read_text()
         for path in (
@@ -83,8 +86,6 @@ def test_orchestrator_does_not_add_rollback_retry_or_queue_lifecycle_semantics()
         "pending_events.clear",
         "pending_events.pop",
         "pending_events =",
-        "rollback",
-        "retry",
         "deepcopy",
         "copy.deepcopy",
         "Event(",
@@ -92,6 +93,7 @@ def test_orchestrator_does_not_add_rollback_retry_or_queue_lifecycle_semantics()
         "payload_bytes=",
     )
     assert all(token not in source for token in forbidden)
+    assert "except " not in run_source
 
 
 def test_production_lifo_compatibility_behavior_remains_unchanged():

@@ -1,0 +1,49 @@
+name: HSR Axis Sim Validation
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install test runner
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pytest
+
+      - name: Compile
+        run: python -m compileall -q hsr_axis_sim
+
+      - name: Run complete pytest suite
+        run: python -m pytest -q
+
+      - name: Run locked regression suite
+        run: |
+          python -m hsr_axis_sim.regression.runner \
+            --manifest hsr_axis_sim/data/regression_manifest.json \
+            --format text
+
+      - name: Run trace-evidence regression
+        run: |
+          python -m hsr_axis_sim.regression.runner \
+            --manifest hsr_axis_sim/data/regression_manifest.json \
+            --only trace_evidence \
+            --format text

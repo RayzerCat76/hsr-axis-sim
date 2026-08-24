@@ -1,4 +1,4 @@
-# HSR-AXIS-001C — File-backed Golden Replay Case Runner
+# HSR-AXIS-001D — Deterministic Golden Replay Batch Runner
 
 ## Status
 
@@ -6,25 +6,25 @@ PASS — proceed
 
 ## Implementation summary
 
-- Added the standard-library-only downstream package `hsr_axis_sim.runtime_golden_cases`.
-- Added immutable `GoldenReplayFileCase` and `GoldenReplayFileRunResult` models.
-- File cases use canonical relative POSIX expected/actual paths under one explicit base directory.
-- Absolute paths, parent traversal, backslash separators, noncanonical spellings, and resolved symlink escape are rejected.
-- Both case files must resolve to regular files inside the base directory.
-- Reads are bounded by the accepted `GoldenReplayValidationConfig.max_bytes` limit.
-- All trace loading, digest, comparison, and first-divergence semantics are delegated to HSR-AXIS-001B `validate_golden_replay_bytes`.
-- Added deterministic file-case text rendering with resolved path provenance followed by the accepted 001B report.
-- Added decision D-012: file-backed Golden Replay cases are base-directory bounded.
+- Added the standard-library-only downstream package `hsr_axis_sim.runtime_golden_batches`.
+- Added immutable non-empty `GoldenReplayBatchPlan` values with unique replay IDs and authoritative declared tuple order.
+- Added immutable complete `GoldenReplayBatchResult` values with exact case/result alignment and one resolved common base directory.
+- Each declared case executes exactly once through HSR-AXIS-001C `run_golden_replay_file_case`.
+- Replay mismatches are completed results and do not stop later declared cases.
+- File/config/loader and other operational exceptions propagate immediately at the exact case; no partial batch result is returned.
+- Added deterministic derived summary values: `matches`, matched/mismatched case counts, and `first_mismatch_index`.
+- Added deterministic batch text that wraps accepted 001C reports in declared case order.
+- Added decision D-013: preserve declared order; mismatch continues; operational errors fail fast.
 
 ## Files added
 
-- `LUMEN_TASK_HSR_AXIS_001C.md`
-- `docs/runtime/GOLDEN_REPLAY_FILE_CASE_V1.md`
-- `hsr_axis_sim/runtime_golden_cases/__init__.py`
-- `hsr_axis_sim/runtime_golden_cases/model.py`
-- `hsr_axis_sim/runtime_golden_cases/run.py`
-- `hsr_axis_sim/tests/test_runtime_golden_file_case_runner.py`
-- `hsr_axis_sim/tests/test_hsr_axis_001c_preservation.py`
+- `LUMEN_TASK_HSR_AXIS_001D.md`
+- `docs/runtime/GOLDEN_REPLAY_BATCH_V1.md`
+- `hsr_axis_sim/runtime_golden_batches/__init__.py`
+- `hsr_axis_sim/runtime_golden_batches/model.py`
+- `hsr_axis_sim/runtime_golden_batches/run.py`
+- `hsr_axis_sim/tests/test_runtime_golden_batch_runner.py`
+- `hsr_axis_sim/tests/test_hsr_axis_001d_preservation.py`
 
 ## Files modified
 
@@ -32,35 +32,37 @@ PASS — proceed
 - `docs/HSR_AXIS_SIM_MASTER_BIBLE.md`
 - `hsr_axis_sim/LUMEN_RESULT.md`
 
-No existing production simulator, runtime contract, adapter, exporter, loader, comparator, divergence reporter, Golden Replay validator, regression, search, binding, data, or locked fixture executable behavior was modified.
+No existing production simulator, runtime trace layer, Golden Replay validator, file-case runner, regression, search, binding, data, or locked fixture executable behavior was modified.
 
 ## Tests added
 
-File-case tests cover:
-- matching file case with resolved absolute path provenance;
-- diverged case preserving the accepted first divergence;
-- deterministic text wrapping the 001B report;
-- canonical relative POSIX path validation;
-- missing base directory and missing file failures;
-- symlink escape rejection;
-- bounded read forwarding size enforcement to the accepted strict validator;
-- frozen case/result models;
+Batch tests cover:
+- declared-order execution;
+- mismatch continuing to later cases;
+- all-match summary;
+- non-empty tuple validation;
+- wrong case type rejection;
+- duplicate replay-ID rejection;
+- operational fail-fast behavior at the exact case;
+- deterministic text and declared report order;
+- frozen plan/result models;
+- strict complete-result alignment;
 - invalid runner/renderer input rejection.
 
 Preservation tests cover:
-- no protected upstream package imports `runtime_golden_cases`;
-- file runner delegates trace semantics only through `validate_golden_replay_bytes`;
-- no comparator or divergence logic is duplicated in the file runner;
+- no protected upstream package imports `runtime_golden_batches`;
+- batch runner delegates only to the accepted 001C file-case boundary;
+- no trace loading/comparison/divergence logic is duplicated;
 - production LIFO compatibility behavior remains unchanged.
 
 ## Exact validation commands and real results
 
-GitHub Actions workflow: `HSR Axis Sim Validation`, PR #6, run #17, job `validate` (`97331493850`).
+GitHub Actions workflow: `HSR Axis Sim Validation`, PR #7, run #21, job `validate` (`97332387296`).
 
 1. `python -m compileall -q hsr_axis_sim`
    - PASS.
 2. `python -m pytest -q`
-   - PASS: `843 passed in 5.20s`.
+   - PASS: `853 passed in 7.16s`.
 3. `python -m hsr_axis_sim.regression.runner --manifest hsr_axis_sim/data/regression_manifest.json --format text`
    - PASS 20/20 total checks:
      - 12/12 golden replays;
@@ -74,26 +76,26 @@ GitHub Actions workflow: `HSR Axis Sim Validation`, PR #6, run #17, job `validat
 ## Warnings / errors
 
 - No compile, test, or regression errors.
-- Existing GitHub Actions platform warning remains: `actions/checkout@v4` and `actions/setup-python@v5` target Node.js 20 and are currently forced onto Node.js 24. This is unrelated to file-case correctness and is nonblocking.
+- Existing GitHub Actions platform warning remains: `actions/checkout@v4` and `actions/setup-python@v5` target Node.js 20 and are currently forced onto Node.js 24. This is unrelated to batch correctness and is nonblocking.
 
 ## Acceptance review
 
-- File identity is explicit and portable relative to one supplied base directory.
-- Path traversal and symlink escape are rejected before trace validation.
-- File reads are bounded and do not introduce normalization or repair.
-- Runtime trace semantics are reused from the accepted 001B validator rather than duplicated.
-- Resolved path, digest, comparison, and first-divergence provenance remain inspectable.
-- No directory scanning, batch manifest, simulator auto-run, CLI/UI, automatic video extraction, fuzzy comparison, repair/realignment, new HSR mechanics, or FIFO/LIFO change was introduced.
+- Batch order is explicit and stable; there is no sorting, discovery, deduplication, parallelism, or retry.
+- Comparison mismatch and inability to validate a case remain distinct states.
+- A returned batch result is always complete for every declared case.
+- Batch summary values are derived only from accepted case results.
+- Lower trace, comparison, divergence, validation, and path semantics are reused rather than duplicated.
+- No JSON/file manifest loader, simulator auto-run, CLI/UI, automatic video extraction, fuzzy comparison, repair/realignment, new HSR mechanics, or FIFO/LIFO change was introduced.
 - Existing production LIFO behavior remains unchanged.
 
 ## Unresolved issues
 
-None blocking HSR-AXIS-001C acceptance.
+None blocking HSR-AXIS-001D acceptance.
 
 Existing unresolved HSR game semantics remain tracked separately and were not changed.
 
 ## Suggested next milestone
 
-`HSR-AXIS-001D — Deterministic Golden Replay Batch Runner`
+`HSR-AXIS-001E — Strict Golden Replay Manifest Artifact`
 
-001D should execute an explicit immutable ordered tuple of already-validated `GoldenReplayFileCase` definitions under one base directory. It should not add JSON manifest loading or directory discovery yet.
+001E should define and strictly load a deterministic canonical JSON manifest that reconstructs an accepted `GoldenReplayBatchPlan`; it should not execute the batch yet.

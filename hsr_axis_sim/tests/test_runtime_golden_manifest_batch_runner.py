@@ -164,7 +164,7 @@ def test_deterministic_text_wraps_accepted_manifest_file_and_batch_reports(tmp_p
     assert "GOLDEN_REPLAY_MANIFEST_FILE_LOADED\n" in first
     assert f"manifest_sha256={artifact.sha256}\n" in first
     assert "\nBATCH\nGOLDEN_REPLAY_BATCH_FAIL\n" in first
-    assert first.index("MANIFEST_FILE") < first.index("BATCH")
+    assert first.index("\nMANIFEST_FILE\n") < first.index("\nBATCH\n")
     assert first.index('CASE index=0 replay_id="case-a"') < first.index('CASE index=1 replay_id="case-b"')
 
 

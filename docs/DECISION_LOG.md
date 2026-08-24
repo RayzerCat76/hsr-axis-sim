@@ -154,3 +154,12 @@ Statuses: `CONFIRMED`, `PROVISIONAL`, `SUPERSEDED`. Never delete superseded hist
 **Consequences:** ARCH-007 can produce deterministic runtime trace artifacts from explicit observations while leaving simulator capture lifecycle untouched for a later milestone.  
 **Supersedes:** Implicit simulator-event capture as part of the first trace bridge.  
 **Superseded By:** None.
+
+## D-018 — BattleState pending-event capture uses explicit non-mutating slices
+**Status:** CONFIRMED  
+**Date:** 2026-08-24  
+**Decision:** Runtime capture from `BattleState.pending_events` requires an explicit `[start_index:end_index)` slice of the list as it exists at capture time; the slice is snapshotted and delegated to ARCH-007 without draining, clearing, reordering, or automatically advancing a stored cursor.  
+**Reason:** The current simulator appends dispatched events to `pending_events`, but its name and existing contract do not justify silently treating it as a permanent complete history or assigning automatic retention/cursor semantics.  
+**Consequences:** ARCH-008 can safely capture exact current slices and return `next_index=end_index`, while persistent cursor/session and history-retention semantics remain separate reviewed work.  
+**Supersedes:** Implicit full-list capture, queue draining, or permanent-history assumptions.  
+**Superseded By:** None.

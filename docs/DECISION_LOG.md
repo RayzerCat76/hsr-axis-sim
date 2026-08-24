@@ -217,3 +217,12 @@ Statuses: `CONFIRMED`, `PROVISIONAL`, `SUPERSEDED`. Never delete superseded hist
 **Consequences:** The ARCH-014 wrapper preserves the complete session and stitch results and requires every stitched segment to be the exact same Python object as the corresponding session capture result. Failed/partial session objects are not valid inputs, and ARCH-010 errors propagate unchanged.  
 **Supersedes:** Reconstructing session segments or implicitly stitching partial-session provenance.  
 **Superseded By:** None.
+
+## D-025 — Successful-session Golden handoff preserves exact accepted stitch provenance
+**Status:** CONFIRMED  
+**Date:** 2026-08-24  
+**Decision:** ARCH-015 accepts only a completed ARCH-014 result and passes `session_stitch_result.stitch_result` unchanged to accepted ARCH-011 exactly once.  
+**Reason:** ARCH-014 already defines the authoritative stitched actual-trace provenance; restitching, rebuilding, or reserializing it before Golden validation would create duplicate identity and semantic boundaries.  
+**Consequences:** ARCH-015 preserves the complete ARCH-014 and ARCH-011 results, requires exact stitch-object identity across the handoff, leaves Golden mismatches as completed validation results, and propagates ARCH-011 input/operational errors unchanged without direct lower-layer validation logic.  
+**Supersedes:** Rebuilding, restitching, or independently revalidating the actual trace between successful session stitching and accepted ARCH-011.  
+**Superseded By:** None.

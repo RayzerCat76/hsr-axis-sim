@@ -27,10 +27,10 @@ Never invent hidden game values or semantics. **Unknown > Guess.**
 ## 4. Confirmed Current Baseline
 ```text
 Latest completed milestone:
-HSR-AXIS-001E — PASS
+HSR-AXIS-001F — PASS
 
 Complete pytest:
-866 / 866 passed
+892 / 892 passed
 
 Locked regression:
 20 / 20 passed
@@ -42,7 +42,7 @@ Current blocker:
 None
 
 Next milestone:
-HSR-AXIS-001F — Base-bounded Golden Replay Manifest File Loader — READY / NOT STARTED
+HSR-AXIS-001G — Manifest-backed Golden Replay Batch Runner — READY / NOT STARTED
 ```
 
 Current governance milestone:
@@ -50,20 +50,21 @@ Current governance milestone:
 
 ## 5. Architecture
 ```text
-hsr_axis_sim/sim              active production MVP
-runtime_contracts             immutable runtime/event/trace contracts
-runtime_adapters              manual legacy Event -> RuntimeEvent bridge
-runtime_exports               deterministic trace export
-runtime_loaders               strict schema-v1 loading/integrity validation
-runtime_comparators           strict expected-vs-actual trace comparison
-runtime_divergence            first-divergence selection/text reporting
-runtime_golden_replays        digest-pinned deterministic Golden Replay validation
-runtime_golden_cases          explicit base-bounded file-backed Golden Replay cases
-runtime_golden_batches        explicit deterministic ordered Golden Replay batches
-runtime_golden_manifests      strict canonical Golden Replay manifest artifacts
-regression                    locked regression runner
-search                        existing search/evaluator tools
-real_bindings                 reviewed partial real-game bindings
+hsr_axis_sim/sim                        active production MVP
+runtime_contracts                       immutable runtime/event/trace contracts
+runtime_adapters                        manual legacy Event -> RuntimeEvent bridge
+runtime_exports                         deterministic trace export
+runtime_loaders                         strict schema-v1 loading/integrity validation
+runtime_comparators                     strict expected-vs-actual trace comparison
+runtime_divergence                      first-divergence selection/text reporting
+runtime_golden_replays                  digest-pinned deterministic Golden Replay validation
+runtime_golden_cases                    explicit base-bounded file-backed Golden Replay cases
+runtime_golden_batches                  explicit deterministic ordered Golden Replay batches
+runtime_golden_manifests                strict canonical Golden Replay manifest artifacts
+runtime_golden_manifest_files           explicit base-bounded Golden Replay manifest file loading
+regression                              locked regression runner
+search                                  existing search/evaluator tools
+real_bindings                           reviewed partial real-game bindings
 ```
 
 Sidecar contracts do not authorize automatic production integration.
@@ -99,6 +100,9 @@ Deterministic Golden Replay Batch Runner. A non-empty explicit tuple of unique r
 ### HSR-AXIS-001E — PASS
 Strict Golden Replay Manifest Artifact. A fixed v1 schema serializes an accepted batch plan to one compact canonical UTF-8 JSON byte form with SHA-256 identity. Strict loading rejects duplicate keys, unknown/missing fields, invalid downstream contracts, digest/size failures, and equivalent-but-noncanonical encodings. It reconstructs a plan but does not execute it.
 
+### HSR-AXIS-001F — PASS
+Base-bounded Golden Replay Manifest File Loader. One reviewed canonical relative POSIX manifest path is resolved under an explicit base directory, must remain inside that base after symlink resolution, and must be a regular file. Bounded raw bytes are delegated unchanged to HSR-AXIS-001E. The result preserves resolved file provenance and does not execute the reconstructed batch.
+
 ## 7. Trace Pipeline
 ```text
 legacy simulator Event
@@ -111,8 +115,9 @@ legacy simulator Event
 -> HSR-AXIS-001C File-backed Golden Replay Case Runner
 -> HSR-AXIS-001D Deterministic Golden Replay Batch Runner
 -> HSR-AXIS-001E Strict Golden Replay Manifest Artifact
--> [CURRENT FRONTIER]
 -> HSR-AXIS-001F Base-bounded Golden Replay Manifest File Loader
+-> [CURRENT FRONTIER]
+-> HSR-AXIS-001G Manifest-backed Golden Replay Batch Runner
 ```
 
 ## 8. Determinism Rules
@@ -125,6 +130,8 @@ File-backed Golden cases use canonical relative POSIX paths under one explicit b
 Golden batches preserve declared tuple order. Replay mismatch and inability to perform validation are distinct states: mismatches remain results, while operational exceptions fail fast without a partial batch result.
 
 Golden manifest v1 has one accepted compact canonical JSON byte representation. Schema/version changes require explicit versioned work; permissive extension or normalization is not accepted.
+
+Golden manifest files use one explicit canonical relative POSIX path under an explicit base directory. Resolved symlink escape and non-file targets are rejected before exact bytes are delegated to the strict manifest loader.
 
 ## 9. Evidence Classification
 - `CONFIRMED`
@@ -184,7 +191,8 @@ Codex is optional and used only when it materially helps.
 | HSR-AXIS-001C File-backed Golden Replay Case Runner | PASS |
 | HSR-AXIS-001D Deterministic Golden Replay Batch Runner | PASS |
 | HSR-AXIS-001E Strict Golden Replay Manifest Artifact | PASS |
-| HSR-AXIS-001F Base-bounded Golden Replay Manifest File Loader | READY / NOT STARTED |
+| HSR-AXIS-001F Base-bounded Golden Replay Manifest File Loader | PASS |
+| HSR-AXIS-001G Manifest-backed Golden Replay Batch Runner | READY / NOT STARTED |
 
 ## 14. Acceptance
 A milestone is not accepted because code looks plausible. Review changed files, tests, regression output, warnings/errors, protected files, unresolved issues, and reference integrity where relevant.
@@ -206,7 +214,7 @@ Unless explicitly unlocked: full automatic Bilibili/video-to-trace extraction, s
 Golden Replay expected traces remain explicitly reviewed artifacts. Automatic video-to-golden generation is not authorized.
 
 ## 16. Near-Term Roadmap
-`HSR-AXIS-001F Base-bounded Golden Replay Manifest File Loader -> manifest-backed batch execution`.
+`HSR-AXIS-001G Manifest-backed Golden Replay Batch Runner`.
 
 Later: incremental universal runtime integration, broader validated semantics, manual trace authoring improvements, then video assistance.
 

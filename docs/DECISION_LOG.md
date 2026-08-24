@@ -253,3 +253,12 @@ Statuses: `CONFIRMED`, `PROVISIONAL`, `SUPERSEDED`. Never delete superseded hist
 **Consequences:** Locked validation now reports two distinct baselines: legacy regression `20/20` and runtime action-session Golden regression `1/1`. Future runtime cases may extend the dedicated lane only under explicit reviewed contracts; they must not be silently folded into the legacy replay categories or broaden the minimal action schema into arbitrary targets/effects.  
 **Supersedes:** Direct runtime-sidecar integration into the legacy regression runner or treating the accepted baseline as one combined `21/21` count.  
 **Superseded By:** None.
+
+## D-029 — Resource observations stay payload-level under trace schema v1 before production emission
+**Status:** CONFIRMED  
+**Date:** 2026-08-24  
+**Decision:** ARCH-019 adds `ENERGY_CHANGED` and `SKILL_POINTS_CHANGED` plus an immutable resource-change payload contract, while schema-v1 `RuntimeTraceRecord.numeric_values` remains empty and no simulator or legacy-adapter emission is introduced yet.  
+**Reason:** The accepted v1 loader explicitly requires empty record-level numeric values, but `RuntimeEvent.payload` is already the schema-compatible extensibility point. Separating vocabulary from production emission keeps contract evolution reviewable and prevents a resource-observation milestone from becoming an implicit trace-schema migration.  
+**Consequences:** Resource observations distinguish `requested_delta` from `applied_delta`, require `applied_delta == after - before`, and encode ENERGY as unit-scoped and SKILL_POINTS as team-scoped. Historical ARCH-002/003/004 reference artifacts remain byte-pinned; their preservation tests continue pinning every untouched source while explicitly allowing the additive `runtime_contracts/enums.py` and `__init__.py` evolution authorized by ARCH-019. Production emission and legacy adapter binding require a separate milestone.  
+**Supersedes:** Treating resource values as record-level numeric data under schema v1 or silently wiring production emission into the vocabulary milestone.  
+**Superseded By:** None.

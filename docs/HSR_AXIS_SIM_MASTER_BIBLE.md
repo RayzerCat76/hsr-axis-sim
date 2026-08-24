@@ -27,10 +27,10 @@ Never invent hidden game values or semantics. **Unknown > Guess.**
 ## 4. Confirmed Current Baseline
 ```text
 Latest completed milestone:
-HSR-RUNTIME-ARCH-018 — PASS
+HSR-RUNTIME-ARCH-019 — PASS
 
 Complete pytest:
-1052 / 1052 passed
+1076 / 1076 passed
 
 Legacy locked regression:
 20 / 20 passed
@@ -45,7 +45,7 @@ Current blocker:
 None
 
 Next milestone:
-Not yet assigned — inspect the post-ARCH-018 runtime frontier before defining the next exact task ID.
+HSR-RUNTIME-ARCH-020 — Production Resource Change Event Emission and Legacy Adapter Binding — READY / NOT STARTED
 ```
 
 Current governance milestone:
@@ -54,7 +54,7 @@ Current governance milestone:
 ## 5. Architecture
 ```text
 hsr_axis_sim/sim                        active production MVP
-runtime_contracts                       immutable runtime/event/trace contracts
+runtime_contracts                       immutable runtime/event/trace/resource-observation contracts
 runtime_adapters                        manual legacy Event -> RuntimeEvent bridge
 runtime_exports                         deterministic trace export
 runtime_trace_bridges                   explicit legacy Event stream -> runtime trace artifact composition
@@ -158,6 +158,9 @@ Reviewed Static End-to-End Golden Action Session Fixture. The first production-A
 ### HSR-RUNTIME-ARCH-018 — PASS
 Reviewed Static End-to-End Golden Fixture Regression Integration. The accepted ARCH-017 fixture is now a locked repeatable runtime regression through a separate downstream `runtime_action_session_regression` package, strict manifest, and CI step. The lane reconstructs only explicitly declared simple no-target/no-effect production Actions and delegates each case once to accepted ARCH-016. Legacy `hsr_axis_sim.regression/**` and its manifest remain unchanged at 20/20; the new runtime lane is reported separately at 1/1. A rejected direct integration into the legacy runner was fully reverted after preservation and research-pin failures exposed that boundary.
 
+### HSR-RUNTIME-ARCH-019 — PASS
+Runtime Resource Change Observation Contract. Added schema-v1-compatible `ENERGY_CHANGED` and `SKILL_POINTS_CHANGED` runtime event vocabulary plus immutable `RuntimeResourceChangeObservation` payload semantics. The contract distinguishes requested versus applied deltas, requires arithmetic consistency, and encodes ENERGY as unit-scoped and SKILL_POINTS as team-scoped. Resource values remain in `RuntimeEvent.payload`; schema-v1 record-level `numeric_values` remains empty. No simulator emission or legacy adapter mapping is introduced yet. Historical ARCH-002/003/004 reference artifacts remain unchanged; preservation tests continue pinning every untouched upstream source while explicitly permitting this reviewed additive contract evolution.
+
 ## 7. Trace Pipeline
 ```text
 caller-supplied legacy simulator Event stream
@@ -220,8 +223,12 @@ reviewed static expected runtime trace
 -> ARCH-017 reviewed non-circular fixture proof
 -> ARCH-018 standalone locked runtime action-session regression lane
 
+resource observation vocabulary
+-> ARCH-019 ENERGY_CHANGED / SKILL_POINTS_CHANGED payload contract
+-> schema-v1 export + strict load with empty record.numeric_values
+
 [CURRENT FRONTIER]
--> inspect accepted post-ARCH-018 runtime semantics before assigning the next exact milestone ID
+-> HSR-RUNTIME-ARCH-020 Production Resource Change Event Emission and Legacy Adapter Binding
 ```
 
 ## 8. Determinism Rules
@@ -262,6 +269,8 @@ ARCH-016 preflights only directly checkable caller inputs before state mutation,
 ARCH-017 end-to-end expected bytes are independent reviewed static artifacts. Tests may read and strict-load them but must not generate the authoritative expected bytes from the simulator, adapter, exporter, or trace builders at test runtime. Any accepted fixture byte change requires explicit review and a matching digest update.
 
 ARCH-018 runtime regression is a distinct locked lane. It preserves the legacy 20/20 regression identity, uses its own strict manifest and CI step, and may reconstruct only the reviewed minimal simple Action schema before delegating to ARCH-016. Runtime Golden cases are not silently reclassified as legacy replay checks.
+
+ARCH-019 resource values are payload-level observations under trace schema v1. `requested_delta` and `applied_delta` are distinct, `applied_delta == after - before`, ENERGY is unit-scoped, and SKILL_POINTS is team-scoped. ARCH-019 does not authorize simulator emission or legacy adapter binding; those require an explicit later milestone.
 
 ## 9. Evidence Classification
 - `CONFIRMED`
@@ -336,6 +345,8 @@ Codex is optional and used only when it materially helps.
 | HSR-RUNTIME-ARCH-016 Explicit End-to-End Action Session Validation Orchestrator | PASS |
 | HSR-RUNTIME-ARCH-017 Reviewed Static End-to-End Golden Action Session Fixture | PASS |
 | HSR-RUNTIME-ARCH-018 Reviewed Static End-to-End Golden Fixture Regression Integration | PASS |
+| HSR-RUNTIME-ARCH-019 Runtime Resource Change Observation Contract | PASS |
+| HSR-RUNTIME-ARCH-020 Production Resource Change Event Emission and Legacy Adapter Binding | READY / NOT STARTED |
 
 ## 14. Acceptance
 A milestone is not accepted because code looks plausible. Review changed files, tests, regression output, warnings/errors, protected files, unresolved issues, and reference integrity where relevant.
@@ -358,9 +369,9 @@ Unless explicitly unlocked: full automatic Bilibili/video-to-trace extraction, s
 Golden Replay expected traces remain explicitly reviewed artifacts. Automatic video-to-golden generation is not authorized.
 
 ## 16. Near-Term Roadmap
-ARCH-018 is complete. Before assigning the next exact task ID, inspect the accepted runtime frontier and choose the smallest reviewed semantics or regression case that materially increases coverage. Prefer another independently reviewed case over generalizing the runtime regression manifest. Do not add targets/effects or new HSR mechanics merely to make the regression schema more generic.
+`HSR-RUNTIME-ARCH-020` should bind the accepted ARCH-019 resource observations to existing production `GainEnergy`, `ConsumeEnergy`, `GainSkillPoint`, and `ConsumeSkillPoint` mutations with explicit post-success legacy events and reviewed adapter mappings. Preserve requested versus applied delta, emit nothing for failed consume operations, keep resource values in RuntimeEvent payload, and leave AV/timeline semantics for a separate milestone.
 
-Later: broader validated semantics, manual trace authoring improvements, then video assistance.
+Later: add a reviewed non-circular static resource Golden fixture and regression case in a separate milestone; then address AV/speed/advance/delay observation contracts and broader validated semantics.
 
 ## 17. Governance Rule
 After HSR-GOV-001 merges, normal development uses Git branches, PRs, and CI. ZIP/Finder folder replacement is retired as the normal workflow.

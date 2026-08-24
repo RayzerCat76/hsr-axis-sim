@@ -91,3 +91,12 @@ Statuses: `CONFIRMED`, `PROVISIONAL`, `SUPERSEDED`. Never delete superseded hist
 **Consequences:** First-divergence reporting does not recompare, re-sort, realign, or guess which difference is more important.  
 **Supersedes:** None.  
 **Superseded By:** None.
+
+## D-011 — Golden expected artifacts are digest-pinned
+**Status:** CONFIRMED  
+**Date:** 2026-08-24  
+**Decision:** A Golden Replay expected trace is identified by explicit replay metadata plus an exact SHA-256 of its canonical expected artifact bytes; actual output is strictly loaded but is not pre-pinned to a digest.  
+**Reason:** Golden expectations must not drift silently, while actual output must remain free to vary and then be compared deterministically.  
+**Consequences:** Changing golden bytes requires an explicit digest change; actual artifact SHA-256 is retained as provenance after loading.  
+**Supersedes:** Filename- or trace-ID-only golden identity.  
+**Superseded By:** None.

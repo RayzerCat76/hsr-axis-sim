@@ -118,3 +118,12 @@ Statuses: `CONFIRMED`, `PROVISIONAL`, `SUPERSEDED`. Never delete superseded hist
 **Consequences:** Batch output is always complete when returned, preserves declared order, and does not hide file/config/loader failures behind partial summaries.  
 **Supersedes:** Implicit sorting, silent partial batch success, or swallowed operational errors.  
 **Superseded By:** None.
+
+## D-014 — Golden manifests use exact compact canonical JSON bytes
+**Status:** CONFIRMED  
+**Date:** 2026-08-24  
+**Decision:** Golden Replay manifest v1 has a fixed minimal schema and one accepted byte form: compact canonical UTF-8 JSON. Equivalent but differently formatted JSON, duplicate keys, unknown fields, missing fields, and implicit defaults are rejected.  
+**Reason:** A reviewed manifest must have stable byte identity and cannot safely drift through parser normalization or extension fields.  
+**Consequences:** Manifest SHA-256 identifies exact reviewed bytes; case order is preserved; any schema evolution requires an explicit versioned milestone rather than permissive parsing.  
+**Supersedes:** Permissive or formatting-insensitive Golden Replay manifest parsing.  
+**Superseded By:** None.

@@ -1,19 +1,31 @@
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
 
 SUPPORTED_GROUPS = {
-    "replays", "manual", "scenarios", "action_sequence_traces", "trace_evidence"
+    "replays",
+    "manual",
+    "scenarios",
+    "action_sequence_traces",
+    "trace_evidence",
+    "runtime_action_sessions",
 }
 ORDERED_GROUPS = [
-    "replays", "manual", "scenarios", "action_sequence_traces", "trace_evidence"
+    "replays",
+    "manual",
+    "scenarios",
+    "action_sequence_traces",
+    "trace_evidence",
+    "runtime_action_sessions",
 ]
 SUPPORTED_ACTION_SEQUENCE_CHECKS = {"lint", "action_sequence"}
 SUPPORTED_TRACE_EVIDENCE_CHECKS = {"semantic_map", "frame_anchors"}
+SUPPORTED_RUNTIME_ACTION_SESSION_CHECKS = {"no_effect_action_session_golden"}
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -24,6 +36,10 @@ class RegressionManifestEntry:
     checks: list[str] = field(default_factory=list)
     check: str | None = None
     source_trace_path: Path | None = None
+    expected_sha256: str | None = None
+    adapter_stream_id: str | None = None
+    actor_id: str | None = None
+    action_ids: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -113,8 +129,14 @@ def _entries_from_list(
                 )
         elif entry_checks:
             raise ValueError(f"{label}.checks is only supported for action_sequence_traces.")
+
         entry_check: str | None = None
         source_trace_path: Path | None = None
+        expected_sha256: str | None = None
+        adapter_stream_id: str | None = None
+        actor_id: str | None = None
+        action_ids: list[str] = []
+
         if group == "trace_evidence":
             _require_fields(entry_data, ["source_trace_path", "check"], label)
             entry_check = entry_data["check"]
@@ -130,6 +152,53 @@ def _entries_from_list(
                 raise ValueError(
                     f"Manifest source trace path does not exist: {source_trace_path}"
                 )
+        elif group == "runtime_action_sessions":
+            _require_fields(
+                entry_data,
+                [
+                    "check",
+                    "expected_sha256",
+                    "adapter_stream_id",
+                    "actor_id",
+                    "action_ids",
+                ],
+                label,
+            )
+            entry_check = entry_data["check"]
+            expected_sha256 = entry_data["expected_sha256"]
+            adapter_stream_id = entry_data["adapter_stream_id"]
+            actor_id = entry_data["actor_id"]
+            action_ids_value = entry_data["action_ids"]
+
+            if (
+                not isinstance(entry_check, str)
+                or entry_check not in SUPPORTED_RUNTIME_ACTION_SESSION_CHECKS
+            ):
+                raise ValueError(
+                    f"{label}.check must be one of "
+                    f"{sorted(SUPPORTED_RUNTIME_ACTION_SESSION_CHECKS)}."
+                )
+            if (
+                not isinstance(expected_sha256, str)
+                or re.fullmatch(r"[0-9a-f]{64}", expected_sha256) is None
+            ):
+                raise ValueError(
+                    f"{label}.expected_sha256 must be exactly 64 lowercase hex characters."
+                )
+            if not isinstance(adapter_stream_id, str) or not adapter_stream_id:
+                raise ValueError(f"{label}.adapter_stream_id must be a non-empty string.")
+            if not isinstance(actor_id, str) or not actor_id:
+                raise ValueError(f"{label}.actor_id must be a non-empty string.")
+            if not isinstance(action_ids_value, list) or not action_ids_value:
+                raise ValueError(f"{label}.action_ids must be a non-empty list.")
+            if any(not isinstance(action_id, str) or not action_id for action_id in action_ids_value):
+                raise ValueError(
+                    f"{label}.action_ids must contain only non-empty strings."
+                )
+            if len(set(action_ids_value)) != len(action_ids_value):
+                raise ValueError(f"{label}.action_ids must not contain duplicates.")
+            action_ids = list(action_ids_value)
+
         if entry_id in seen_ids:
             raise ValueError(f"Duplicate manifest id {entry_id!r} in group {group!r}.")
         seen_ids.add(entry_id)
@@ -144,6 +213,10 @@ def _entries_from_list(
                 checks=list(entry_checks),
                 check=entry_check,
                 source_trace_path=source_trace_path,
+                expected_sha256=expected_sha256,
+                adapter_stream_id=adapter_stream_id,
+                actor_id=actor_id,
+                action_ids=action_ids,
             )
         )
     return entries

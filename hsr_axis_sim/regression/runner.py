@@ -12,22 +12,53 @@ from hsr_axis_sim.regression.manifest import (
     RegressionManifestEntry,
     load_regression_manifest,
 )
+from hsr_axis_sim.runtime_action_session_validation import run_action_session_validation
+from hsr_axis_sim.runtime_action_sessions import (
+    ExplicitActionCaptureStep,
+    MultiActionCaptureSessionConfig,
+)
+from hsr_axis_sim.runtime_adapters import (
+    AmbiguousLegacyEventPolicy,
+    LegacyEventAdapterConfig,
+    UnknownLegacyEventPolicy,
+)
+from hsr_axis_sim.runtime_capture_cursors import PendingEventCaptureCursor
+from hsr_axis_sim.runtime_exports import (
+    EmptyTracePolicy,
+    TraceExportConfig,
+    TraceSequencePolicy,
+)
+from hsr_axis_sim.runtime_golden_replays import GoldenReplayValidationConfig
+from hsr_axis_sim.runtime_loaders import TraceCanonicalFormPolicy
+from hsr_axis_sim.runtime_trace_stitching import CapturedTraceStitchConfig
 from hsr_axis_sim.search.scenario import (
     load_search_scenario,
     render_search_scenario_report,
     run_search_scenario,
 )
+from hsr_axis_sim.sim.action import Action
 from hsr_axis_sim.sim.replay import ReplayValidator
 from hsr_axis_sim.sim.replay_lint import load_and_lint_manual_video_trace
+from hsr_axis_sim.sim.state import BattleState
 from hsr_axis_sim.tools.trace_frame_anchors import validate_frame_anchor_files
 from hsr_axis_sim.tools.trace_semantics import validate_semantic_map_files
 
 
 VALID_GROUPS = {
-    "replays", "manual", "scenarios", "action_sequence_traces", "trace_evidence"
+    "replays",
+    "manual",
+    "scenarios",
+    "action_sequence_traces",
+    "trace_evidence",
+    "runtime_action_sessions",
 }
 REPORT_GROUPS = [
-    "replays", "manual", "scenarios", "action_sequence_traces", "trace_evidence"
+    "replays",
+    "manual",
+    "scenarios",
+    "action_sequence_traces",
+    "trace_evidence",
+    "runtime_action_sessions",
 ]
 PACKAGE_ROOT = Path(__file__).resolve().parents[1]
 DATA_ROOT = PACKAGE_ROOT / "data"
@@ -63,6 +94,7 @@ def run_regression(
     scenario_paths: list[Path] | None = None,
     action_sequence_paths: list[Path] | None = None,
     trace_evidence_entries: list[RegressionManifestEntry] | None = None,
+    runtime_action_session_entries: list[RegressionManifestEntry] | None = None,
     manifest: RegressionManifest | None = None,
 ) -> RegressionReport:
     groups = _selected_groups(only)
@@ -74,6 +106,7 @@ def run_regression(
         scenario_paths = manifest.paths_for_group("scenarios")
         action_sequence_entries = manifest.groups.get("action_sequence_traces", [])
         trace_evidence_entries = manifest.groups.get("trace_evidence", [])
+        runtime_action_session_entries = manifest.groups.get("runtime_action_sessions", [])
 
     if "replays" in groups:
         for path in replay_paths or discover_replay_paths():
@@ -118,6 +151,16 @@ def run_regression(
             if fail_fast and not result.passed:
                 return _report_from_results(results, manifest=manifest)
 
+    if "runtime_action_sessions" in groups:
+        entries = runtime_action_session_entries
+        if entries is None:
+            entries = discover_runtime_action_session_entries()
+        for entry in entries:
+            result = _check_runtime_action_session(entry)
+            results.append(result)
+            if fail_fast and not result.passed:
+                return _report_from_results(results, manifest=manifest)
+
     return _report_from_results(results, manifest=manifest)
 
 
@@ -139,6 +182,11 @@ def discover_action_sequence_trace_paths() -> list[Path]:
             "*action_sequence_only.json"
         )
     )
+
+
+def discover_runtime_action_session_entries() -> list[RegressionManifestEntry]:
+    manifest = load_regression_manifest(DATA_ROOT / "regression_manifest.json")
+    return list(manifest.groups.get("runtime_action_sessions", []))
 
 
 def format_regression_text(report: RegressionReport) -> str:
@@ -442,6 +490,110 @@ def _check_trace_evidence(entry: RegressionManifestEntry) -> RegressionCheckResu
             details=details,
             error=str(exc),
         )
+
+
+def _check_runtime_action_session(entry: RegressionManifestEntry) -> RegressionCheckResult:
+    details: dict[str, Any] = {
+        "check": entry.check,
+        "action_count": len(entry.action_ids),
+        "expected_sha256": entry.expected_sha256,
+    }
+    try:
+        if entry.check != "no_effect_action_session_golden":
+            raise ValueError(f"Unsupported runtime action-session check: {entry.check!r}.")
+        if entry.expected_sha256 is None:
+            raise ValueError("Runtime action-session entry is missing expected_sha256.")
+        if entry.adapter_stream_id is None:
+            raise ValueError("Runtime action-session entry is missing adapter_stream_id.")
+        if entry.actor_id is None:
+            raise ValueError("Runtime action-session entry is missing actor_id.")
+        if not entry.action_ids:
+            raise ValueError("Runtime action-session entry is missing action_ids.")
+
+        expected_payload_bytes = entry.path.read_bytes()
+        steps = tuple(
+            ExplicitActionCaptureStep(
+                Action(action_id, action_id, entry.actor_id, ends_turn=False)
+            )
+            for action_id in entry.action_ids
+        )
+        adapter_config = LegacyEventAdapterConfig(
+            entry.adapter_stream_id,
+            UnknownLegacyEventPolicy.REJECT,
+            AmbiguousLegacyEventPolicy.REJECT,
+        )
+        segment_export_configs = tuple(
+            TraceExportConfig(
+                f"regression:{entry.id}:segment:{index}",
+                TraceSequencePolicy.CONTIGUOUS,
+                EmptyTracePolicy.REJECT,
+                {"regression_id": entry.id, "segment": index},
+            )
+            for index in range(len(steps))
+        )
+        session_config = MultiActionCaptureSessionConfig(
+            PendingEventCaptureCursor(0, 0),
+            adapter_config,
+            segment_export_configs,
+            False,
+        )
+        stitch_config = CapturedTraceStitchConfig(
+            TraceExportConfig(
+                f"regression:{entry.id}:actual",
+                TraceSequencePolicy.CONTIGUOUS,
+                EmptyTracePolicy.REJECT,
+                {"regression_id": entry.id, "source": "locked-regression"},
+            ),
+            False,
+        )
+        golden_config = GoldenReplayValidationConfig(
+            entry.id,
+            entry.expected_sha256,
+            TraceCanonicalFormPolicy.COMPACT_ONLY,
+            100_000,
+        )
+
+        result = run_action_session_validation(
+            BattleState([]),
+            steps,
+            session_config=session_config,
+            stitch_config=stitch_config,
+            expected_payload_bytes=expected_payload_bytes,
+            golden_config=golden_config,
+        )
+        details["actual_sha256"] = result.actual_sha256
+
+        golden_result = result.validation_result.validation_result.validation_result
+        if not result.matches:
+            details["mismatch_count"] = golden_result.comparison.mismatch_count
+            divergence = golden_result.first_divergence.divergence
+            if divergence is not None:
+                details["first_divergence_record_index"] = divergence.record_index
+                details["first_divergence_status"] = divergence.record_status.value
+                if divergence.first_field_difference is not None:
+                    details["first_divergence_path"] = (
+                        divergence.first_field_difference.path
+                    )
+
+        return RegressionCheckResult(
+            group="runtime_action_sessions",
+            name=entry.id,
+            path=str(entry.path),
+            passed=result.matches,
+            details=details,
+            error=None if result.matches else "Golden runtime action-session trace diverged.",
+        )
+    except Exception as exc:
+        return RegressionCheckResult(
+            group="runtime_action_sessions",
+            name=entry.id,
+            path=str(entry.path),
+            passed=False,
+            details=details,
+            error=str(exc),
+        )
+
+
 def _selected_groups(only: str | None) -> list[str]:
     if only is None:
         return list(REPORT_GROUPS)
@@ -493,6 +645,8 @@ def _group_label(group: str) -> str:
         return "action-sequence trace checks"
     if group == "trace_evidence":
         return "trace evidence checks"
+    if group == "runtime_action_sessions":
+        return "runtime action-session Golden checks"
     return group
 
 

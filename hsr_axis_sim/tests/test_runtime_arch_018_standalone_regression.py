@@ -302,7 +302,7 @@ def test_wrong_but_well_formed_digest_becomes_failed_operational_check():
 
     assert report.passed is False
     assert report.total == 1
-    assert "digest" in report.results[0].error.lower()
+    assert "sha-256 mismatch" in report.results[0].error.lower()
 
 
 def test_arch_017_expected_artifact_remains_exact_and_legacy_manifest_does_not_reference_it():

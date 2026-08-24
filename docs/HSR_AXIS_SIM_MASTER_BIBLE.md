@@ -46,7 +46,7 @@ HSR-RUNTIME-ARCH-005 — READY / NOT STARTED
 ```
 
 Current governance milestone:
-`HSR-GOV-001 — GitHub Canonical Repository Governance`.
+`HSR-GOV-001 — PASS`.
 
 ## 5. Architecture
 ```text
@@ -141,7 +141,7 @@ Codex is optional and used only when it materially helps.
 | HSR-RUNTIME-ARCH-002 | PASS |
 | HSR-RUNTIME-ARCH-003 | PASS |
 | HSR-RUNTIME-ARCH-004 | PASS |
-| HSR-GOV-001 | IN PROGRESS |
+| HSR-GOV-001 | PASS |
 | HSR-RUNTIME-ARCH-005 | READY / NOT STARTED |
 | HSR-RUNTIME-ARCH-006 | PLANNED |
 | Golden Replay Validator | PLANNED |
@@ -166,7 +166,7 @@ Unless explicitly unlocked: full automatic Bilibili/video-to-trace extraction, s
 The first Golden Replay must remain manually constructed and deterministic.
 
 ## 16. Near-Term Roadmap
-`HSR-GOV-001 -> ARCH-005 -> ARCH-006 -> deterministic Golden Replay Validator`.
+`ARCH-005 -> ARCH-006 -> deterministic Golden Replay Validator`.
 
 Later: incremental universal runtime integration, broader validated semantics, manual trace authoring improvements, then video assistance.
 

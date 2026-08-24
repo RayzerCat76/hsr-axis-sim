@@ -1,0 +1,146 @@
+{
+  "name": "real_video_trace_001_botu_dilemma_3_4_floor12_side1_opening_v0_3",
+  "status": "intake_sequence_confirmed_not_replay_ready",
+  "source": {
+    "type": "manual_video_trace",
+    "platform": "bilibili",
+    "url": "https://www.bilibili.com/video/BV1CXtVzaEQB?vd_source=ac236634092c9f9a4f4b0169249ce344",
+    "title": "【3.4博徒困境】全网首发！0+1风套那刻夏逆属性2金0t砂金！",
+    "scenario": "3.4 博徒困境 第12层 第一面",
+    "notes": "Opening action order confirmed by Ray. Targets/resources/damage/toughness still need confirmation."
+  },
+  "team": [
+    {
+      "slot": 1,
+      "unit_id": "nakxia",
+      "display_name": "那刻夏",
+      "role_notes": "main carry; exact kit mapping pending"
+    },
+    {
+      "slot": 2,
+      "unit_id": "tingyun",
+      "display_name": "停云"
+    },
+    {
+      "slot": 3,
+      "unit_id": "pela",
+      "display_name": "佩拉",
+      "precombat": "uses technique to start combat"
+    },
+    {
+      "slot": 4,
+      "unit_id": "remembrance_trailblazer",
+      "display_name": "记忆主",
+      "summon_or_companion": "迷迷"
+    }
+  ],
+  "precombat": [
+    {
+      "step": 0,
+      "actor": "pela",
+      "action_kind": "technique",
+      "action_label_cn": "佩拉秘技开怪",
+      "target": "enemy_group_or_first_wave",
+      "notes": "Pre-combat opener; exact debuff/toughness effects pending."
+    }
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "expected_actor": "tingyun",
+      "action_kind": "ultimate",
+      "action_label_cn": "停云终结技",
+      "target": "unknown_likely_nakxia",
+      "expect": {},
+      "forced_rng": {},
+      "notes": "Confirm target and energy/SP states."
+    },
+    {
+      "step": 2,
+      "expected_actor": "pela",
+      "action_kind": "skill",
+      "action_label_cn": "佩拉战技",
+      "target": "unknown_enemy",
+      "expect": {},
+      "forced_rng": {},
+      "notes": "Confirm target, SP change, enemy toughness/HP."
+    },
+    {
+      "step": 3,
+      "expected_actor": "remembrance_trailblazer",
+      "action_kind": "skill",
+      "action_label_cn": "记忆主战技",
+      "target": "unknown",
+      "expect": {},
+      "forced_rng": {},
+      "notes": "Confirm whether this affects 迷迷 charge/action advance."
+    },
+    {
+      "step": 4,
+      "expected_actor": "tingyun",
+      "action_kind": "skill",
+      "action_label_cn": "停云战技",
+      "target": "unknown_likely_nakxia",
+      "expect": {},
+      "forced_rng": {},
+      "notes": "Confirm target and SP change."
+    },
+    {
+      "step": 5,
+      "expected_actor": "pela",
+      "action_kind": "ultimate",
+      "action_label_cn": "佩拉终结技",
+      "target": "all_enemies_or_enemy_group",
+      "window": "ultimate_interrupt",
+      "expect": {},
+      "forced_rng": {},
+      "notes": "Occurs before/around 那刻夏's action window. Confirm exact timing."
+    },
+    {
+      "step": 6,
+      "expected_actor": "nakxia",
+      "action_kind": "ultimate",
+      "action_label_cn": "那刻夏终结技",
+      "target": "unknown_enemy_or_all_enemies",
+      "window": "ultimate_interrupt_or_current_actor_window",
+      "expect": {},
+      "forced_rng": {},
+      "notes": "Confirm target, damage, toughness, energy after ult."
+    },
+    {
+      "step": 7,
+      "expected_actor": "nakxia",
+      "action_kind": "basic_plus_bonus_skill",
+      "action_label_cn": "那刻夏普攻 + 额外战技",
+      "target": "unknown_enemy",
+      "expect": {},
+      "forced_rng": {},
+      "notes": "Record as observed trace component; exact kit modeling pending."
+    },
+    {
+      "step": 8,
+      "expected_actor": "mimi",
+      "action_kind": "action_advance",
+      "action_label_cn": "迷迷拉条那刻夏",
+      "target": "nakxia",
+      "expect": {},
+      "forced_rng": {},
+      "notes": "Semantic companion/summon action. Confirm whether it is full advance/immediate action or percentage advance."
+    },
+    {
+      "step": 9,
+      "expected_actor": "nakxia",
+      "action_kind": "skill_plus_bonus_skill",
+      "action_label_cn": "那刻夏战技 + 额外战技",
+      "target": "unknown_enemy",
+      "expect": {},
+      "forced_rng": {},
+      "notes": "Record as observed trace component; exact kit modeling pending."
+    }
+  ],
+  "validation_policy": {
+    "include_in_locked_manifest": false,
+    "allow_missing_expect_fields": true,
+    "purpose": "manual trace intake and opening sequence correction only"
+  }
+}

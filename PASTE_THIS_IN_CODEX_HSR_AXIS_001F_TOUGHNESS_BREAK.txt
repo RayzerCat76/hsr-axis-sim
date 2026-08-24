@@ -1,0 +1,224 @@
+Task ID: HSR-AXIS-001F
+Reasoning: HIGH
+
+You are continuing the same permanent Python project for a Honkai: Star Rail inspired action-axis simulator.
+
+Previous accepted tasks:
+- 001A: deterministic action value timeline core
+- 001A-FIX: resource validation and turn actor validation
+- 001B: replay validator MVP
+- 001C: multi-step Bronya-like + Seele-like replay
+- 001D: generic buff/debuff duration semantics
+- 001E: Damage / Stats / Forced RNG MVP
+
+Do not scrape Huroka/Yatta/HoneyHunter yet.
+Do not implement all real HSR characters yet.
+Do not implement AI axis search yet.
+Do not implement enemy AI yet.
+Do not implement the full HSR damage formula yet.
+
+Goal of this task:
+Add a deterministic Toughness / Weakness / Break MVP so future golden replays can validate toughness changes, weakness break, and break-related action delay.
+
+Important philosophy:
+This is still not full HSR-accurate break math. Build a clean, testable scaffold that can later be extended.
+
+Required deliverables:
+1. Add unit toughness fields.
+2. Add unit weakness fields.
+3. Add a generic toughness damage effect.
+4. Add deterministic weakness break behavior.
+5. Add break-triggered action delay.
+6. Add break-state recovery semantics.
+7. Extend replay JSON loading and expectation checks for toughness/break fields.
+8. Add `toughness_break_mvp.json` golden replay.
+9. Add tests for all new mechanics.
+10. Update README and `hsr_axis_sim/LUMEN_RESULT.md`.
+11. Fix project import/test invocation so both `python -m pytest -q` and `pytest -q` work from the project root.
+
+Suggested architecture:
+
+hsr_axis_sim/
+  sim/
+    unit.py              # add toughness / weakness / broken fields
+    effects.py           # add toughness damage / break effects
+    replay.py            # load/check toughness fields
+    break_logic.py        # optional new module for break helpers
+  data/golden_replays/
+    toughness_break_mvp.json
+  tests/
+    test_toughness_break.py
+    test_replay_validator.py  # extend
+  pyproject.toml          # make pytest import path explicit if needed
+
+Unit model requirements:
+
+Extend `Unit` while preserving backward compatibility with existing construction:
+
+```python
+Unit("id", "Name", "ally", 100)
+```
+
+Add fields with safe defaults:
+
+```python
+element: str | None = None
+weaknesses: list[str] = []
+max_toughness: float = 0
+current_toughness: float | None = None
+is_broken: bool = False
+```
+
+Rules:
+- If `current_toughness is None`, set it to `max_toughness`.
+- If `max_toughness <= 0`, the unit should be considered to have no toughness bar.
+- Toughness should never go below 0.
+- Existing tests must not need edits except where explicitly extending coverage.
+
+Effect requirements:
+
+Add a generic effect such as:
+
+```python
+@dataclass
+class DealToughnessDamage(UnitEffect):
+    amount: float
+    element: str | None = None
+    ignore_weakness: bool = False
+    break_delay_percent: float = 0.25
+```
+
+Suggested behavior:
+
+1. Resolve target units using the existing `UnitEffect` target resolution system.
+2. If target has `max_toughness <= 0`, do nothing.
+3. If `ignore_weakness` is false and `element` is not in target.weaknesses, do not reduce toughness.
+4. If target is already broken, do not reduce toughness further.
+5. Reduce `current_toughness` by `amount`, clamped to 0.
+6. If toughness crosses from >0 to 0, trigger weakness break:
+   - set `target.is_broken = True`
+   - keep `current_toughness = 0`
+   - apply break action delay using the existing AV semantics:
+     `target.current_av += target.base_av * break_delay_percent`
+   - append a readable log entry such as `break:<target_id>`
+
+Break-state recovery MVP:
+
+Use a simple deterministic rule for this task:
+
+- Broken state persists until the broken unit completes its next **normal** turn.
+- At the end of that normal turn:
+  - `is_broken = False`
+  - `current_toughness = max_toughness`
+
+Implementation hint:
+- This likely belongs in `Timeline.end_turn` or a helper called from there.
+- Extra turns should not recover toughness unless the broken unit is taking a normal turn.
+- Do not add full HSR break damage or element-specific break status yet.
+
+Replay Validator requirements:
+
+Update `unit_from_spec` to accept:
+
+```json
+{
+  "element": "quantum",
+  "weaknesses": ["quantum", "ice"],
+  "max_toughness": 60,
+  "current_toughness": 60,
+  "is_broken": false
+}
+```
+
+Update expected unit fields to support:
+
+```json
+{
+  "units": {
+    "enemy_1": {
+      "current_toughness": 0,
+      "max_toughness": 60,
+      "is_broken": true,
+      "current_av": 125
+    }
+  }
+}
+```
+
+Add `DealToughnessDamage` to replay effect deserialization.
+
+Golden replay requirement:
+
+Create `hsr_axis_sim/data/golden_replays/toughness_break_mvp.json`.
+
+It should verify at least this sequence:
+
+1. Ally acts and deals toughness damage with a matching element.
+2. Enemy toughness reaches 0.
+3. Enemy becomes broken.
+4. Enemy is delayed by `base_av * break_delay_percent`.
+5. On enemy's next normal turn end, enemy recovers toughness and `is_broken` becomes false.
+
+Tests required:
+
+1. Toughness damage reduces toughness when element matches weakness.
+2. Toughness damage does not reduce toughness when element does not match weakness.
+3. `ignore_weakness=True` allows toughness damage even without matching weakness.
+4. Toughness is clamped at 0.
+5. Breaking a unit sets `is_broken=True`.
+6. Breaking a unit delays its current AV by `base_av * break_delay_percent`.
+7. Already-broken units do not take additional toughness damage.
+8. Broken unit recovers toughness at the end of its next normal turn.
+9. Extra turns do not recover toughness unless explicitly modeled later.
+10. Replay Validator can load and check toughness/break fields.
+11. `toughness_break_mvp.json` passes via CLI.
+12. All existing tests and golden replays still pass.
+
+Packaging/test command fix:
+
+In Lumen's sandbox, `python -m pytest -q` passed, but bare `pytest -q` had an import-path issue. Make this robust.
+
+Recommended `pyproject.toml`:
+
+```toml
+[tool.pytest.ini_options]
+testpaths = ["hsr_axis_sim/tests"]
+pythonpath = ["."]
+```
+
+Run both commands if pytest is available:
+
+```bash
+python -m compileall -q hsr_axis_sim
+python -m pytest -q
+pytest -q
+```
+
+Replay CLI commands to run:
+
+```bash
+python -m hsr_axis_sim.sim.replay hsr_axis_sim/data/golden_replays/bronya_seele_timeline_mvp.json
+python -m hsr_axis_sim.sim.replay hsr_axis_sim/data/golden_replays/bronya_seele_multistep_mvp.json
+python -m hsr_axis_sim.sim.replay hsr_axis_sim/data/golden_replays/buff_duration_mvp.json
+python -m hsr_axis_sim.sim.replay hsr_axis_sim/data/golden_replays/damage_rng_mvp.json
+python -m hsr_axis_sim.sim.replay hsr_axis_sim/data/golden_replays/toughness_break_mvp.json
+```
+
+Update `hsr_axis_sim/LUMEN_RESULT.md` with:
+- files changed
+- exact tests run
+- exact test results
+- toughness/break rules implemented
+- what is intentionally not full-HSR-accurate yet
+- known assumptions
+- whether 001G is safe to begin
+
+Acceptance criteria:
+- Test suite passes.
+- Existing replay JSONs still pass.
+- New toughness/break replay passes.
+- Existing damage/stat/RNG behavior is not broken.
+- No website scraping.
+- No real character kit implementation.
+- No enemy AI.
+- No AI search.

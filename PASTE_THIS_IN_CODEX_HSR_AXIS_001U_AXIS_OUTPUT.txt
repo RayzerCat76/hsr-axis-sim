@@ -1,0 +1,193 @@
+Task ID: HSR-AXIS-001U
+Task name: Axis Output / Search Report MVP
+
+Codex Reasoning: Medium
+ChatGPT Model: GPT-5.5 is enough; GPT-5.5 Thinking is not required unless you find a deep architecture issue.
+
+Context:
+You are continuing the permanent HSR Axis Simulator project.
+001A–001T are already complete and passing. 001T added evaluator profiles and score breakdowns.
+
+Goal:
+Build a human-readable output/report layer for beam search results.
+
+This task should make search results easier to inspect, compare, and export without changing combat mechanics.
+
+Do NOT:
+- Do not change action value mechanics.
+- Do not change damage formula.
+- Do not change buff/debuff duration logic.
+- Do not change toughness/break logic.
+- Do not change target legality.
+- Do not change enemy AI behavior.
+- Do not scrape Huroka, Yatta, Bilibili, or any external site.
+- Do not build a web UI.
+- Do not implement new AI algorithms beyond formatting existing beam search output.
+
+Required implementation:
+
+1. Add a search report module
+
+Create:
+
+```text
+hsr_axis_sim/search/report.py
+```
+
+It should provide data structures and helpers such as:
+
+```python
+SearchReport
+AxisStepReport
+BeamCandidateReport
+build_search_report(result, evaluator=None, top_k=5)
+format_axis_markdown(report)
+format_axis_text(report)
+search_report_to_dict(report)
+```
+
+The exact names may vary slightly, but the API must be clear and tested.
+
+2. Report contents
+
+A report should include at least:
+
+- best score
+- terminal reason for the best node
+- overall terminated reason from the SearchResult
+- nodes expanded
+- depth reached
+- number of final beam candidates
+- best axis steps
+- final score breakdown if an Evaluator is supplied
+- top-K final beam candidate summary
+
+Each axis step should include:
+
+- step number
+- actor id
+- skill id or action id
+- target ids
+- global AV before
+- global AV after
+- SP after
+- score after
+- human-readable line
+
+Candidate summary should include:
+
+- rank
+- score
+- depth
+- terminal reason
+- number of actions
+- final global AV
+- last action key if available
+
+3. Output formats
+
+Add readable formatting for:
+
+- plain text
+- Markdown
+- JSON-compatible dict
+
+The Markdown format should be suitable to paste into a project note or future guide.
+
+Example style:
+
+```markdown
+# HSR Axis Search Report
+
+## Summary
+- Best score: ...
+- Best terminal reason: ...
+- Search terminated reason: ...
+- Nodes expanded: ...
+- Depth reached: ...
+
+## Best Axis
+| Step | AV before | Actor | Action | Targets | AV after | SP | Score |
+|---:|---:|---|---|---|---:|---:|---:|
+| 1 | 0.000 | carry | skill | enemy_1 | 0.000 | 2 | 12345.000 |
+
+## Score Breakdown
+...
+
+## Final Beam Candidates
+...
+```
+
+4. Preserve existing `format_axis(...)`
+
+The existing `format_axis(node)` function may stay as-is for compatibility.
+You may optionally improve it, but only if existing tests still pass.
+Prefer adding new report functions rather than heavily rewriting old APIs.
+
+5. Optional CLI MVP
+
+Add a small CLI only if it can be done without touching core mechanics.
+Possible module:
+
+```text
+hsr_axis_sim/search/report_cli.py
+```
+
+It can run a small sample search and print the report, or read a minimal JSON scenario if such fixture already exists.
+Do not overbuild the CLI.
+
+6. Tests
+
+Add tests such as:
+
+```text
+hsr_axis_sim/tests/test_search_report.py
+```
+
+Tests should verify:
+
+- report can be built from a beam search result
+- best axis steps are present and ordered
+- Markdown contains Summary / Best Axis / Final Beam Candidates
+- dict export is JSON-serializable
+- score breakdown appears when evaluator is provided
+- top_k candidate limit works
+- existing `format_axis(...)` compatibility is not broken
+
+7. LUMEN_RESULT
+
+Update:
+
+```text
+hsr_axis_sim/LUMEN_RESULT.md
+```
+
+Include:
+
+- files changed
+- tests run
+- exact pass/fail results
+- golden replay CLI results
+- manual video trace lint/replay results
+- what was implemented
+- known limitations
+- whether 001V is safe to begin
+
+Expected tests to run:
+
+```bash
+python -m compileall -q hsr_axis_sim
+python -m pytest -q
+for f in hsr_axis_sim/data/golden_replays/*.json; do python -m hsr_axis_sim.sim.replay "$f"; done
+python -m hsr_axis_sim.sim.replay_lint hsr_axis_sim/data/manual_video_traces/samples/manual_video_trace_sample_mvp.json
+python -m hsr_axis_sim.sim.replay hsr_axis_sim/data/manual_video_traces/samples/manual_video_trace_sample_mvp.json
+```
+
+Acceptance criteria:
+
+- All existing tests still pass.
+- New report tests pass.
+- Golden replays still pass.
+- Manual video trace lint/replay still passes.
+- No combat mechanics are changed.
+- The report output is readable enough for a human to inspect a generated axis.

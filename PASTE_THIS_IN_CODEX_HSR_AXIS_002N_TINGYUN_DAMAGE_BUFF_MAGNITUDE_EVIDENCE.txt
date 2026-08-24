@@ -1,0 +1,185 @@
+Task ID: HSR-AXIS-002N
+Task name: Tingyun Ultimate DMG-Buff Magnitude Evidence Capture MVP
+
+Codex Reasoning: HIGH
+Recommended model: GPT-5.6 Sol
+Fallback model: GPT-5.6 Terra only after the relevant evidence has already been captured and is unambiguous.
+
+Accepted starting point
+=======================
+
+HSR-AXIS-002M-FIX2 has passed independent review:
+
+- complete 421-test collection passed in two disjoint shards;
+- locked regression PASS 20/20;
+- trace-evidence-only regression PASS 2/2;
+- committed reports are byte-identical to regeneration;
+- malformed provenance data is rejected before sorting;
+- readiness remains `blocked_by_both`;
+- no executable Tingyun DMG buff exists.
+
+Do not reopen 002M validator architecture unless a new concrete defect is demonstrated.
+
+Goal
+====
+
+Capture and normalize a version-qualified, source-backed level-scaling table for the DMG-increase component of Tingyun's Ultimate.
+
+This is an evidence-only task. It must not implement the buff in the simulator.
+
+Scope
+=====
+
+Resolve only this atomic fact if adequate evidence is found:
+
+- `tingyun.ultimate.damage_buff.magnitude_by_trace_level`
+
+Preserve as unresolved/missing:
+
+- the real video's Tingyun trace level;
+- which ally Tingyun selected in the accepted video;
+- DMG-buff application order relative to target Energy restoration;
+- same-current-turn duration behavior;
+- executable simulator binding.
+
+Source requirements
+===================
+
+1. Prefer release/live structured game data with an exact field locator or stable structured path.
+2. Seek at least one independent corroborating source for the level table.
+3. Record for every accepted source:
+   - source ID;
+   - title;
+   - locator;
+   - source type;
+   - language;
+   - game version or snapshot qualification;
+   - retrieval date;
+   - exact field/page locator;
+   - whether the source supports the exact field or only context.
+4. Preserve the source's raw level numbering and values before normalization.
+5. Do not infer missing levels from memory, interpolation, a single displayed level, guide prose, or the recorded video.
+6. Do not claim that a current page is byte-identical to version 3.4 unless the source proves it.
+7. If browsing or an exact table is unavailable, stop safely and produce a blocked evidence-intake result. Do not invent values.
+
+Normalization contract
+======================
+
+If a valid table is captured, create an evidence-only normalized representation that clearly distinguishes:
+
+- raw source level index;
+- normalized trace level, only where mapping is explicitly supported;
+- DMG increase value;
+- unit (`percent`);
+- version applicability;
+- provenance for each normalized row or table block.
+
+Do not assume the player-accessible maximum trace level. Preserve extra source rows separately if the structured source exposes internal levels beyond normal gameplay.
+
+Required implementation
+=======================
+
+Add a narrowly scoped evidence artifact and validator/report tooling for the magnitude table. Suggested locations may follow the existing 002M evidence-review pattern, but do not copy unsafe assumptions.
+
+The validator must:
+
+- strictly validate all JSON-compatible input types before sets, sorting, comparison or dataclass construction;
+- reject duplicate levels and duplicate source IDs;
+- reject booleans where integers or numeric percentages are required;
+- reject NaN and infinity if floating-point values are accepted;
+- require deterministic ordering;
+- require exact provenance locators;
+- keep `simulator_binding_allowed: false`;
+- preserve controlled CLI exit codes with no traceback.
+
+Readiness rules
+===============
+
+Do not automatically mark the damage buff ready for binding.
+
+Even if the magnitude table becomes source-backed, readiness should remain blocked while either of these remains unresolved:
+
+- buff-versus-Energy application order;
+- same-current-turn duration semantics.
+
+The real-video trace level must remain unknown, so this task must not select a magnitude for the accepted video.
+
+Required tests
+==============
+
+Add focused tests for:
+
+1. valid exact table ingestion;
+2. deterministic rendering;
+3. duplicate level rejection;
+4. non-string provenance IDs/locators rejection;
+5. object/list/boolean/null in numeric fields rejection;
+6. NaN/infinity rejection if floats are supported;
+7. malformed CLI input exits 1 with no traceback;
+8. missing/unavailable source path exits 2 without traceback;
+9. no executable schema keys;
+10. no real-video trace-level inference;
+11. no change to current Tingyun Energy binding;
+12. no change to Pela binding or reviewed registry;
+13. locked regression remains 20/20;
+14. trace-evidence-only regression remains 2/2.
+
+Deliverables
+============
+
+- evidence/source artifact(s);
+- normalized magnitude-table artifact or explicit blocked intake artifact;
+- validator/report CLI;
+- deterministic Markdown and JSON reports;
+- focused tests;
+- `hsr_axis_sim/LUMEN_RESULT.md`.
+
+LUMEN_RESULT must state:
+
+- exact sources retrieved or why retrieval was blocked;
+- exact field locators;
+- raw table and normalized table relationship;
+- fields resolved and fields still unresolved;
+- whether readiness changed and why;
+- exact test/regression results;
+- confirmation that no executable buff or 002O work was added.
+
+Preservation gates
+==================
+
+Preserve exactly:
+
+- 002M six-fact evidence contract except for a source-backed update to the magnitude fact;
+- readiness logic;
+- current duration-semantics assessment;
+- Tingyun Energy partial binding;
+- Pela partial binding;
+- reviewed registry with exactly two entries;
+- simulator/search/evaluator/replay behavior;
+- locked manifest and counts;
+- accepted real-video action sequence and evidence artifacts.
+
+Scope exclusions
+================
+
+Do not:
+
+- implement AddBuff for Tingyun's Ultimate;
+- choose the accepted video's target or trace level;
+- choose buff-versus-Energy order;
+- declare the same-current-turn duration edge verified;
+- edit combat damage formulas;
+- add a third reviewed binding;
+- start HSR-AXIS-002O.
+
+Required final checks
+=====================
+
+Run:
+
+python -m compileall -q hsr_axis_sim
+python -m pytest -q
+python -m hsr_axis_sim.regression.runner --manifest hsr_axis_sim/data/regression_manifest.json --format text
+python -m hsr_axis_sim.regression.runner --manifest hsr_axis_sim/data/regression_manifest.json --only trace_evidence --format text
+
+Run the new magnitude-evidence CLI in Markdown and JSON modes and confirm committed outputs are byte-identical to regeneration.

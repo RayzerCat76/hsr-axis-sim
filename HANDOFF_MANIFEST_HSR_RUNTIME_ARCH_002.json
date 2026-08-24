@@ -1,0 +1,52 @@
+{
+  "task_id": "HSR-RUNTIME-ARCH-002",
+  "title": "Event Envelope Adapter Bridge",
+  "created": "2026-07-12",
+  "recommended_model": "GPT-5.6 Sol",
+  "codex_reasoning": "High",
+  "starting_baseline": {
+    "latest_completed_task": "HSR-RUNTIME-ARCH-001",
+    "decision": "PASS",
+    "pytest": {
+      "passed": 718,
+      "failed": 0
+    },
+    "locked_regression": {
+      "passed": 20,
+      "failed": 0
+    },
+    "trace_evidence": {
+      "passed": 2,
+      "failed": 0
+    }
+  },
+  "files": {
+    "PASTE_THIS_IN_CODEX_HSR_RUNTIME_ARCH_002.txt": "8a69d3722a353f5238d19601dfce080e6fa6dde158218b86efa5cd1ba283e1e7",
+    "LUMEN_TASK_HSR_RUNTIME_ARCH_002.md": "284f8cf66a955ea1f5583ea50f817688c23f1bdda8ec3d55dc5829e9bc05b118",
+    "BASELINE_HSR_RUNTIME_ARCH_002.txt": "7aeee8e220843202d963a8af1f752cbec4f4f61eb6a58c48dbeed35a46c25c31",
+    "REFERENCE_LEGACY_EVENT_SURFACE_HSR_RUNTIME_ARCH_002.md": "6d28569b81c11c6620c6bb69984e3cf9da1162f2169fc4b1022198519abbb7fe",
+    "REFERENCE_LEGACY_EVENT_SURFACE_HSR_RUNTIME_ARCH_002.json": "97142cfc8e8834c99f53ae9bf133e73b723e96fefe30b9c4649c92304e2d4b19",
+    "LUMEN_REVIEW_HSR_RUNTIME_ARCH_001_AFTER_CODEX.md": "12c86271d4e072bb373796743ae3ac785a7abac642b380c79abb532deb988750"
+  },
+  "placement": {
+    "prompt": "Paste into Codex after extracting the bundle into the current repository root.",
+    "task": "Repository root; new task reference.",
+    "reference_files": "docs/runtime/research/; new byte-identical reference files.",
+    "review": "Repository root or handoff audit folder; do not replace production files."
+  },
+  "preservation": [
+    "hsr_axis_sim/sim/**",
+    "hsr_axis_sim/runtime_contracts/**",
+    "hsr_axis_sim/search/**",
+    "hsr_axis_sim/regression/**",
+    "hsr_axis_sim/adapters/**",
+    "hsr_axis_sim/real_bindings/**",
+    "hsr_axis_sim/data/**",
+    "fixtures/**",
+    "README.md",
+    "pyproject.toml",
+    "PACKAGE_MANIFEST.json",
+    "all existing tests",
+    "HSR-AXIS-002Q-FIX artifacts"
+  ]
+}

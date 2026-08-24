@@ -1,0 +1,119 @@
+HSR-AXIS-002O independent review
+================================
+
+Package reviewed:
+  hsr_axis_001a_package(53).zip
+
+Compile gate
+------------
+Command:
+  python -m compileall -q hsr_axis_sim
+Result:
+  PASS
+
+Complete pytest collection
+--------------------------
+The project contains 45 test files and 458 collected tests.
+A single invocation exceeded the sandbox time limit after exposing two failures,
+so the files were run in four non-overlapping groups.
+
+Group 1:
+  121 passed in 0.36s
+
+Group 2:
+  175 passed in 17.63s
+
+Group 3:
+  85 passed, 2 failed in 18.13s
+
+Group 4:
+  75 passed in 20.04s
+
+Total:
+  456 passed
+  2 failed
+  458 total
+
+Failing tests
+-------------
+1. test_object_list_bool_rejected_in_scalar_semantic_fields[status-value0]
+2. test_object_list_bool_rejected_in_scalar_semantic_fields[status-value1]
+
+Root exception:
+  TypeError: unhashable type: 'dict'
+  TypeError: unhashable type: 'list'
+
+Focused 002O tests
+------------------
+Command:
+  python -m pytest -q hsr_axis_sim/tests/test_tingyun_ultimate_damage_buff_semantic_readiness.py -vv
+Result:
+  26 passed, 2 failed
+
+Locked regression
+-----------------
+Command:
+  python -m hsr_axis_sim.regression.runner \
+    --manifest hsr_axis_sim/data/regression_manifest.json \
+    --format text
+Result:
+  PASS 12/12 golden replays
+  PASS 2/2 manual checks
+  PASS 2/2 search scenarios
+  PASS 2/2 action-sequence trace checks
+  PASS 2/2 trace evidence checks
+  PASS 20/20 total
+
+Trace-evidence-only regression
+------------------------------
+Command:
+  python -m hsr_axis_sim.regression.runner \
+    --manifest hsr_axis_sim/data/regression_manifest.json \
+    --only trace_evidence \
+    --format text
+Result:
+  PASS 2/2
+
+Deterministic reports
+---------------------
+Markdown regeneration:
+  PASS, byte-identical
+  SHA-256: 7afa0d13a92faf654530c40c799f0daff49f18718a4087735016384a2b3dea52
+
+JSON regeneration:
+  PASS, byte-identical
+  SHA-256: d401cb85ff580d563ff44e415c1bd379957caa6e5a7a6f0353e68aef6e802a21
+
+Independent malformed-input matrix
+----------------------------------
+Mutations exercised:
+  220
+Controlled ValueError:
+  214
+Native exception leaks:
+  2
+No-op mutations equal to original valid values:
+  4
+
+Native leaks:
+  semantic_claims[*].status = object -> TypeError
+  semantic_claims[*].status = list   -> TypeError
+
+CLI reproduction
+----------------
+Readable JSON with semantic_claims[*].status = object:
+  exit code: 2
+  traceback: absent
+  stderr classification: ERROR
+
+Required result after fix:
+  exit code: 1
+  traceback: absent
+  stderr classification: validation failure
+
+Preservation comparison
+-----------------------
+Compared with accepted package hsr_axis_001a_package(52).zip.
+Only the intended 002O files, carried review/task files, LUMEN_RESULT, caches,
+and test-run metadata differ. Historical 002M/002N artifacts and existing
+simulator/binding source files are unchanged.

@@ -1,0 +1,203 @@
+Task ID: HSR-AXIS-002Q-FIX
+Task name: Strict unresolved-semantic contract and locator-pin hardening
+
+Codex Reasoning: MEDIUM
+Recommended model: GPT-5.6 Terra
+Upgrade model: GPT-5.6 Sol only if the validator cannot be hardened without redesigning the evidence schema.
+
+Starting point
+==============
+
+Replacement HSR-AXIS-002Q correctly normalizes the accepted target-normal-turn-entry claim, reproduces the current engine gap, passes all existing tests and regressions, and changes no runtime behavior.
+
+Independent review found one semantic-integrity class of blocker:
+
+A readable tampered review can keep an unresolved status while filling unresolved output fields with invented strings. The validator accepts it and the CLI exits 0.
+
+Confirmed accepted tamper:
+
+- `zero_counter_effect_lifetime.effect_active_during_entered_turn = "true"`
+- `extra_action_consumption.extra_action_consumes = "true"`
+- `extra_turn_consumption.extra_turn_consumes = "true"`
+
+The successful rendered report then contains those invented assertions.
+
+Independent review also confirmed that source locators are not strictly pinned: path and digest are checked, but arbitrary locator replacement is accepted.
+
+Objective
+=========
+
+Harden only the replacement-002Q validator and focused tests so that the versioned evidence artifact preserves its exact semantic contract.
+
+Do not modify the normalized evidence input or the committed Markdown/JSON reports unless absolutely required. The preferred result is validator-only hardening with byte-identical reports.
+
+Required changes
+================
+
+1. Exact review identity
+------------------------
+
+Require exact values:
+
+- `review_id = tingyun_ultimate_turn_entry_duration_gap_v0_1`
+- `version = 0.1`
+
+Reject changed values with controlled `ValueError`.
+
+2. Exact source locator pins
+----------------------------
+
+Upgrade the supplied-reference and project-source pin contracts from:
+
+`source_id -> (path, digest)`
+
+to an exact contract that also includes the accepted locator set/list.
+
+For every source pin, validate:
+
+- exact source ID;
+- exact path;
+- exact SHA-256;
+- exact locator values;
+- no missing locator;
+- no extra locator;
+- no duplicate locator;
+- deterministic ordering in output.
+
+Changing any locator to `"tampered"` must fail.
+
+3. Exact per-claim semantic contracts
+-------------------------------------
+
+Create a data-driven `CLAIM_CONTRACTS` or equivalent for all eight claims.
+
+Each contract must enforce at least:
+
+- exact `claim_id`;
+- exact `claim_value` and type;
+- exact `verification_status`;
+- exact source-ID set;
+- exact nullable semantic fields;
+- exact unresolved-field set;
+- `simulator_binding_allowed = false`;
+- stable claim scope, release-game claim, current-engine behavior, and observable-boundary meaning.
+
+A strict exact template is preferred because this is a versioned evidence artifact, not an extensible user-authored note format.
+
+4. Unresolved outputs must remain null
+--------------------------------------
+
+At minimum enforce:
+
+- `zero_counter_effect_lifetime.effect_active_during_entered_turn = null`
+- `extra_action_consumption.extra_action_consumes = null`
+- `extra_turn_consumption.extra_turn_consumes = null`
+- `turn_started_event_order.event_order_relative_to_turn_started = null`
+- `same_id_refresh_active_turn.refresh_behavior = null`
+
+Also keep every other unresolved per-claim semantic output null unless the accepted input contract explicitly contains a non-null candidate-boundary description.
+
+Do not treat a non-empty string as acceptable merely because the overall claim status remains unresolved.
+
+5. Exact unresolved fields and source provenance
+------------------------------------------------
+
+Reject:
+
+- removed required source IDs;
+- added unrelated source IDs;
+- replaced unresolved-field labels;
+- missing unresolved fields;
+- extra unresolved fields.
+
+6. Exact boundary-case contracts
+--------------------------------
+
+Create exact per-case contracts for all seven boundary cases, including:
+
+- exact case ID;
+- exact accepted evidence boundary;
+- exact current-engine boundary classification;
+- exact `fully_decidable` value;
+- exact `runtime_assertion_unsafe` value;
+- exact unresolved-field set.
+
+Changing an unresolved-field label to `"tampered"` must fail.
+
+7. Gap contract hardening
+-------------------------
+
+Keep all exact gap IDs and statuses. Also prevent arbitrary semantic replacement of the gap summary, either by exact summary contract or by a stable structured semantic code with deterministic rendering.
+
+Do not change the accepted gap classifications.
+
+Required negative tests
+=======================
+
+Add focused tests proving controlled rejection of:
+
+1. the three confirmed invented assertions listed above;
+2. `turn_started_event_order.event_order_relative_to_turn_started = "before_turn_started"`;
+3. `same_id_refresh_active_turn.refresh_behavior = "refresh_consumes_active_turn"`;
+4. a supplied-reference locator changed to `"tampered"`;
+5. a project-source locator changed to `"tampered"`;
+6. a required claim source ID removed;
+7. an unrelated valid source ID added to a claim;
+8. a claim unresolved-field label replaced;
+9. a boundary-case unresolved-field label replaced;
+10. changed `review_id`;
+11. changed `version`.
+
+For readable invalid CLI input:
+
+- exit 1;
+- no traceback;
+- no successful report body.
+
+Continue testing object/list/bool/number/null mutations for controlled `ValueError` and zero native exception leakage.
+
+Preservation requirements
+=========================
+
+Do not change:
+
+- `hsr_axis_sim/sim/**` runtime behavior;
+- Timeline, Unit, Buff, AddBuff, Action, interrupt, event, trigger, state, or TurnContext;
+- existing Tingyun/Pela bindings;
+- reviewed registry;
+- locked regression manifest;
+- accepted 002O/002P artifacts;
+- Bilibili evidence status;
+- accepted project-domain boundary;
+- conclusion/readiness values;
+- any 002R implementation.
+
+Keep these report digests unchanged if the input artifact does not need correction:
+
+- JSON: `af9aedfbb0f9fbdcc16e78f05b7929cae96932beea36779cc88afba54561da7b`
+- Markdown: `6568ffdde296c3d96f0196480747b22c71ef84099076bdc8a210608b006eef60`
+
+Required gates
+==============
+
+Run and report:
+
+1. `python -m compileall -q hsr_axis_sim`
+2. complete `python -m pytest -q`
+3. focused replacement-002Q tests
+4. locked regression PASS 20/20
+5. trace-evidence-only regression PASS 2/2
+6. report regeneration byte comparison
+7. confirmed tamper CLI cases exit 1 without traceback
+8. diff/preservation confirmation
+
+Update `hsr_axis_sim/LUMEN_RESULT.md` with:
+
+- exact files changed;
+- exact tests executed;
+- confirmed semantic tamper cases now rejected;
+- locator pins now exact;
+- report digests;
+- preservation confirmation.
+
+Stop after HSR-AXIS-002Q-FIX. Do not start 002R.

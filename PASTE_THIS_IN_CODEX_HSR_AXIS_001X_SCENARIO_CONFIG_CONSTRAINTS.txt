@@ -1,0 +1,237 @@
+Task ID: HSR-AXIS-001X
+Title: Scenario Config V1 / Search Constraints MVP
+
+Codex Reasoning: Medium
+ChatGPT Model recommendation: GPT-5.5
+Reason: This task mostly adds scenario config parsing, action-choice filtering, CLI/report metadata, and tests. It should not change combat-core mechanics. Use GPT-5.5 Thinking only if the constraint plumbing unexpectedly touches beam-search branching semantics in a nontrivial way.
+
+Context:
+We have completed HSR-AXIS-001W. The project now has:
+- action-value timeline mechanics
+- replay validation
+- buffs/debuffs
+- damage formula V1
+- toughness/break MVP
+- event hooks/triggers
+- data-driven character specs
+- target legality
+- action generation
+- ultimate interrupt windows
+- enemy AI pattern MVP
+- beam search
+- evaluator profiles
+- search report output
+- CLI scenario runner
+- timeline snapshot export
+
+Current problem:
+The search engine can generate legal actions, but scenario files cannot yet constrain the search space beyond max_depth, beam_width, profile, include_ultimates, max_global_av, and max_nodes_expanded.
+
+For real axis-search work, we need scenario-level constraints such as:
+- only allow certain actors to be manually searched
+- disable a skill that a player does not want to use
+- restrict targets for debugging or reproducing a known axis
+- cap branching deterministically for small experiments
+
+Goal:
+Add a conservative search-constraints layer to scenario config and search expansion. The constraints should filter already-generated legal choices. They must not bypass existing legality/resource checks and must not mutate loaded skill specs or battle state.
+
+Hard scope boundaries:
+- Do NOT change battle timeline semantics.
+- Do NOT change damage formula semantics.
+- Do NOT change break/toughness semantics.
+- Do NOT change buff/debuff duration semantics.
+- Do NOT change target legality rules.
+- Do NOT change enemy AI pattern semantics.
+- Do NOT scrape Huroka, Yatta, Bilibili, or any external website.
+- Do NOT implement real character imports.
+- Do NOT build a web UI.
+- Do NOT add external dependencies.
+- Do NOT implement forced-prefix replay scripting in this task unless it is trivial and fully tested. Prefer filtering constraints first.
+
+Recommended architecture:
+
+1. Add a search constraints module, for example:
+
+```text
+hsr_axis_sim/search/constraints.py
+```
+
+Suggested dataclass:
+
+```python
+@dataclass
+class SearchConstraints:
+    allowed_actor_ids: set[str] | None = None
+    disabled_actor_ids: set[str] = field(default_factory=set)
+    allowed_skill_ids: set[str] | None = None
+    disabled_skill_ids: set[str] = field(default_factory=set)
+    allowed_skill_ids_by_actor: dict[str, set[str]] = field(default_factory=dict)
+    disabled_skill_ids_by_actor: dict[str, set[str]] = field(default_factory=dict)
+    allowed_target_ids: set[str] | None = None
+    disabled_target_ids: set[str] = field(default_factory=set)
+    max_choices_per_node: int | None = None
+```
+
+You may adjust names if the existing code style suggests something cleaner.
+
+Important semantics:
+- If an `allowed_*` field is `None`, it means unrestricted.
+- If an `allowed_*` field is an empty set, it means allow none.
+- `disabled_*` always excludes.
+- Actor-level skill allow/disable rules should override or combine clearly with global rules. Recommended: a choice is legal only if it passes all applicable global and per-actor filters.
+- Target filtering should apply to every id in `choice.target_ids`. For group targets, the entire target group must pass.
+
+2. Add a function such as:
+
+```python
+filter_action_choices(choices: list[ActionChoice], constraints: SearchConstraints | None) -> list[ActionChoice]
+```
+
+It should:
+- preserve original choice order unless `max_choices_per_node` applies.
+- apply actor filters.
+- apply skill filters.
+- apply target filters.
+- apply deterministic branch cap after filtering.
+
+If a branch cap is implemented, either preserve input order or sort by a stable key such as:
+
+```python
+(actor_id, skill_id, ",".join(target_ids))
+```
+
+Pick one deterministic policy and test it.
+
+3. Integrate constraints into `SearchConfig` / `SearchEngine`.
+
+`SearchConfig` should be able to carry:
+
+```python
+constraints: SearchConstraints | None = None
+```
+
+In `SearchEngine._expand_next_normal_action(...)`, after `legal_action_choices_for_actor(...)`, apply constraints to the choices.
+
+In `SearchEngine._expand_ultimates(...)`, after `legal_ultimate_choices(...)`, apply constraints too.
+
+Important:
+- Enemy AI actions should continue to execute according to enemy AI plans. Do not accidentally block enemies because `allowed_actor_ids` only names allies. If you choose to let constraints apply to enemies too, document it and add tests. Preferred MVP: constraints apply to generated player/search choices, not fixed enemy AI plan execution.
+
+4. Handle no-choice cases clearly.
+
+If constraints filter all choices at a node, the search should not silently loop on the same node forever.
+
+Recommended behavior:
+- Return no children from expansion.
+- Beam search should preserve a clear terminal reason, such as `no_legal_choices` or `constraints_no_choices`.
+
+If current beam search needs a small adjustment to avoid `children or [node]` hiding this situation, make the minimal change and test it carefully.
+
+5. Add scenario JSON support.
+
+Update `hsr_axis_sim/search/scenario.py` so scenario files can include:
+
+```json
+{
+  "search": {
+    "max_depth": 2,
+    "beam_width": 3,
+    "profile": "generic_kill",
+    "include_ultimates": false,
+    "constraints": {
+      "allowed_actor_ids": ["seele_like", "bronya_like"],
+      "disabled_skill_ids_by_actor": {
+        "bronya_like": ["ultimate"]
+      },
+      "disabled_target_ids": ["enemy_2"],
+      "max_choices_per_node": 4
+    }
+  }
+}
+```
+
+Suggested config fields:
+- `allowed_actor_ids`
+- `disabled_actor_ids`
+- `allowed_skill_ids`
+- `disabled_skill_ids`
+- `allowed_skill_ids_by_actor`
+- `disabled_skill_ids_by_actor`
+- `allowed_target_ids`
+- `disabled_target_ids`
+- `max_choices_per_node`
+
+Validate types enough that malformed config fails clearly.
+
+6. Add at least one sample scenario fixture:
+
+```text
+hsr_axis_sim/data/search_scenarios/constrained_search_mvp.json
+```
+
+This fixture should prove constraints are actually used. Keep it small and deterministic.
+
+Example purposes:
+- disable `skill` for one actor and verify best axis uses only `basic`, or
+- disable `enemy_2` as target and verify no best-axis step targets `enemy_2`, or
+- allow only one actor and verify other ally actors do not appear as chosen player actions.
+
+Do not rely only on printed strings; tests should inspect parsed report data where possible.
+
+7. Update report/scenario metadata if useful.
+
+Minimum requirement:
+- scenario parsing should keep constraints in the `SearchScenario` object.
+- JSON report does not have to include full constraints, but it is useful if it includes enough metadata or tests verify constraints from the scenario object.
+
+Do not make text/Markdown reports too verbose by default.
+
+8. Add/update tests.
+
+Required tests:
+- `SearchConstraints` with no constraints preserves choices.
+- disabled actor removes choices for that actor.
+- allowed actor permits only that actor.
+- disabled skill id removes matching choices.
+- per-actor disabled skill id only affects that actor.
+- disabled target removes target groups containing that target.
+- allowed target permits only target groups fully contained in the allow list.
+- `max_choices_per_node` caps choices deterministically.
+- scenario config parses constraints.
+- constrained scenario CLI runs.
+- constrained scenario JSON/Markdown output does not include disabled target/skill in best-axis steps.
+- all previous tests still pass.
+
+9. Run validation commands.
+
+Run:
+
+```bash
+python -m compileall -q hsr_axis_sim
+python -m pytest hsr_axis_sim/tests -q
+for f in hsr_axis_sim/data/golden_replays/*.json; do python -m hsr_axis_sim.sim.replay "$f"; done
+python -m hsr_axis_sim.sim.replay_lint hsr_axis_sim/data/manual_video_traces/samples/manual_video_trace_sample_mvp.json
+python -m hsr_axis_sim.sim.replay hsr_axis_sim/data/manual_video_traces/samples/manual_video_trace_sample_mvp.json
+python -m hsr_axis_sim.search.scenario hsr_axis_sim/data/search_scenarios/basic_search_mvp.json --format markdown
+python -m hsr_axis_sim.search.scenario hsr_axis_sim/data/search_scenarios/basic_search_mvp.json --format markdown --include-snapshots
+python -m hsr_axis_sim.search.scenario hsr_axis_sim/data/search_scenarios/basic_search_mvp.json --format json
+python -m hsr_axis_sim.search.scenario hsr_axis_sim/data/search_scenarios/constrained_search_mvp.json --format markdown
+python -m hsr_axis_sim.search.scenario hsr_axis_sim/data/search_scenarios/constrained_search_mvp.json --format json
+```
+
+10. Update LUMEN_RESULT.md.
+
+LUMEN_RESULT.md must include:
+- files changed
+- tests run
+- exact pass/fail results
+- what constraints were implemented
+- no-choice behavior
+- scenario fixture behavior
+- what is intentionally not implemented
+- known limitations
+- whether 001Y is safe to begin
+
+Deliverable:
+A working 001X implementation with passing tests, a constrained scenario fixture, and no combat-core semantic changes.

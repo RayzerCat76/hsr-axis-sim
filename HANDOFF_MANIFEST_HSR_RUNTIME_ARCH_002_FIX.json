@@ -1,0 +1,38 @@
+{
+  "task_id": "HSR-RUNTIME-ARCH-002-FIX",
+  "decision": "PARTIAL — fixes required",
+  "created": "2026-07-12",
+  "recommended_model": "GPT-5.6 Terra",
+  "codex_reasoning": "Medium",
+  "independent_results": {
+    "focused_arch_002": {
+      "passed": 27,
+      "failed": 0
+    },
+    "complete": {
+      "passed": 743,
+      "failed": 2,
+      "total": 745
+    },
+    "locked_regression": {
+      "passed": 20,
+      "failed": 0
+    },
+    "trace_evidence": {
+      "passed": 2,
+      "failed": 0
+    }
+  },
+  "restored_files": {
+    "docs/runtime/ARCHITECTURE_CONTRACT_V1.md": "7665b8214cdd8ad12f23735b2ad4e214d33b3feafd74d2b4199a71826bdd0539",
+    "docs/runtime/UNRESOLVED_SEMANTICS_V1.json": "70b2e84706bf6fcb0c5e59a0d10fc0f223c5b217c8c2535595fb3c3884150bf5",
+    "docs/runtime/research/HSR_RUNTIME_FRAMEWORK_BASELINE_V1_0.md": "cf6b94fb29ce8ca2cf5e0dbcd125c87a65c026304bf8c68dfdd0a4e7b9074817",
+    "docs/runtime/research/HSR_RUNTIME_FORMULA_REGISTRY_V1_0.json": "7adaeb30b38c70c9c32de39925561abdf64ef1415e9fdd57b56026feca6912d9",
+    "docs/runtime/research/HSR_RUNTIME_DEFENSE_TOUGHNESS_PRECISION_MODEL_V1_0.json": "cf3e46a7a0a12db73f30bc96837a143061e1a012d66384c43eb20685d6a223b3"
+  },
+  "allowed_modifications": [
+    "hsr_axis_sim/runtime_adapters/legacy_events.py",
+    "hsr_axis_sim/tests/test_runtime_legacy_event_stream.py",
+    "hsr_axis_sim/LUMEN_RESULT.md"
+  ]
+}

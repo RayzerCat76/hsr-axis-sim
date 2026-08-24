@@ -1,0 +1,230 @@
+Task ID: HSR-AXIS-001Y
+Title: Batch Scenario Regression Runner MVP
+
+Codex Reasoning: Medium
+ChatGPT Model recommendation: GPT-5.5
+Reason: This task is mostly CLI/reporting/orchestration over already-working validators and scenario runners. It should not change combat-core mechanics. Use GPT-5.5 Thinking only if you unexpectedly need to modify beam-search or replay internals.
+
+Context:
+We have completed HSR-AXIS-001X. The project now has:
+- action-value timeline mechanics
+- replay validation
+- manual video trace protocol
+- buffs/debuffs
+- damage formula V1
+- toughness/break and break damage MVP
+- event hooks/triggers
+- data-driven character specs
+- target legality and action generation
+- ultimate interrupt windows
+- enemy AI pattern MVP
+- beam search
+- evaluator profiles
+- search report output
+- CLI scenario runner
+- timeline snapshot export
+- scenario constraints
+
+Current problem:
+Every review currently requires running many separate commands:
+- compileall
+- pytest
+- every golden replay JSON
+- manual video trace lint
+- manual video trace replay
+- every search scenario JSON
+
+This is error-prone. Before larger real-video calibration work, we need one local regression command that runs all project validation fixtures and produces a compact report.
+
+Goal:
+Add a batch regression runner that can run replay validation, manual video trace lint/replay, and search scenario smoke tests from one command.
+
+Hard scope boundaries:
+- Do NOT change battle timeline semantics.
+- Do NOT change damage formula semantics.
+- Do NOT change break/toughness semantics.
+- Do NOT change buff/debuff duration semantics.
+- Do NOT change target legality rules.
+- Do NOT change enemy AI semantics.
+- Do NOT change beam-search scoring or candidate ordering.
+- Do NOT scrape Huroka, Yatta, Bilibili, or any external website.
+- Do NOT implement real character imports.
+- Do NOT build a web UI.
+- Do NOT add external dependencies.
+- Do NOT require pytest inside the regression runner. Pytest remains a developer command; this runner should validate data fixtures and CLIs using in-process project code.
+
+Recommended architecture:
+
+Create a regression package, for example:
+
+```text
+hsr_axis_sim/regression/
+  __init__.py
+  runner.py
+```
+
+The runner should be invokable as:
+
+```bash
+python -m hsr_axis_sim.regression.runner
+```
+
+Optional CLI arguments:
+
+```bash
+python -m hsr_axis_sim.regression.runner --format text
+python -m hsr_axis_sim.regression.runner --format markdown
+python -m hsr_axis_sim.regression.runner --format json
+python -m hsr_axis_sim.regression.runner --output regression_report.md
+python -m hsr_axis_sim.regression.runner --fail-fast
+python -m hsr_axis_sim.regression.runner --only replays
+python -m hsr_axis_sim.regression.runner --only manual
+python -m hsr_axis_sim.regression.runner --only scenarios
+```
+
+Supported groups:
+
+1. `replays`
+   - Scan `hsr_axis_sim/data/golden_replays/*.json`.
+   - Validate each replay using the existing replay validation API rather than shelling out if possible.
+   - Record pass/fail, fixture id/name, path, checked steps, and error message if failed.
+
+2. `manual`
+   - Scan `hsr_axis_sim/data/manual_video_traces/samples/*.json` for MVP.
+   - Run existing manual trace lint logic.
+   - Run replay validation on the same file.
+   - Record lint pass/fail and replay pass/fail separately or as two checks.
+
+3. `scenarios`
+   - Scan `hsr_axis_sim/data/search_scenarios/*.json`.
+   - Load each scenario using existing scenario loader.
+   - Run search using existing scenario runner.
+   - Render at least JSON or report object internally to ensure serialization works.
+   - Record pass/fail, best score, terminal reason, depth reached, nodes expanded.
+
+Do not use subprocess unless the existing code makes in-process calls impossible. Prefer direct Python calls so tests are faster and errors are structured.
+
+Suggested data classes:
+
+```python
+@dataclass
+class RegressionCheckResult:
+    group: str
+    name: str
+    path: str
+    passed: bool
+    details: dict[str, Any] = field(default_factory=dict)
+    error: str | None = None
+
+@dataclass
+class RegressionReport:
+    passed: bool
+    total: int
+    passed_count: int
+    failed_count: int
+    results: list[RegressionCheckResult]
+```
+
+Output requirements:
+
+Text format should be compact, for example:
+
+```text
+HSR Axis Regression Report
+PASS 12/12 golden replays
+PASS 2/2 manual checks
+PASS 2/2 search scenarios
+
+[PASS] replays break_damage_elemental_mvp checked_steps=1
+[PASS] scenarios basic_search_mvp best_score=102850.000 terminal=max_depth
+...
+```
+
+Markdown format should include:
+
+```text
+# HSR Axis Regression Report
+
+## Summary
+| Group | Passed | Failed | Total |
+...
+
+## Checks
+| Status | Group | Name | Details |
+...
+```
+
+JSON format should be stable and machine-readable:
+
+```json
+{
+  "passed": true,
+  "total": 26,
+  "passed_count": 26,
+  "failed_count": 0,
+  "results": [...]
+}
+```
+
+Exit code behavior:
+- Return `0` if all selected checks pass.
+- Return nonzero if any selected check fails or if an invalid `--only` group is provided.
+- With `--fail-fast`, stop after the first failure.
+
+Testing requirements:
+
+Add tests, for example:
+
+```text
+hsr_axis_sim/tests/test_regression_runner.py
+```
+
+Required tests:
+- default runner discovers golden replays, manual trace samples, and search scenarios.
+- default in-process runner returns a passing report on existing fixtures.
+- `--only replays` limits to replay checks.
+- `--only manual` limits to manual checks.
+- `--only scenarios` limits to scenario checks.
+- text renderer contains report title and pass counts.
+- markdown renderer contains report title and summary table.
+- JSON renderer is valid and includes results.
+- `--output` writes a file.
+- invalid `--only` fails clearly.
+- `--fail-fast` stops after first failure. You may implement this with a temporary intentionally bad fixture or by monkeypatching a check function.
+
+Validation commands to run:
+
+```bash
+python -m compileall -q hsr_axis_sim
+python -m pytest hsr_axis_sim/tests -q
+python -m hsr_axis_sim.regression.runner --format text
+python -m hsr_axis_sim.regression.runner --format markdown
+python -m hsr_axis_sim.regression.runner --format json
+python -m hsr_axis_sim.regression.runner --only replays
+python -m hsr_axis_sim.regression.runner --only manual
+python -m hsr_axis_sim.regression.runner --only scenarios
+```
+
+Also ensure these previous commands still pass:
+
+```bash
+for f in hsr_axis_sim/data/golden_replays/*.json; do python -m hsr_axis_sim.sim.replay "$f"; done
+python -m hsr_axis_sim.sim.replay_lint hsr_axis_sim/data/manual_video_traces/samples/manual_video_trace_sample_mvp.json
+python -m hsr_axis_sim.sim.replay hsr_axis_sim/data/manual_video_traces/samples/manual_video_trace_sample_mvp.json
+python -m hsr_axis_sim.search.scenario hsr_axis_sim/data/search_scenarios/basic_search_mvp.json --format json
+python -m hsr_axis_sim.search.scenario hsr_axis_sim/data/search_scenarios/constrained_search_mvp.json --format json
+```
+
+Update `hsr_axis_sim/LUMEN_RESULT.md` with:
+- files changed
+- tests run
+- exact pass/fail results
+- discovered fixture counts by group
+- sample text/markdown/json runner output summary
+- whether the runner uses in-process APIs or subprocesses
+- what is intentionally not implemented
+- known limitations
+- whether 001Z is safe to begin
+
+Deliverable:
+A working regression runner MVP with passing tests and no combat-core semantic changes.

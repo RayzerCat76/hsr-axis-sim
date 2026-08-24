@@ -1,0 +1,72 @@
+{
+  "id": "seele_like",
+  "name": "Seele-like DPS",
+  "team": "ally",
+  "element": "quantum",
+  "path": "hunt_like",
+  "base_stats": {
+    "hp": 3000,
+    "atk": 1000,
+    "defense": 0,
+    "base_speed": 143,
+    "max_energy": 120,
+    "crit_rate": 0,
+    "crit_dmg": 0.5,
+    "dmg_bonus": 0,
+    "max_toughness": 0,
+    "weaknesses": []
+  },
+  "skills": [
+    {
+      "id": "basic",
+      "name": "Simple Basic",
+      "skill_type": "basic",
+      "target_type": "single_enemy",
+      "sp_delta": 1,
+      "energy_delta": 20,
+      "ends_turn": true,
+      "effects": [
+        {"type": "GainSkillPoint", "amount": 1},
+        {"type": "GainEnergy", "amount": 20, "target_ref": "actor"},
+        {"type": "DealDamage", "amount": 500, "target_ref": "action_targets"}
+      ]
+    },
+    {
+      "id": "skill",
+      "name": "Simple Skill",
+      "skill_type": "skill",
+      "target_type": "single_enemy",
+      "sp_delta": -1,
+      "energy_delta": 30,
+      "ends_turn": true,
+      "effects": [
+        {"type": "ConsumeSkillPoint", "amount": 1},
+        {"type": "GainEnergy", "amount": 30, "target_ref": "actor"},
+        {"type": "DealDamage", "amount": 900, "target_ref": "action_targets"}
+      ]
+    },
+    {
+      "id": "ultimate",
+      "name": "Simple Ultimate",
+      "skill_type": "ultimate",
+      "target_type": "single_enemy",
+      "sp_delta": 0,
+      "energy_delta": -80,
+      "ends_turn": false,
+      "effects": [
+        {"type": "ConsumeEnergy", "amount": 80, "target_ref": "actor"},
+        {"type": "DealDamage", "amount": 400, "target_ref": "action_targets"}
+      ]
+    }
+  ],
+  "triggers": [
+    {
+      "id": "seele_like_on_kill_extra_turn",
+      "event_type": "unit_defeated",
+      "condition": {"type": "event_killer_is_owner"},
+      "effects": [{"type": "GrantExtraTurn", "target_ref": "actor"}],
+      "max_triggers_per_action": 1,
+      "enabled": true
+    }
+  ]
+}

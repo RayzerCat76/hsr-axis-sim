@@ -1,0 +1,235 @@
+Task ID: HSR-AXIS-002P
+Task name: Current-contract effect-order irrelevance proof for Tingyun Ultimate
+
+Codex Reasoning: HIGH
+Recommended model: GPT-5.6 Sol
+Fallback model: GPT-5.6 Terra only if the current event/trigger contract inventory is already explicit and implementation becomes mechanical.
+
+Starting point
+==============
+
+HSR-AXIS-002O-FIX passed independent review.
+
+Current semantic readiness still has two generic blockers:
+
+1. release-game order between target Energy restoration and DMG-buff application is unknown;
+2. same-current-turn duration behavior is unknown.
+
+Do not implement a Tingyun DMG buff. Do not start the duration-policy task.
+
+Objective
+=========
+
+Determine whether the two candidate effect orders are observably equivalent under the COMPLETE CURRENT SIMULATOR CONTRACT:
+
+A. target Energy restoration, then DMG-buff application;
+B. DMG-buff application, then target Energy restoration.
+
+This is a current-engine proof only. Release-game order must remain unknown.
+
+The task may conclude either:
+
+- `proven_irrelevant_under_current_simulator_contract`; or
+- `not_proven_irrelevant_under_current_simulator_contract` with exact blockers.
+
+Do not force a positive conclusion if any current observable differs.
+
+Required architecture audit
+===========================
+
+Pin and inspect at least:
+
+- `hsr_axis_sim/sim/action.py`
+- `hsr_axis_sim/sim/effects.py`
+- `hsr_axis_sim/sim/events.py`
+- `hsr_axis_sim/sim/state.py`
+- `hsr_axis_sim/sim/turn_context.py`
+- `hsr_axis_sim/sim/targets.py`
+- `hsr_axis_sim/sim/buffs.py`
+- `hsr_axis_sim/real_bindings/tingyun_ultimate_v0_1.py`
+- the accepted HSR-AXIS-002O semantic-readiness evidence/report
+
+Record source paths, SHA-256 digests, and precise implementation locators in a new non-executable evidence artifact. A future source change must invalidate the proof rather than silently preserving it.
+
+Required synthetic comparison harness
+=====================================
+
+Create a test/audit-only harness that executes the two candidate orders in isolated deep-equivalent states. Do not modify the existing Tingyun reviewed binding and do not register a new handler.
+
+Use a synthetic non-ending interrupt-style action and the existing `GainEnergy` and `AddBuff` primitives. The synthetic buff may use an unmistakably non-real ID such as `synthetic_tingyun_order_probe`; it must never enter the reviewed registry or a real character spec.
+
+Compare complete canonical observables after execution, not merely target Energy and buff presence.
+
+At minimum include:
+
+1. target Energy below cap;
+2. target Energy near cap, exercising clamp behavior;
+3. target Energy already at cap;
+4. no existing probe buff;
+5. existing same-ID probe buff with deterministic refresh;
+6. unrelated existing buffs and debuffs;
+7. multiple non-target units with nontrivial state;
+8. `action_started` and `action_finished` triggers, including trigger effects, to prove that trigger boundaries do not expose intermediate order;
+9. nontrivial logs, pending events, trigger counters, SP, AV, HP, toughness, extra-turn stack, and enemy-AI state;
+10. interrupt `TurnContext` preservation and no turn end.
+
+Canonical comparison must cover at least:
+
+- every `Unit` field;
+- buff/debuff values and metadata;
+- Energy and caps;
+- global and unit AV;
+- HP/toughness/alive state;
+- skill points;
+- extra-turn stack;
+- logs;
+- pending event sequence and event data;
+- trigger fire counts;
+- event dispatch count;
+- enemy AI plans and cursors;
+- every `TurnContext` field;
+- action result/return shape.
+
+If any field must be excluded, document the exact reason and prove that it is not user-visible or contract-visible. Prefer no exclusions.
+
+Proof boundaries
+================
+
+A positive result may state only:
+
+- the order is irrelevant under the pinned current simulator code and valid static effect configuration;
+- no current event or trigger boundary observes the intermediate state;
+- final current-contract observables are equal for the tested exhaustive contract cases.
+
+It must also state:
+
+- release-game order remains unknown;
+- invalid configurations, exceptions, and future engine changes are outside the proof;
+- same-current-turn duration semantics remain unresolved;
+- accepted-video target and trace level remain unknown;
+- simulator binding remains disallowed in this task.
+
+Do not claim mathematical universality beyond the explicitly pinned current contract.
+
+New artifacts
+=============
+
+Create a new versioned non-executable input artifact, for example:
+
+`hsr_axis_sim/data/manual_video_traces/normalized_character_facts/tingyun_ultimate_effect_order_irrelevance_review_v0_1.json`
+
+Create deterministic audit reports:
+
+`hsr_axis_sim/data/manual_video_traces/real_binding_audits/tingyun_ultimate_effect_order_irrelevance_v0_1.json`
+
+`hsr_axis_sim/data/manual_video_traces/real_binding_audits/tingyun_ultimate_effect_order_irrelevance_v0_1.md`
+
+Create a dedicated validator/report tool, for example:
+
+`hsr_axis_sim/tools/trace_tingyun_ultimate_effect_order_irrelevance.py`
+
+Create focused tests in a new test file.
+
+Do not rewrite the 002O normalized artifact or its reports in place. The 002P report may reference 002O and state a derived readiness overlay:
+
+- if proven irrelevant: generic readiness after 002P becomes `blocked_by_duration_semantics`;
+- if not proven: generic readiness remains `blocked_by_both_semantics`.
+
+Accepted-video binding readiness remains `blocked_by_unknown_target_and_trace_level`.
+
+Strict validation requirements
+==============================
+
+Treat the new JSON as untrusted input.
+
+- Type-check before set membership, dictionary-key construction, sorting, hashing, tuple unpacking, numeric comparison, or path operations.
+- Reject unknown executable schema keys.
+- Reject duplicate IDs, duplicate source paths, stale digests, missing evidence, unsupported status values, malformed comparison cases, and inconsistent conclusions.
+- Object/list/bool/number/null mutations of every scalar field must produce controlled `ValueError`, never native `TypeError`, `AttributeError`, `KeyError`, or assertion leakage.
+- Readable invalid CLI input: exit 1, no traceback.
+- Missing/unreadable/invalid-JSON input: exit 2, no traceback.
+- Valid output must be deterministic under reversed unordered inputs.
+
+Required negative tests
+=======================
+
+The validator must reject at least:
+
+- a positive conclusion with a failed or missing comparison case;
+- a positive conclusion when any pinned source digest is stale;
+- a positive conclusion claiming release-game order is known;
+- a positive conclusion claiming duration semantics are resolved;
+- a positive conclusion with `simulator_binding_allowed: true`;
+- a report that selects an accepted-video target or trace level;
+- an observation snapshot that omits a required state/TurnContext/event field;
+- duplicate case IDs or source IDs;
+- malformed nested event, trigger, unit, buff, or snapshot data;
+- registry or manifest count changes.
+
+Preservation requirements
+=========================
+
+Do not change:
+
+- `GainEnergy`, `AddBuff`, `Action`, event, trigger, target, buff, timeline, or state implementation;
+- the existing Tingyun Energy partial binding;
+- the Pela partial binding;
+- reviewed binding registry version or entries;
+- the 002O artifacts or reports;
+- magnitude table;
+- accepted-video trace;
+- replay/search/evaluator behavior;
+- regression manifest.
+
+Strict safety boundaries
+========================
+
+Do not:
+
+- add an executable Tingyun DMG buff;
+- add any reviewed registry entry;
+- choose a Tingyun trace level;
+- infer the accepted-video target;
+- infer release-game effect order;
+- choose or change a duration policy;
+- implement HSR-AXIS-002Q.
+
+Required gates
+==============
+
+Run:
+
+`python -m compileall -q hsr_axis_sim`
+
+`python -m pytest -q`
+
+Run the new focused 002P test file.
+
+`python -m hsr_axis_sim.regression.runner --manifest hsr_axis_sim/data/regression_manifest.json --format text`
+
+`python -m hsr_axis_sim.regression.runner --manifest hsr_axis_sim/data/regression_manifest.json --only trace_evidence --format text`
+
+Regenerate 002P Markdown and JSON reports and verify byte identity.
+
+Also verify that all 002O Markdown/JSON report bytes remain unchanged.
+
+LUMEN_RESULT must state
+=======================
+
+- exact files changed;
+- all pinned source paths and digests;
+- exact current observable contract used;
+- all synthetic comparison cases;
+- whether every case is equal;
+- exact conclusion and its limited scope;
+- derived generic readiness after 002P;
+- explicit statement that release-game order remains unknown;
+- malformed-input matrix results;
+- CLI exit-code results;
+- full and focused pytest results;
+- regression results;
+- 002P report byte-identity results;
+- 002O artifact/report preservation;
+- confirmation that no binding, registry, duration, target, trace-level, core simulator, or 002Q work was added.
+
+Stop after HSR-AXIS-002P.

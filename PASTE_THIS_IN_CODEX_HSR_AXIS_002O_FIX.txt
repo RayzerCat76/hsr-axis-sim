@@ -1,0 +1,171 @@
+Task ID: HSR-AXIS-002O-FIX
+Task name: Semantic-claim status type-safety and CLI validation-path fix
+
+Codex Reasoning: MEDIUM
+Recommended model: GPT-5.6 Terra
+Escalation model: GPT-5.6 Sol only if the fix unexpectedly requires redesigning the semantic-readiness validator architecture.
+
+Starting point
+==============
+
+HSR-AXIS-002O is semantically correct but failed independent review because two of its own malformed-input tests fail.
+
+Do not begin HSR-AXIS-002P.
+
+Blocking defect
+===============
+
+In:
+
+`hsr_axis_sim/tools/trace_tingyun_ultimate_damage_buff_semantic_readiness.py`
+
+`_claims(...)` currently performs:
+
+```python
+if item.get("status") not in STATUSES or item.get("status") != status:
+```
+
+before ensuring the raw status is a valid non-empty string.
+
+Consequences:
+
+- status object -> `TypeError: unhashable type: 'dict'`
+- status list -> `TypeError: unhashable type: 'list'`
+- CLI returns exit 2 instead of the required validation-failure exit 1
+
+Required fix
+============
+
+1. Validate the raw status type before any set membership or other hash-based operation.
+2. Invalid JSON-compatible status values must be accumulated as validation issues and ultimately raise the normal controlled `ValueError` from `build_report(...)`.
+3. Do not solve this by broadly catching `TypeError` around `_claims`, `build_report`, or set membership.
+4. Do not weaken the exact status contract for any semantic claim.
+5. Preserve deterministic output for valid committed input.
+
+Suggested safe shape
+====================
+
+Use an explicit local value and guard, for example conceptually:
+
+```python
+raw_status = item.get("status")
+if not isinstance(raw_status, str) or not raw_status:
+    # `_string` may already have recorded the issue; do not use it in a set.
+    pass
+elif raw_status not in STATUSES or raw_status != expected_status:
+    issues.append(...)
+```
+
+The exact implementation may differ, but membership must occur only after the type guard.
+
+Required test expansion
+=======================
+
+Keep the two currently failing tests and make them pass.
+
+Add or expand adversarial coverage so that every scalar semantic-claim field is exercised with JSON-compatible malformed values where applicable:
+
+- `claim_id`
+- `semantic_field`
+- `status`
+- `normalized_value`
+- `value_type`
+- `unit`
+- `evidence_summary`
+- `unresolved_notes`
+- `simulator_binding_allowed`
+
+At minimum test object, list, bool, number, and null values, accounting for fields whose valid committed value is already null.
+
+The test must distinguish:
+
+- expected controlled `ValueError`
+- forbidden native `TypeError`, `AttributeError`, `KeyError`, or other exception leakage
+
+Add explicit CLI tests for readable JSON containing:
+
+- status object
+- status list
+
+Both must produce:
+
+- exit code 1
+- no `Traceback`
+- normal validation-failure message
+
+Missing/unreadable input must remain exit code 2 without traceback.
+
+Preservation requirements
+=========================
+
+Do not change:
+
+- semantic conclusions
+- `generic_binding_readiness = blocked_by_both_semantics`
+- `accepted_video_binding_readiness = blocked_by_unknown_target_and_trace_level`
+- `accepted_video_semantic_readiness = blocked_by_both_semantics`
+- magnitude table or selected level (`null`)
+- controlled-interaction protocol results (`not_run` / `null`)
+- historical 002M or 002N artifacts
+- committed 002O normalized evidence unless strictly necessary
+- committed 002O Markdown/JSON report bytes unless the valid rendering genuinely changes
+- Tingyun Energy partial binding
+- Pela partial binding
+- reviewed registry
+- simulator, replay, search, evaluator, or regression manifest
+
+Strict safety boundaries
+========================
+
+Do not:
+
+- add an executable DMG buff
+- infer the accepted video's target
+- infer the accepted video's trace level
+- change duration behavior
+- claim effect order is resolved
+- claim same-current-turn duration is resolved
+- add HSR-AXIS-002P work
+
+Required gates
+==============
+
+Run:
+
+`python -m compileall -q hsr_axis_sim`
+
+`python -m pytest -q`
+
+`python -m pytest -q hsr_axis_sim/tests/test_tingyun_ultimate_damage_buff_semantic_readiness.py`
+
+`python -m hsr_axis_sim.regression.runner --manifest hsr_axis_sim/data/regression_manifest.json --format text`
+
+`python -m hsr_axis_sim.regression.runner --manifest hsr_axis_sim/data/regression_manifest.json --only trace_evidence --format text`
+
+Regenerate the 002O Markdown and JSON reports and verify byte identity.
+
+Required direct checks
+======================
+
+- `build_report` with status object -> controlled `ValueError`
+- `build_report` with status list -> controlled `ValueError`
+- CLI status object -> exit 1, no traceback
+- CLI status list -> exit 1, no traceback
+- CLI missing file -> exit 2, no traceback
+- valid report output remains deterministic under reversed unordered inputs
+
+LUMEN_RESULT must state
+=======================
+
+- exact files changed
+- exact root cause
+- exact guard used before membership
+- malformed-input test matrix results
+- CLI exit-code results
+- complete pytest result
+- focused 002O result
+- regression results
+- report byte-identity result
+- confirmation that semantic conclusions and all safety boundaries remain unchanged
+
+Stop after HSR-AXIS-002O-FIX.

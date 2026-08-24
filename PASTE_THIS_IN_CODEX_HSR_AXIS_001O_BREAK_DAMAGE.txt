@@ -1,0 +1,211 @@
+Task ID: HSR-AXIS-001O
+Task name: Break Damage / Elemental Break Effects MVP
+
+Codex Reasoning: HIGH
+ChatGPT Model Recommendation: GPT-5.5 Thinking
+Reason: This task touches toughness, damage formula, status application, events, replay validation, and future break-team AI scoring. If break semantics are wrong, later Bilibili replay validation and AI axis search will become unreliable.
+
+You are working in the existing permanent project folder for the HSR Axis Simulator.
+
+Current accepted state:
+- 001A action value core: accepted
+- 001B replay validator: accepted
+- 001C multi-step replay: accepted
+- 001D buff/debuff duration: accepted
+- 001E damage/stats/forced RNG MVP: accepted
+- 001F toughness/weakness/break MVP: accepted
+- 001G event hooks/triggers MVP: accepted
+- 001H data-driven character/skill schema MVP: accepted
+- 001I semantic target resolver MVP: accepted
+- 001J target legality MVP: accepted
+- 001K action generator/resource-gated actions MVP: accepted
+- 001L ultimate/interrupt window MVP: accepted
+- 001M enemy AI/action-pattern MVP: accepted
+- 001N damage formula V1/combat stat pipeline MVP: accepted
+
+Goal:
+Add an MVP break-damage and elemental-break-effect layer on top of the existing toughness/break scaffold.
+
+Important scope boundaries:
+- Do NOT implement Huroka/Yatta/HoneyHunter importers.
+- Do NOT implement Beam Search or AI axis search.
+- Do NOT implement real character kits.
+- Do NOT implement full DoT ticking, super break, blast, bounce, or follow-up-specific formula yet.
+- Do NOT rewrite action value, ultimate timing, target legality, enemy AI, replay semantics, or normal damage formula unless strictly necessary.
+- Keep this as an MVP scaffold, not a claim of full official HSR accuracy.
+
+Pre-flight data-layer fix:
+Before implementing break damage, fix this small data-loader issue:
+- `UnitInstanceSpec` already has a top-level `level` field.
+- `instantiate_unit(...)` must apply `unit_ref.level` when it is provided.
+- Add a test proving team JSON/unit-ref level overrides the character base_stats level.
+- Do not remove the existing `stat_overrides["level"]` path if it already works; both paths may remain valid, but top-level `level` should work because the schema exposes it.
+
+Required design principle:
+Break damage must be a separate, named pipeline, not mixed into normal `DealDamage` in an opaque way. Future tasks must be able to extend it for super break, DoT, and real elemental effects.
+
+Core requirements:
+
+1. Add break-damage stats
+   Extend `Unit` and/or `EffectiveStats` to support at least:
+   - `break_effect`, default 0
+   - optional `break_damage_bonus`, default 0 through stat_mods
+
+   Buff/debuff `data.stat_mods` should be able to modify:
+   - `break_effect`
+   - `break_damage_bonus`
+
+2. Add a break damage formula module
+   Create a dedicated helper such as `hsr_axis_sim/sim/break_damage.py`.
+
+   Suggested MVP pipeline:
+
+   ```text
+   base_break_damage = level_break_base(attacker.level)
+   after_element = base_break_damage * element_break_multiplier
+   after_toughness = after_element * toughness_factor
+   after_break_effect = after_toughness * (1 + break_effect)
+   after_break_bonus = after_break_effect * (1 + break_damage_bonus)
+   after_defense = after_break_bonus * defense_multiplier
+   after_resistance = after_defense * resistance_multiplier
+   final_break_damage = after_resistance * (1 + vulnerability)
+   ```
+
+   Keep this explicitly documented as MVP.
+
+   You may use a small deterministic level-base formula or lookup table for now, but isolate it in a helper called something like `level_break_base(level)` so it can be replaced later.
+
+3. Element multipliers
+   Add an explicit element multiplier helper/table for break damage.
+
+   The exact values can be MVP placeholders, but they must be deterministic, named, documented, and tested. Do not hide magic numbers inline.
+
+   Supported elements:
+   - physical
+   - fire
+   - ice
+   - lightning
+   - wind
+   - quantum
+   - imaginary
+
+4. Trigger break damage only when toughness actually breaks
+   Existing `DealToughnessDamage` should continue reducing toughness.
+
+   Break damage should only occur when toughness crosses from positive to 0 and `is_broken` becomes true.
+
+   No break damage should occur when:
+   - target was already broken
+   - attack does no toughness damage because weakness does not match and `ignore_weakness` is false
+   - toughness damage does not reduce toughness to 0
+
+5. Add data-driven options to `DealToughnessDamage`
+   Extend `DealToughnessDamage` with optional fields such as:
+   - `deal_break_damage: bool = false`
+   - `break_damage_element: optional string`
+   - `break_damage_base_override: optional float` if useful for stable tests
+   - `apply_elemental_break_effect: bool = true/false`
+
+   Keep defaults backward compatible: existing toughness tests and replays should still pass without changing their expected HP.
+
+6. Elemental break effect MVP
+   When a weakness break occurs, optionally apply a generic debuff/status representing the elemental break effect.
+
+   This MVP should NOT implement full DoT ticking or complicated freeze/imprisonment behavior yet.
+
+   Suggested statuses:
+   - `physical_break_bleed`
+   - `fire_break_burn`
+   - `ice_break_frozen`
+   - `lightning_break_shock`
+   - `wind_break_wind_shear`
+   - `quantum_break_entanglement`
+   - `imaginary_break_imprisonment`
+
+   Use existing debuff/status infrastructure:
+   - duration_type can be `target_normal_turns`
+   - remaining_turns can default to 1 unless you choose a documented MVP value
+   - `data` should include metadata like `source`, `element`, and `mvp_no_dot_tick: true`
+
+   Do not add real DoT ticking in this task.
+
+7. Events
+   Extend or add events so replay debugging can see break results.
+
+   Existing `weakness_break` event should remain.
+
+   Add useful fields where appropriate:
+   - source_id
+   - target_id
+   - element
+   - break_damage_amount
+   - elemental_break_effect_id
+   - formula_parts if break damage was calculated
+
+   Do not break existing trigger behavior.
+
+8. Replay validator
+   Add one new golden replay, for example:
+
+   `hsr_axis_sim/data/golden_replays/break_damage_elemental_mvp.json`
+
+   It should validate at least:
+   - toughness goes to 0
+   - `is_broken` becomes true
+   - enemy HP decreases by expected break damage
+   - elemental break debuff exists on target
+   - existing break delay still applies if expected fields already support checking it
+
+9. Tests
+   Add or update tests covering:
+   - break damage only happens on actual break
+   - no break damage if weakness does not match and ignore_weakness is false
+   - no break damage if target is already broken
+   - break_effect increases break damage
+   - break_damage_bonus increases break damage
+   - defense/resistance/vulnerability affect break damage if you reuse those formula helpers
+   - elemental break debuff is applied with expected id/data/duration
+   - existing toughness_break_mvp replay still passes unchanged
+   - top-level `UnitInstanceSpec.level` override works
+
+Suggested files to inspect and likely modify:
+- `hsr_axis_sim/sim/break_logic.py`
+- `hsr_axis_sim/sim/effects.py`
+- `hsr_axis_sim/sim/damage.py`
+- `hsr_axis_sim/sim/stats.py`
+- `hsr_axis_sim/sim/unit.py`
+- `hsr_axis_sim/sim/data_loader.py`
+- `hsr_axis_sim/sim/data_schema.py`
+- `hsr_axis_sim/sim/events.py`
+- `hsr_axis_sim/sim/replay.py`
+- `hsr_axis_sim/tests/test_toughness_break.py`
+- `hsr_axis_sim/tests/test_damage.py`
+- `hsr_axis_sim/tests/test_data_loader.py`
+- `hsr_axis_sim/data/golden_replays/`
+- `README.md`
+
+Deliverables:
+1. Break Damage / Elemental Break Effects MVP implementation.
+2. Top-level `UnitInstanceSpec.level` override fix and test.
+3. New or updated tests.
+4. A new golden replay for break damage + elemental break status.
+5. Existing tests and golden replays must remain passing.
+6. Update `README.md` with a short Break Damage / Elemental Break Effects MVP section.
+7. Write/update `hsr_axis_sim/LUMEN_RESULT.md` with:
+   - files changed
+   - exact tests run
+   - exact test results
+   - golden replay CLI results
+   - break damage stages implemented
+   - elemental break effects implemented
+   - known limitations
+   - whether the next task is safe to begin
+
+Acceptance criteria:
+- `python -m compileall -q hsr_axis_sim` passes.
+- `python -m pytest -q` passes.
+- Every JSON file under `hsr_axis_sim/data/golden_replays/*.json` passes via `python -m hsr_axis_sim.sim.replay <file>`.
+- Existing fixed damage, normal calculated damage, enemy AI, ultimate interrupt, trigger, target legality, and action-generation tests remain stable.
+- Break damage is not applied to non-break toughness hits.
+- Elemental break statuses are represented, but real DoT ticking/super break are not implemented.
+- No Huroka import, AI search, UI, full real character batch import, or unrelated refactor appears in this task.

@@ -1,0 +1,146 @@
+{
+  "metadata": {
+    "task_id": "HSR-RUNTIME-ARCH-002",
+    "title": "Event Envelope Adapter Bridge",
+    "reference_version": "1.0",
+    "inspection_date": "2026-07-12",
+    "repository_package": "hsr_axis_001a_package(1).zip",
+    "policy": "Observation-only; no production integration; Unknown > Guess"
+  },
+  "legacy_event_surface": [
+    {
+      "legacy_event_type": "action_started",
+      "source_locator": "hsr_axis_sim/sim/action.py",
+      "payload_keys": [
+        "actor_id",
+        "action_id"
+      ],
+      "runtime_event_type": "ACTION_START",
+      "mapping_status": "BOUND",
+      "normalized_fields": {
+        "actor_id": "actor_id",
+        "action_id": "action_id"
+      }
+    },
+    {
+      "legacy_event_type": "action_finished",
+      "source_locator": "hsr_axis_sim/sim/action.py",
+      "payload_keys": [
+        "actor_id",
+        "action_id"
+      ],
+      "runtime_event_type": "ACTION_END",
+      "mapping_status": "BOUND",
+      "normalized_fields": {
+        "actor_id": "actor_id",
+        "action_id": "action_id"
+      }
+    },
+    {
+      "legacy_event_type": "turn_started",
+      "source_locator": "hsr_axis_sim/sim/timeline.py",
+      "payload_keys": [
+        "actor_id",
+        "is_extra_turn"
+      ],
+      "runtime_event_type": "TURN_START",
+      "mapping_status": "BOUND",
+      "normalized_fields": {
+        "actor_id": "actor_id"
+      },
+      "notes": "Do not infer ActionFamily, TurnKind, PriorityClass, or SamePriorityPolicy."
+    },
+    {
+      "legacy_event_type": "turn_ended",
+      "source_locator": "hsr_axis_sim/sim/timeline.py",
+      "payload_keys": [
+        "actor_id",
+        "is_extra_turn"
+      ],
+      "runtime_event_type": "TURN_END",
+      "mapping_status": "BOUND",
+      "normalized_fields": {
+        "actor_id": "actor_id"
+      }
+    },
+    {
+      "legacy_event_type": "damage_dealt",
+      "source_locator": "hsr_axis_sim/sim/effects.py",
+      "payload_keys": [
+        "source_id",
+        "target_id",
+        "amount",
+        "damage_type",
+        "element",
+        "is_crit",
+        "formula_parts"
+      ],
+      "optional_payload_keys": [
+        "is_break_damage"
+      ],
+      "runtime_event_type": "DAMAGE_RESOLVED",
+      "mapping_status": "BOUND",
+      "normalized_fields": {
+        "source_id": "source_id",
+        "target_id": "target_id"
+      },
+      "notes": "Do not infer attack_id, hit_id, HP_LOST, or quantization."
+    },
+    {
+      "legacy_event_type": "weakness_break",
+      "source_locator": "hsr_axis_sim/sim/effects.py",
+      "payload_keys": [
+        "source_id",
+        "target_id",
+        "element",
+        "break_damage_amount",
+        "elemental_break_effect_id",
+        "formula_parts"
+      ],
+      "runtime_event_type": "WEAKNESS_BROKEN",
+      "mapping_status": "BOUND",
+      "normalized_fields": {
+        "source_id": "source_id",
+        "target_id": "target_id"
+      }
+    },
+    {
+      "legacy_event_type": "unit_defeated",
+      "source_locator": "hsr_axis_sim/sim/effects.py",
+      "payload_keys": [
+        "killer_id",
+        "target_id"
+      ],
+      "runtime_event_type": "CONTENT_DEFINED",
+      "mapping_status": "AMBIGUOUS",
+      "normalized_fields": {
+        "target_id": "target_id"
+      },
+      "semantic_gap_id": "LEGACY_EVENT.UNIT_DEFEATED_LIFECYCLE",
+      "notes": "The MVP sets hp=0 and is_alive=False but does not distinguish DOWNED, KNOCKED_DOWN, DEATH, pending revive, or lethal interception. Do not alias killer_id to source_id and do not bind a lifecycle type."
+    }
+  ],
+  "unknown_event_evidence": {
+    "example": "preexisting_event",
+    "source_locator": "hsr_axis_sim/data/manual_video_traces/normalized_character_facts/tingyun_ultimate_effect_order_irrelevance_review_v0_1.json",
+    "required_behavior": "Unknown legacy event handling must be explicitly configured as PRESERVE_AS_CONTENT_DEFINED or REJECT."
+  },
+  "existing_event_semantics": {
+    "event_class": "hsr_axis_sim.sim.events.Event",
+    "event_fields": [
+      "type",
+      "data"
+    ],
+    "history_container": "BattleState.pending_events",
+    "dispatch_behavior": "dispatch_event appends the mutable legacy Event to pending_events and fires triggers synchronously. ARCH-002 must not modify or hook this path.",
+    "missing_runtime_hierarchy": [
+      "event_id",
+      "sequence",
+      "attack_id",
+      "hit_id",
+      "ActionContext",
+      "AttackContext",
+      "HitContext"
+    ]
+  }
+}

@@ -1,0 +1,281 @@
+Task ID: HSR-AXIS-002K
+Task name: Reviewed Partial-Binding Registry and Execution Contract MVP
+
+Codex Reasoning: HIGH
+Recommended model: GPT-5.6 Sol
+Fallback model: GPT-5.6 Terra only if no cross-module ambiguity appears.
+
+Why this combination:
+002K defines the reusable safety boundary between source-reviewed atomic facts and executable simulator actions. A registry mistake could allow an unvalidated partial shell to be treated as a complete skill or make later real bindings inconsistent. Use Sol for the primary implementation and review.
+
+Accepted prior gate
+===================
+
+HSR-AXIS-002J has passed independent review:
+
+- compileall: PASS
+- full pytest: 359 passed
+- locked regression: PASS 20/20
+- trace-evidence-only regression: PASS 2/2
+- Pela Skill partial shell audit reports are byte-identical
+- accepted 002I atomic-fact SHA-256 remains:
+  `b17a5f295cb8902883d6e8ddaa70c626bdbddf60572db8ce28da6eb3c555491f`
+
+002J accepted binding:
+
+- binding ID: `pela_skill_partial_resource_target_dispel_shell_v0_1`
+- scope: `partial_resource_target_dispel_shell`
+- `complete_game_skill: false`
+- `synthetic_only: true`
+- no damage
+- no toughness
+
+Goal
+====
+
+Create a small reviewed-binding registry and execution contract before adding a second real action binding.
+
+The registry must make it difficult to:
+
+- execute a raw, unvalidated binding dictionary through the reviewed-binding public API;
+- register duplicate binding IDs;
+- register a partial shell as a complete skill or complete character kit;
+- point a registry entry at an unknown handler or unsupported binding type;
+- hide unresolved facts or synthetic-only status;
+- accidentally make the real video trace executable.
+
+Do not implement Tingyun Ultimate or any second real action in this task.
+
+Mandatory pre-flight
+====================
+
+1. Inspect:
+
+- `hsr_axis_sim/real_bindings/pela_skill_v0_1.py`
+- `hsr_axis_sim/real_bindings/data/pela_skill_partial_v0_1.json`
+- `hsr_axis_sim/real_bindings/README.md`
+- existing loader/validator patterns elsewhere in the project
+
+2. Preserve 002J execution behavior and report bytes unless an independently reproducible defect requires a tightly scoped fix.
+
+3. Confirm the 002I atomic-fact artifact digest and locked manifest remain unchanged.
+
+Required architecture
+=====================
+
+Add a reusable registry under the existing reviewed real-binding namespace, for example:
+
+```text
+hsr_axis_sim/real_bindings/registry.py
+hsr_axis_sim/real_bindings/registry_v0_1.json
+```
+
+Equivalent paths are acceptable if the separation is clear.
+
+The registry must use a validated immutable record/handle rather than exposing raw JSON dictionaries as the normal public execution interface.
+
+Minimum registry metadata per entry
+===================================
+
+- registry entry ID
+- binding ID
+- version
+- actor ID
+- action category
+- binding scope
+- binding type, currently only `partial_action_shell`
+- binding data path
+- handler key
+- source atomic-fact artifact path
+- accepted atomic-fact artifact SHA-256
+- source atomic-fact IDs
+- unresolved atomic-fact IDs/fields
+- `complete_game_skill`
+- `complete_character_kit`
+- `synthetic_only`
+- `real_trace_executable`
+- damage semantics status
+- toughness semantics status
+
+For the existing Pela entry, required values include:
+
+```text
+complete_game_skill = false
+complete_character_kit = false
+synthetic_only = true
+real_trace_executable = false
+damage semantics = not_implemented
+toughness semantics = not_implemented
+```
+
+Public API
+==========
+
+Provide a small typed API similar to:
+
+```text
+load_reviewed_binding_registry(...)
+list_reviewed_bindings(...)
+get_reviewed_binding(binding_id, ...)
+execute_reviewed_binding(binding_id, state, target_ids, turn_context=None, ...)
+```
+
+Names may differ, but behavior must be equivalent.
+
+Requirements:
+
+1. Loading the registry validates every entry.
+2. Getting a binding returns a validated immutable handle or dataclass.
+3. Execution is dispatched only through a static allow-listed handler table.
+4. The registry must not dynamically import arbitrary module paths from JSON.
+5. Execution must validate the underlying binding and atomic-fact artifact before applying effects.
+6. Unknown binding IDs and unknown handler keys must fail clearly.
+7. A partial binding cannot be requested or registered as a complete skill/kit.
+8. Registry execution of the Pela synthetic fixture must match the accepted 002J result exactly.
+
+Pela compatibility
+==================
+
+Preserve the existing 002J module and CLI.
+
+You may add a validated loader/handle around it, but do not:
+
+- add damage;
+- add toughness;
+- infer the real-video target;
+- change SP cost, energy gain, target scope, or dispel count;
+- implement any other Pela action.
+
+A direct low-level helper may remain for backward compatibility, but the README must state that the reviewed public path is the registry and that raw dictionaries are not a reviewed execution contract.
+
+Registry validation must reject
+===============================
+
+- duplicate registry entry IDs;
+- duplicate binding IDs;
+- missing binding files;
+- paths escaping the project/package root;
+- unsupported binding types;
+- unknown handler keys;
+- mismatch between registry metadata and binding JSON;
+- mismatch between accepted atomic digest and actual artifact;
+- partial bindings claiming `complete_game_skill: true`;
+- partial bindings claiming `complete_character_kit: true`;
+- `synthetic_only: false` for the current Pela shell;
+- `real_trace_executable: true` for the current Pela shell;
+- damage or toughness marked implemented for the current Pela shell;
+- dangling or unapproved atomic fact IDs;
+- mutable registry handles if the chosen model is intended to be immutable.
+
+Synthetic execution test
+========================
+
+Run the existing Pela synthetic fixture through the registry public API and verify:
+
+- removed buff is `alpha_guard`;
+- SP `3 -> 2`;
+- Pela Energy `10 -> 40`;
+- HP unchanged;
+- toughness unchanged;
+- normal turn ended;
+- no complete-skill/kit registration occurs.
+
+Reports and CLI
+===============
+
+Add deterministic Markdown and JSON registry audit reports containing:
+
+- registry version;
+- number of reviewed bindings;
+- each binding's ID, actor, action, scope, handler, and safety flags;
+- accepted atomic digest;
+- bound and unresolved fact IDs;
+- warning that all current entries are partial/synthetic-only;
+- confirmation that the real trace remains non-executable.
+
+Add a CLI supporting stdout and `--output`, with:
+
+- success exit 0;
+- validated mismatch exit 1;
+- unreadable/malformed input exit 2 without traceback.
+
+Committed reports must be byte-identical to regenerated output.
+
+Tests
+=====
+
+Add focused tests for at least:
+
+- successful registry load;
+- immutable validated handle;
+- unique registry and binding IDs;
+- list/get behavior;
+- unknown binding ID rejection;
+- unknown handler rejection;
+- duplicate ID rejection;
+- path traversal/out-of-root rejection;
+- missing binding file rejection;
+- registry/binding metadata mismatch rejection;
+- atomic digest mismatch rejection;
+- partial-to-complete skill guard;
+- partial-to-complete kit guard;
+- synthetic-only and real-trace-executable guards;
+- damage/toughness implementation guards;
+- registry execution reproduces the accepted Pela fixture result;
+- insufficient SP and invalid target behavior remain unchanged through the registry;
+- deterministic Markdown and JSON output;
+- committed reports byte-identical;
+- CLI stdout and `--output`;
+- mismatch exits 1;
+- unreadable input exits 2 without traceback;
+- input ordering does not change normalized registry/report output.
+
+Scope gates
+===========
+
+Do not:
+
+- add a second reviewed binding;
+- implement Tingyun Ultimate;
+- implement any full character kit;
+- make the real trace executable;
+- change the accepted action-sequence trace;
+- change the locked manifest or its counts;
+- change search/evaluator behavior;
+- modify generic simulator primitives unless an independently reproducible defect is found and documented.
+
+Deliverables
+============
+
+- reviewed-binding registry data;
+- typed registry/handle implementation;
+- static handler allow-list;
+- registry execution public API;
+- focused tests;
+- deterministic Markdown and JSON registry audit reports;
+- updated reviewed-binding README;
+- updated `hsr_axis_sim/LUMEN_RESULT.md` describing:
+  - files changed;
+  - tests run;
+  - registry contract;
+  - safety guards;
+  - accepted binding count;
+  - known limitations;
+  - scope confirmation;
+  - recommended next task.
+
+Required final checks
+=====================
+
+Run:
+
+```text
+python -m compileall -q hsr_axis_sim
+python -m pytest -q
+python -m hsr_axis_sim.regression.runner --manifest hsr_axis_sim/data/regression_manifest.json --format text
+python -m hsr_axis_sim.regression.runner --manifest hsr_axis_sim/data/regression_manifest.json --only trace_evidence --format text
+```
+
+Existing manifest counts and the accepted 002I atomic-fact artifact must remain unchanged.
+
+Stop after 002K. Do not begin Tingyun Ultimate or another real action binding.

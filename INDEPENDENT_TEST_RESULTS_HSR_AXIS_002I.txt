@@ -1,0 +1,21 @@
+HSR-AXIS-002I independent test results
+
+python -m compileall -q hsr_axis_sim
+PASS
+
+python -m pytest -q
+352 passed in 27.42s
+
+Locked regression:
+PASS 12/12 golden replays
+PASS 2/2 manual checks
+PASS 2/2 search scenarios
+PASS 2/2 action-sequence trace checks
+PASS 2/2 trace evidence checks
+
+Manifest counts:
+replays=12
+manual=1
+scenarios=2
+action_sequence_traces=1
+trace_evidence=2

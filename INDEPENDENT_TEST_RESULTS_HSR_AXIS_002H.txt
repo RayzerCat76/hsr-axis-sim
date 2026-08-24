@@ -1,0 +1,45 @@
+HSR-AXIS-002H INDEPENDENT TEST RESULTS
+
+Working package: hsr_axis_001a_package(39).zip
+
+1. Compile
+   python -m compileall -q hsr_axis_sim
+   PASS
+
+2. Full test suite
+   python -m pytest -q
+   345 passed in 21.61s
+
+3. Locked regression
+   python -m hsr_axis_sim.regression.runner \
+     --manifest hsr_axis_sim/data/regression_manifest.json \
+     --format text
+
+   PASS 12/12 golden replays
+   PASS 2/2 manual checks
+   PASS 2/2 search scenarios
+   PASS 2/2 action-sequence trace checks
+   PASS 2/2 trace evidence checks
+   TOTAL PASS 20/20
+
+4. Trace evidence only
+   python -m hsr_axis_sim.regression.runner \
+     --manifest hsr_axis_sim/data/regression_manifest.json \
+     --only trace_evidence \
+     --format text
+
+   PASS 2/2
+
+5. Source registry CLI
+   Markdown generation: PASS
+   JSON generation: PASS
+   Committed outputs byte-identical to generated outputs: PASS
+   Validated mismatch exit code: 1
+   Unreadable input exit code: 2
+
+6. Manifest counts
+   replays=12
+   manual=1
+   scenarios=2
+   action_sequence_traces=1
+   trace_evidence=2

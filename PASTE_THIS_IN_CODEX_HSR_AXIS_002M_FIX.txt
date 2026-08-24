@@ -1,0 +1,210 @@
+Task ID: HSR-AXIS-002M-FIX
+Task name: Tingyun Ultimate Damage-Buff Review Validator and Readiness Hardening
+
+Codex Reasoning: MEDIUM
+Recommended model: GPT-5.6 Terra
+Escalate to GPT-5.6 Sol only if the fix unexpectedly requires redesigning the evidence-review architecture. It should not.
+
+Current accepted state
+======================
+
+HSR-AXIS-002M has independently demonstrated:
+
+- compileall PASS;
+- all 416 collected tests pass when run in two exhaustive non-overlapping groups;
+- locked regression PASS 20/20;
+- trace-evidence-only regression PASS 2/2;
+- deterministic Markdown and JSON reports;
+- no executable Tingyun damage buff;
+- no changes to accepted Tingyun Energy, Pela, registry, simulator, search, evaluator, replay, or manifest behavior.
+
+Do not broaden the task or alter accepted execution behavior.
+
+Blocking issues
+===============
+
+1. Malformed JSON-compatible values can raise uncontrolled `TypeError` from `build_report(...)` before schema validation.
+
+Examples include objects used as:
+
+- `verification_status`;
+- provenance `source_id`;
+- provenance `release_status`;
+- provenance `corroboration_status`;
+- `declared_readiness_status`.
+
+2. Fact-specific normalized values are not strictly validated. The current validator accepts invalid claims such as:
+
+- target scope `all_allies`;
+- duration `999` or boolean `true`;
+- object-valued release scope;
+- object-valued unit;
+- nonsensical values marked as corroborated magnitude tables or application order.
+
+3. Readiness is misclassified. The current report has:
+
+- `verified_game_equivalence=false`;
+- `engine_representation_status=representable_with_source_unverified_same_turn_edge`;
+- an explicit same-current-turn duration-edge blocker;
+
+but computes only `blocked_by_source_gap`.
+
+Under the task contract, the current result must be `blocked_by_both` because both source facts and duration semantics remain unresolved.
+
+Goal
+====
+
+Harden the 002M evidence-review validator so all malformed JSON-compatible input fails deterministically with controlled `ValueError`, all six facts obey strict per-fact schemas, and readiness correctly reflects both source and duration-semantics gaps.
+
+Required implementation
+=======================
+
+1. Harden:
+
+- `hsr_axis_sim/tools/trace_tingyun_ultimate_damage_buff_review.py`
+- the versioned 002M fact file and committed reports only where required by the corrected readiness status;
+- focused 002M tests;
+- `hsr_axis_sim/LUMEN_RESULT.md`.
+
+2. Validate before membership, lookup, set conversion, sorting, or comparison:
+
+- enum-like fields are strings;
+- provenance source IDs are non-empty strings;
+- readiness status is a string;
+- all required source-catalog fields used in output are non-empty strings;
+- provenance rows are objects with strictly typed fields.
+
+3. Enforce a strict fact-specific contract for this versioned 002M review:
+
+- `tingyun.ultimate.damage_buff.target_scope`
+  - field name: `damage_buff_target_scope`;
+  - normalized value exactly `selected_single_ally`;
+  - value type `target_scope`;
+  - unit null;
+  - status `corroborated`.
+
+- `tingyun.ultimate.damage_buff.duration_turns`
+  - field name: `damage_buff_duration_turns`;
+  - normalized value exactly integer `2`;
+  - reject booleans;
+  - value type `integer`;
+  - unit `turn`;
+  - status `corroborated`.
+
+- `tingyun.ultimate.damage_buff.magnitude_by_trace_level`
+  - normalized value null in v0.1;
+  - value type `trace_level_table`;
+  - unit `percent`;
+  - status `missing`.
+
+- `tingyun.ultimate.damage_buff.application_order`
+  - normalized value null in v0.1;
+  - value type `effect_order`;
+  - unit null;
+  - status `unresolved`.
+
+- `tingyun.ultimate.damage_buff.release_scope`
+  - normalized value must be the accepted non-empty version-qualifier string for this v0.1 artifact;
+  - value type `version_qualifier`;
+  - unit null;
+  - status `corroborated`.
+
+- `tingyun.ultimate.damage_buff.real_video_trace_level`
+  - normalized value null;
+  - value type `trace_level`;
+  - unit null;
+  - status `missing`.
+
+4. Reject duplicate provenance source IDs within a fact and reject malformed source-catalog fields used in reports.
+
+5. Readiness correction:
+
+- a duration gap exists when the current game-equivalence boundary is not verified, even if the engine can represent the chosen interpretation;
+- the current v0.1 review must compute and declare `blocked_by_both`;
+- update blockers/report wording if needed so classification and report text are internally consistent;
+- do not claim the engine itself is defective unless evidence shows that.
+
+6. Error behavior:
+
+- direct `build_report(...)` schema failures must raise `ValueError`, not `TypeError`, `AttributeError`, or `KeyError`;
+- CLI schema failures must use the controlled validation-failure exit path;
+- stderr must contain no traceback;
+- unreadable/invalid JSON remains an input error.
+
+Required tests
+==============
+
+Add focused tests covering at least:
+
+1. object/list values for every enum-like field;
+2. object/list provenance source IDs;
+3. object/list release and corroboration statuses;
+4. object/list declared readiness;
+5. malformed source-catalog title, locator, source type, language, and game version;
+6. duplicate provenance source IDs;
+7. wrong target-scope value;
+8. duration `999`;
+9. duration boolean `true`;
+10. wrong unit type/value;
+11. wrong release-scope type;
+12. nonsensical corroborated magnitude value;
+13. nonsensical corroborated application-order value;
+14. direct validator failures are `ValueError`;
+15. CLI validation failures have the expected nonzero validation exit and no traceback;
+16. corrected readiness is `blocked_by_both`;
+17. committed Markdown/JSON reports are deterministic and byte-identical to regeneration;
+18. the current engine duration-boundary probe remains unchanged.
+
+Preservation gates
+==================
+
+Preserve:
+
+- no executable damage buff;
+- existing Tingyun Energy partial binding exactly;
+- existing Pela partial binding exactly;
+- reviewed registry v0.2 exactly two entries;
+- simulator/search/evaluator/replay behavior;
+- locked manifest and counts;
+- action-sequence and trace-evidence artifacts;
+- current duration-engine behavior;
+- target and real-video trace level remaining unknown;
+- magnitude and effect order remaining unresolved in this fix.
+
+Scope exclusions
+================
+
+Do not:
+
+- retrieve or add new source facts;
+- add a magnitude table;
+- choose buff-versus-Energy order;
+- verify or change the same-current-turn game rule;
+- implement the damage buff;
+- infer the real-video target or trace level;
+- modify the reviewed binding registry API;
+- start HSR-AXIS-002N.
+
+Required final checks
+=====================
+
+Run:
+
+python -m compileall -q hsr_axis_sim
+python -m pytest -q
+python -m hsr_axis_sim.regression.runner --manifest hsr_axis_sim/data/regression_manifest.json --format text
+python -m hsr_axis_sim.regression.runner --manifest hsr_axis_sim/data/regression_manifest.json --only trace_evidence --format text
+python -m hsr_axis_sim.tools.trace_tingyun_ultimate_damage_buff_review --format markdown
+python -m hsr_axis_sim.tools.trace_tingyun_ultimate_damage_buff_review --format json
+
+Confirm committed Markdown and JSON reports are byte-identical to regeneration.
+
+Update `hsr_axis_sim/LUMEN_RESULT.md` with:
+
+- exact files changed;
+- strict-schema cases added;
+- readiness correction from `blocked_by_source_gap` to `blocked_by_both`;
+- exact pytest and regression results;
+- malformed-input CLI/direct-validator results;
+- report determinism results;
+- confirmation that no new research, executable buff, or 002N work was added.

@@ -1,0 +1,36 @@
+{
+  "binding_id": "pela_skill_partial_resource_target_dispel_shell_v0_1",
+  "version": "0.1",
+  "actor_id": "pela",
+  "action_category": "skill",
+  "binding_scope": "partial_resource_target_dispel_shell",
+  "complete_game_skill": false,
+  "source_atomic_fact_ids": [
+    "pela.skill.target_scope",
+    "pela.skill.sp_delta",
+    "pela.skill.energy_generation",
+    "pela.skill.dispel_count"
+  ],
+  "unresolved_atomic_fact_ids": [
+    "pela.skill.observed_target_and_level",
+    "pela.skill.toughness_native"
+  ],
+  "unresolved_fields": [
+    "damage_multiplier",
+    "final_damage",
+    "trace_level",
+    "build_assumptions",
+    "observed_real_video_target",
+    "normalized_toughness",
+    "debuff_application",
+    "eidolon_trace_light_cone_relic_team_interactions"
+  ],
+  "target_type": "single_enemy",
+  "skill_point_cost": 1,
+  "actor_energy_gain": 30,
+  "dispel_count": 1,
+  "damage_effect": false,
+  "toughness_effect": false,
+  "dispel_ordering": "lexical_removable_buff_id",
+  "synthetic_only": true
+}

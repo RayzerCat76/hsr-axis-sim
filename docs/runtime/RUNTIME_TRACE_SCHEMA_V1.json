@@ -1,0 +1,50 @@
+{
+  "document_fields": [
+    "schema_name",
+    "schema_version",
+    "trace_id",
+    "sequence_policy",
+    "record_count",
+    "first_sequence",
+    "last_sequence",
+    "event_type_counts",
+    "semantic_gap_ids",
+    "records",
+    "metadata"
+  ],
+  "empty_trace_policies": {
+    "ALLOW": "Produce an empty document with null sequence boundaries.",
+    "REJECT": "Raise EmptyRuntimeTraceError."
+  },
+  "numeric_projection": {
+    "notes": [],
+    "numeric_values": {},
+    "policy": "Do not extract or quantize legacy or runtime payload numbers."
+  },
+  "prohibited_inference": [
+    "ActionContext",
+    "AttackContext",
+    "HitContext",
+    "attack_id",
+    "hit_id",
+    "lifecycle",
+    "numeric_values",
+    "FIFO_or_LIFO"
+  ],
+  "record_projection": {
+    "action_context": null,
+    "attack_context": null,
+    "event": "original RuntimeEvent object",
+    "hit_context": null,
+    "notes": [],
+    "numeric_values": {},
+    "sequence": "event.sequence"
+  },
+  "schema_name": "hsr_runtime_trace",
+  "schema_version": "1.0",
+  "semantic_gap_source": "event.payload.adapter.semantic_gap_ids only",
+  "sequence_policies": {
+    "CONTIGUOUS": "next.sequence == previous.sequence + 1",
+    "STRICTLY_INCREASING": "next.sequence > previous.sequence"
+  }
+}

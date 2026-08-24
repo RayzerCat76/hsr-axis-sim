@@ -1,0 +1,640 @@
+{
+  "review_id": "tingyun_ultimate_turn_entry_duration_gap_v0_1",
+  "version": "0.1",
+  "warning": "NON-EXECUTABLE DURATION EVIDENCE/GAP AUDIT. The turn-entry correction is accepted project-domain input pending independent frame verification; no runtime policy is selected.",
+  "conclusion": "turn_entry_claim_normalized_current_engine_gap_confirmed_runtime_change_blocked",
+  "supplied_references": [
+    {
+      "source_id": "engine_source_pins",
+      "scope": "external_reference",
+      "path": "REFERENCE_CURRENT_ENGINE_SOURCE_PINS_HSR_AXIS_002Q.json",
+      "sha256": "2dd754b1e2997c48e9e5f7986589cad7ae6d1708ef48e1245cd784c8586bee91",
+      "locators": [
+        "pins"
+      ]
+    },
+    {
+      "source_id": "external_capture",
+      "scope": "external_reference",
+      "path": "REFERENCE_EXTERNAL_SOURCE_CAPTURE_HSR_AXIS_002Q.json",
+      "sha256": "aaf3e3a73c9b51f341afe0fb2857a86fe395e9415d1fa1f4365071660fbf7135",
+      "locators": [
+        "facts effect/extra-action/extra-turn unknowns",
+        "facts.duration_count",
+        "facts.settlement_boundary",
+        "sources"
+      ]
+    },
+    {
+      "source_id": "obsolete_notice",
+      "scope": "external_reference",
+      "path": "OBSOLETE_OLD_002Q_NOTICE.md",
+      "sha256": "fe4e068f8f95bc68f40b8af4798524bf3a54584d428478ad02dac8d152e9fb7e",
+      "locators": [
+        "Do not reuse",
+        "Obsolete task notice"
+      ]
+    },
+    {
+      "source_id": "release_vs_engine",
+      "scope": "external_reference",
+      "path": "REFERENCE_002Q_RELEASE_GAME_VS_ENGINE_CONTRACT.md",
+      "sha256": "e4237a2b546a5f8e89861f41502ee64d4e1916e3ac85181f0aa01ad6e206310d",
+      "locators": [
+        "Accepted project-domain claim",
+        "Current engine",
+        "Not yet proven",
+        "Proven gap"
+      ]
+    },
+    {
+      "source_id": "research_summary",
+      "scope": "external_reference",
+      "path": "LUMEN_RESEARCH_HSR_AXIS_002Q_TINGYUN_DURATION.md",
+      "sha256": "ae1396289cc9434321567d93f39ebadc8e8e948e01a1fd60465e0fec8c1b9a3e",
+      "locators": [
+        "Accepted project-domain correction",
+        "Result classification",
+        "Still unresolved"
+      ]
+    }
+  ],
+  "pinned_sources": [
+    {
+      "source_id": "002o_input",
+      "scope": "project_source",
+      "path": "data/manual_video_traces/normalized_character_facts/tingyun_ultimate_damage_buff_semantic_readiness_v0_1.json",
+      "sha256": "29ece44c9bc051590c308f7b6774ce192a47e11ec5176cf5adf645336c3025f1",
+      "locators": [
+        "readiness fields",
+        "same_current_turn_duration unresolved"
+      ]
+    },
+    {
+      "source_id": "002o_report",
+      "scope": "project_source",
+      "path": "data/manual_video_traces/real_binding_audits/tingyun_ultimate_damage_buff_semantic_readiness_v0_1.json",
+      "sha256": "d401cb85ff580d563ff44e415c1bd379957caa6e5a7a6f0353e68aef6e802a21",
+      "locators": [
+        "current engine assessment and blockers"
+      ]
+    },
+    {
+      "source_id": "002p_input",
+      "scope": "project_source",
+      "path": "data/manual_video_traces/normalized_character_facts/tingyun_ultimate_effect_order_irrelevance_review_v0_1.json",
+      "sha256": "ddb7cf48e45ae38c9ab9a11dd2dca65fdc1d21c7a2169e4a782b3eda72ea052a",
+      "locators": [
+        "derived readiness blocked_by_duration_semantics"
+      ]
+    },
+    {
+      "source_id": "002p_report",
+      "scope": "project_source",
+      "path": "data/manual_video_traces/real_binding_audits/tingyun_ultimate_effect_order_irrelevance_v0_1.json",
+      "sha256": "493dddbe07de1a4e68fb30389c8efa1da9294e0d6d5fe2c26f3826d283879c4e",
+      "locators": [
+        "current-contract order irrelevance conclusion"
+      ]
+    },
+    {
+      "source_id": "002p_tool",
+      "scope": "project_source",
+      "path": "tools/trace_tingyun_ultimate_effect_order_irrelevance.py",
+      "sha256": "3154afec1a5e7cb2a3f162d7ab5c27d0dd356a6354e09046a7af1dc1e8cbf168",
+      "locators": [
+        "pinned current-contract effect-order proof validator"
+      ]
+    },
+    {
+      "source_id": "action",
+      "scope": "project_source",
+      "path": "sim/action.py",
+      "sha256": "ad6994e79d8c8833304df4d4cc67ea84c07db988f4b9365840e0707dd5100f34",
+      "locators": [
+        "Action.execute event and turn-end boundary"
+      ]
+    },
+    {
+      "source_id": "bilibili_template",
+      "scope": "project_source",
+      "path": "data/manual_video_traces/normalized_character_facts/tingyun_ultimate_duration_bilibili_evidence_intake_template_v0_1.json",
+      "sha256": "bd59448abfeddbde1541fc025cd9a1dc411b7248f60909885e47a289f0e40391",
+      "locators": [
+        "unfilled candidate metadata and required future observations"
+      ]
+    },
+    {
+      "source_id": "buffs",
+      "scope": "project_source",
+      "path": "sim/buffs.py",
+      "sha256": "7095d592ee4466396bcd2224d740aa780271e7f539cd9751949ee41c1f5837b5",
+      "locators": [
+        "Buff dataclass has no application-turn or entry marker"
+      ]
+    },
+    {
+      "source_id": "effects",
+      "scope": "project_source",
+      "path": "sim/effects.py",
+      "sha256": "3adb44ababa1725933c82a105706b388239d895a98f159db5c4691a12dfa9618",
+      "locators": [
+        "AddBuff.apply",
+        "_add_status direct create/refresh of remaining_turns"
+      ]
+    },
+    {
+      "source_id": "events",
+      "scope": "project_source",
+      "path": "sim/events.py",
+      "sha256": "79e9a95d0788a1b87980f9de1fa58c48feccd34f4730a67798d6feb832f93525",
+      "locators": [
+        "dispatch_event and trigger ordering"
+      ]
+    },
+    {
+      "source_id": "regression_manifest",
+      "scope": "project_source",
+      "path": "data/regression_manifest.json",
+      "sha256": "acfb663d7dbd93f3b0bdba9838a8b2a0712df144da14aae513830c406f142a02",
+      "locators": [
+        "locked group counts"
+      ]
+    },
+    {
+      "source_id": "reviewed_registry",
+      "scope": "project_source",
+      "path": "real_bindings/registry_v0_2.json",
+      "sha256": "0cd0c9f9d4594654aaae91fa834988a4a373674d8e6397e757165d4f76fd11b8",
+      "locators": [
+        "version 0.2 and two reviewed partial bindings"
+      ]
+    },
+    {
+      "source_id": "state",
+      "scope": "project_source",
+      "path": "sim/state.py",
+      "sha256": "7d91095f082e60da27730b713fed3b08e47d0f3c422c26ae18a507c63a8b236a",
+      "locators": [
+        "BattleState event, trigger, AI, AV, SP, and stack fields"
+      ]
+    },
+    {
+      "source_id": "timeline",
+      "scope": "project_source",
+      "path": "sim/timeline.py",
+      "sha256": "511d7bebab2542cce45cec6a1ddbf1833c1664770bca5f76267f0561db6e0aa8",
+      "locators": [
+        "Timeline.end_turn normal-turn tick and current-turn expiration",
+        "Timeline.next_turn normal and extra turn_started emission"
+      ]
+    },
+    {
+      "source_id": "turn_context",
+      "scope": "project_source",
+      "path": "sim/turn_context.py",
+      "sha256": "a670688d83bf986c5b5edeb094124454d1e69c58c2953c2e11f79d133f68aeaa",
+      "locators": [
+        "TurnContext normal, extra, interrupt, and no-turn-end fields"
+      ]
+    },
+    {
+      "source_id": "ultimate_windows",
+      "scope": "project_source",
+      "path": "sim/ultimate_windows.py",
+      "sha256": "15b109774bfebd576d2614ec5bf1101563c40d87f0fab08fb4b9e11f45c98f53",
+      "locators": [
+        "execute_interrupt_action creates a non-ending interrupt context"
+      ]
+    },
+    {
+      "source_id": "unit",
+      "scope": "project_source",
+      "path": "sim/unit.py",
+      "sha256": "f4e100a12d1ae160fc58f9ef874fe188851d7f29284acef4c51273792f41eb62",
+      "locators": [
+        "expire_current_turn_statuses",
+        "tick_target_normal_turn_statuses"
+      ]
+    }
+  ],
+  "claims": [
+    {
+      "claim_id": "bilibili_candidate",
+      "claim_scope": "Candidate page for independent frame verification",
+      "claim_value": "BV1yz4y1t79s",
+      "counter_transition": null,
+      "current_engine_behavior": "Not applicable; the candidate is external evidence intake only.",
+      "effect_active_during_entered_turn": null,
+      "event_order_relative_to_turn_started": null,
+      "extra_action_consumes": null,
+      "extra_turn_consumes": null,
+      "observable_boundary": "No timestamp or frame boundary retrieved.",
+      "refresh_behavior": null,
+      "release_game_claim": "No release-game duration claim is accepted from this candidate until frames are retrieved.",
+      "simulator_binding_allowed": false,
+      "source_ids": [
+        "bilibili_template",
+        "external_capture"
+      ],
+      "unresolved_fields": [
+        "counter_observations",
+        "frame_range",
+        "game_version_or_build",
+        "publication_date",
+        "target_state",
+        "timestamp",
+        "uploader"
+      ],
+      "verification_status": "candidate_identified_page_or_frames_not_retrieved"
+    },
+    {
+      "claim_id": "duration_count_2",
+      "claim_scope": "Tingyun Ultimate DMG-increase duration count",
+      "claim_value": 2,
+      "counter_transition": null,
+      "current_engine_behavior": "target_normal_turns stores an integer remaining_turns count.",
+      "effect_active_during_entered_turn": null,
+      "event_order_relative_to_turn_started": null,
+      "extra_action_consumes": null,
+      "extra_turn_consumes": null,
+      "observable_boundary": "Duration count only; source text does not expose the countdown boundary.",
+      "refresh_behavior": null,
+      "release_game_claim": "The DMG increase lasts two target turns.",
+      "simulator_binding_allowed": false,
+      "source_ids": [
+        "external_capture",
+        "research_summary"
+      ],
+      "unresolved_fields": [
+        "countdown_boundary_from_structured_sources"
+      ],
+      "verification_status": "source_cross_checked"
+    },
+    {
+      "claim_id": "extra_action_consumption",
+      "claim_scope": "Non-turn extra-action duration consumption",
+      "claim_value": null,
+      "counter_transition": null,
+      "current_engine_behavior": "A non-ending action does not call Timeline.end_turn and does not tick target_normal_turns.",
+      "effect_active_during_entered_turn": null,
+      "event_order_relative_to_turn_started": null,
+      "extra_action_consumes": null,
+      "extra_turn_consumes": null,
+      "observable_boundary": "non-ending extra action",
+      "refresh_behavior": null,
+      "release_game_claim": "No consumption rule is inferred for a non-turn extra action.",
+      "simulator_binding_allowed": false,
+      "source_ids": [
+        "external_capture",
+        "research_summary"
+      ],
+      "unresolved_fields": [
+        "extra_action_consumes"
+      ],
+      "verification_status": "unresolved_not_infer_from_normal_turn_entry"
+    },
+    {
+      "claim_id": "extra_turn_consumption",
+      "claim_scope": "Granted extra-turn duration consumption",
+      "claim_value": null,
+      "counter_transition": null,
+      "current_engine_behavior": "The engine emits extra-turn turn_started but skips target_normal_turns ticking at extra-turn end.",
+      "effect_active_during_entered_turn": null,
+      "event_order_relative_to_turn_started": null,
+      "extra_action_consumes": null,
+      "extra_turn_consumes": null,
+      "observable_boundary": "granted extra-turn entry",
+      "refresh_behavior": null,
+      "release_game_claim": "No consumption rule is inferred for granted extra turns.",
+      "simulator_binding_allowed": false,
+      "source_ids": [
+        "external_capture",
+        "research_summary",
+        "timeline"
+      ],
+      "unresolved_fields": [
+        "extra_turn_consumes"
+      ],
+      "verification_status": "unresolved_not_infer_from_normal_turn_entry"
+    },
+    {
+      "claim_id": "same_id_refresh_active_turn",
+      "claim_scope": "Same-ID refresh during the holder's active normal turn",
+      "claim_value": null,
+      "counter_transition": null,
+      "current_engine_behavior": "_add_status directly sets remaining_turns on refresh, then the current engine decrements at normal-turn end.",
+      "effect_active_during_entered_turn": null,
+      "event_order_relative_to_turn_started": null,
+      "extra_action_consumes": null,
+      "extra_turn_consumes": null,
+      "observable_boundary": "refresh during active normal turn",
+      "refresh_behavior": null,
+      "release_game_claim": "Release-game refresh interaction with an already-entered turn is unknown.",
+      "simulator_binding_allowed": false,
+      "source_ids": [
+        "effects",
+        "research_summary"
+      ],
+      "unresolved_fields": [
+        "refresh_count_after_active_turn",
+        "refresh_entry_marker_semantics"
+      ],
+      "verification_status": "unresolved"
+    },
+    {
+      "claim_id": "turn_entry_settlement",
+      "claim_scope": "Accepted project-domain duration settlement boundary",
+      "claim_value": "target_normal_turn_entry",
+      "counter_transition": "candidate transitions 2 to 1 and 1 to 0 occur at target normal-turn entry",
+      "current_engine_behavior": "The engine does not tick target_normal_turns at entry and ticks at normal-turn end.",
+      "effect_active_during_entered_turn": null,
+      "event_order_relative_to_turn_started": null,
+      "extra_action_consumes": null,
+      "extra_turn_consumes": null,
+      "observable_boundary": "target_normal_turn_entry",
+      "refresh_behavior": null,
+      "release_game_claim": "Tingyun Ultimate duration settles when the target enters a normal turn.",
+      "simulator_binding_allowed": false,
+      "source_ids": [
+        "external_capture",
+        "release_vs_engine",
+        "research_summary"
+      ],
+      "unresolved_fields": [
+        "independent_frame_verification",
+        "turn_started_event_order",
+        "zero_counter_effect_lifetime"
+      ],
+      "verification_status": "accepted_project_domain_correction_pending_independent_frame_verification"
+    },
+    {
+      "claim_id": "turn_started_event_order",
+      "claim_scope": "Release-game decrement/removal order relative to turn_started observability",
+      "claim_value": null,
+      "counter_transition": null,
+      "current_engine_behavior": "Timeline.next_turn emits turn_started without a target-normal-turn entry tick.",
+      "effect_active_during_entered_turn": null,
+      "event_order_relative_to_turn_started": null,
+      "extra_action_consumes": null,
+      "extra_turn_consumes": null,
+      "observable_boundary": "turn_started dispatch",
+      "refresh_behavior": null,
+      "release_game_claim": "The order relative to release-game turn-start triggers is unknown.",
+      "simulator_binding_allowed": false,
+      "source_ids": [
+        "events",
+        "external_capture",
+        "research_summary",
+        "timeline"
+      ],
+      "unresolved_fields": [
+        "decrement_before_or_after_turn_started",
+        "removal_before_or_after_turn_started_triggers"
+      ],
+      "verification_status": "unresolved"
+    },
+    {
+      "claim_id": "zero_counter_effect_lifetime",
+      "claim_scope": "Effect lifetime when a candidate entry transition reaches zero",
+      "claim_value": null,
+      "counter_transition": "1 to 0 at target normal-turn entry is a candidate counter transition",
+      "current_engine_behavior": "The current engine removes the status when end-turn decrement produces remaining_turns at or below zero.",
+      "effect_active_during_entered_turn": null,
+      "event_order_relative_to_turn_started": null,
+      "extra_action_consumes": null,
+      "extra_turn_consumes": null,
+      "observable_boundary": "target normal-turn entry is accepted, but pre-action versus post-action removal is unknown.",
+      "refresh_behavior": null,
+      "release_game_claim": "Unknown whether the effect remains active during the entered turn when the counter reaches zero.",
+      "simulator_binding_allowed": false,
+      "source_ids": [
+        "external_capture",
+        "research_summary"
+      ],
+      "unresolved_fields": [
+        "effect_active_during_entered_turn",
+        "removal_before_or_after_action_eligibility"
+      ],
+      "verification_status": "unresolved"
+    }
+  ],
+  "engine_audit": {
+    "normal_turn_actor_selection": "Timeline._select_next_normal_actor",
+    "normal_turn_started_emission": "Timeline.next_turn emits turn_started after selecting the normal actor",
+    "extra_turn_started_emission": "Timeline.next_turn emits turn_started for a popped extra-turn actor",
+    "target_normal_turn_tick_boundary": "Timeline.end_turn after a normal turn",
+    "current_turn_expiration_boundary": "Timeline.end_turn for every unit after normal or extra turn end",
+    "same_id_refresh_behavior": "_add_status directly refreshes remaining_turns when refresh_policy is refresh",
+    "buff_application_turn_marker_present": false,
+    "target_normal_turn_entry_tick_path_present": false,
+    "current_engine_conforms_to_accepted_boundary": false
+  },
+  "gaps": [
+    {
+      "gap_id": "GAP_EXTRA_ACTION_CONSUMPTION",
+      "status": "unresolved",
+      "summary": "Non-turn extra-action consumption cannot be inferred from normal-turn-entry wording."
+    },
+    {
+      "gap_id": "GAP_EXTRA_TURN_CONSUMPTION",
+      "status": "unresolved",
+      "summary": "Granted extra-turn consumption cannot be inferred from normal-turn-entry wording."
+    },
+    {
+      "gap_id": "GAP_GLOBAL_MIGRATION_IMPACT",
+      "status": "unresolved",
+      "summary": "Changing the shared target_normal_turns contract requires a separate global migration audit."
+    },
+    {
+      "gap_id": "GAP_SAME_ID_REFRESH_AT_ACTIVE_TURN",
+      "status": "unresolved",
+      "summary": "Same-ID refresh semantics during an already-active turn are not verified."
+    },
+    {
+      "gap_id": "GAP_TARGET_NORMAL_TURN_TICK_BOUNDARY",
+      "status": "proven_current_engine_gap",
+      "summary": "Accepted project-domain settlement is target normal-turn entry; pinned engine mutation is target normal-turn end."
+    },
+    {
+      "gap_id": "GAP_TURN_STARTED_EVENT_ORDER",
+      "status": "unresolved",
+      "summary": "Release-game decrement/removal order relative to turn_started is not verified."
+    },
+    {
+      "gap_id": "GAP_ZERO_COUNTER_EFFECT_LIFETIME",
+      "status": "unresolved",
+      "summary": "Effect activity during the entered turn when the counter reaches zero is not verified."
+    }
+  ],
+  "boundary_matrix": [
+    {
+      "case_id": "action_advanced_into_next_normal_turn",
+      "evidence_settlement_boundary": "target_normal_turn_entry",
+      "current_engine_mutation_boundary": "target_normal_turn_end_or_absent_for_non_normal_turn_boundary",
+      "fully_decidable": false,
+      "unresolved_fields": [
+        "turn_started_event_order",
+        "zero_counter_effect_lifetime"
+      ],
+      "runtime_assertion_unsafe": true,
+      "counter_checkpoints": {
+        "after_action_advance": 2,
+        "after_normal_turn_entry": 2,
+        "after_normal_turn_end": 1
+      },
+      "emitted_events": [
+        "preexisting_event",
+        "action_started",
+        "action_finished",
+        "turn_started",
+        "turn_ended"
+      ],
+      "state_digest": "7ad77f93b7635c6627ab54c8b693f122f58ad4abd5a62e199bde4515f71e8e7f"
+    },
+    {
+      "case_id": "applied_before_next_normal_turn",
+      "evidence_settlement_boundary": "target_normal_turn_entry",
+      "current_engine_mutation_boundary": "target_normal_turn_end_or_absent_for_non_normal_turn_boundary",
+      "fully_decidable": false,
+      "unresolved_fields": [
+        "turn_started_event_order",
+        "zero_counter_effect_lifetime"
+      ],
+      "runtime_assertion_unsafe": true,
+      "counter_checkpoints": {
+        "after_application": 2,
+        "after_normal_turn_entry": 2,
+        "after_normal_turn_end": 1
+      },
+      "emitted_events": [
+        "preexisting_event",
+        "action_started",
+        "action_finished",
+        "turn_started",
+        "turn_ended"
+      ],
+      "state_digest": "86c645e7e5f5dcea0e6157ebb11e60cfe8087b6fe9b2880ca82306c7cceea802"
+    },
+    {
+      "case_id": "applied_during_active_normal_turn",
+      "evidence_settlement_boundary": "target_normal_turn_entry",
+      "current_engine_mutation_boundary": "target_normal_turn_end_or_absent_for_non_normal_turn_boundary",
+      "fully_decidable": false,
+      "unresolved_fields": [
+        "next_entry_transition",
+        "zero_counter_effect_lifetime"
+      ],
+      "runtime_assertion_unsafe": true,
+      "counter_checkpoints": {
+        "before_application_after_entry": null,
+        "after_interrupt_application": 2,
+        "after_active_normal_turn_end": 1
+      },
+      "emitted_events": [
+        "preexisting_event",
+        "turn_started",
+        "action_started",
+        "action_finished",
+        "turn_ended"
+      ],
+      "state_digest": "be01198780b0184fd2b53fb24b1a8852dc96b49dfe52fbb0e3b3c631872b11e1"
+    },
+    {
+      "case_id": "evidence_model_counter_transitions",
+      "evidence_settlement_boundary": "target_normal_turn_entry",
+      "current_engine_mutation_boundary": "target_normal_turn_end_or_absent_for_non_normal_turn_boundary",
+      "fully_decidable": false,
+      "unresolved_fields": [
+        "effect_active_during_entered_turn",
+        "removal_order_at_zero"
+      ],
+      "runtime_assertion_unsafe": true,
+      "counter_checkpoints": {
+        "evidence_model_candidate_transition_2_to_1": "target_normal_turn_entry",
+        "evidence_model_candidate_transition_1_to_0": "target_normal_turn_entry",
+        "current_engine_after_entry_from_1": 1,
+        "current_engine_after_end_from_1": null
+      },
+      "emitted_events": [
+        "preexisting_event",
+        "turn_started",
+        "turn_ended"
+      ],
+      "state_digest": "f2ce2b6a0425298b9a4443ad4770bbe78e142c480428441806ca37fa78a86334"
+    },
+    {
+      "case_id": "granted_extra_turn",
+      "evidence_settlement_boundary": "target_normal_turn_entry",
+      "current_engine_mutation_boundary": "target_normal_turn_end_or_absent_for_non_normal_turn_boundary",
+      "fully_decidable": false,
+      "unresolved_fields": [
+        "extra_turn_consumes"
+      ],
+      "runtime_assertion_unsafe": true,
+      "counter_checkpoints": {
+        "after_extra_turn_entry": 2,
+        "after_extra_turn_end": 2
+      },
+      "emitted_events": [
+        "preexisting_event",
+        "turn_started",
+        "turn_ended"
+      ],
+      "state_digest": "cade5d6d3b680a04812d4218275a0e1da0d4b9ff72b830aba687cd47ffa17a9d"
+    },
+    {
+      "case_id": "non_ending_extra_action",
+      "evidence_settlement_boundary": "target_normal_turn_entry",
+      "current_engine_mutation_boundary": "target_normal_turn_end_or_absent_for_non_normal_turn_boundary",
+      "fully_decidable": false,
+      "unresolved_fields": [
+        "extra_action_consumes"
+      ],
+      "runtime_assertion_unsafe": true,
+      "counter_checkpoints": {
+        "after_non_ending_action": 2
+      },
+      "emitted_events": [
+        "preexisting_event",
+        "action_started",
+        "action_finished"
+      ],
+      "state_digest": "bf6166714f341acbe5e78f7980f997c0bb216dfb43641d6e62da78bfccc4e741"
+    },
+    {
+      "case_id": "same_id_refresh_during_active_normal_turn",
+      "evidence_settlement_boundary": "target_normal_turn_entry",
+      "current_engine_mutation_boundary": "target_normal_turn_end_or_absent_for_non_normal_turn_boundary",
+      "fully_decidable": false,
+      "unresolved_fields": [
+        "refresh_count_after_active_turn",
+        "refresh_entry_marker_semantics"
+      ],
+      "runtime_assertion_unsafe": true,
+      "counter_checkpoints": {
+        "after_entry_before_refresh": 1,
+        "after_same_id_refresh": 2,
+        "after_active_normal_turn_end": 1
+      },
+      "emitted_events": [
+        "preexisting_event",
+        "turn_started",
+        "action_started",
+        "action_finished",
+        "turn_ended"
+      ],
+      "state_digest": "be01198780b0184fd2b53fb24b1a8852dc96b49dfe52fbb0e3b3c631872b11e1"
+    }
+  ],
+  "old_002q_obsolete": true,
+  "end_turn_dual_policy_selected": false,
+  "release_game_duration_policy": null,
+  "accepted_project_domain_boundary": "target_normal_turn_entry",
+  "independent_frame_verification": "pending",
+  "generic_binding_readiness": "blocked_by_duration_semantics",
+  "accepted_video_binding_readiness": "blocked_by_unknown_target_and_trace_level",
+  "accepted_video_target": null,
+  "accepted_video_trace_level": null,
+  "simulator_binding_allowed": false
+}

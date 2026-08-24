@@ -1,0 +1,1993 @@
+{
+  "metadata": {
+    "title": "HSR Runtime Formula Registry",
+    "version": "1.0",
+    "research_date": "2026-07-12",
+    "target_game_version": "4.3",
+    "policy": "Evidence First; Unknown > Guess",
+    "scope": "Universal combat runtime mechanics; excludes character-specific coefficients unless used as evidence of a generic primitive.",
+    "status_values": [
+      "CONFIRMED",
+      "PARTIAL",
+      "UNKNOWN"
+    ],
+    "change_summary": [
+      "Added shield multi-instance semantics",
+      "Added DoT tick, ordering, and detonation request model",
+      "Added Extra Turn status/queue semantics and an explicit LIFO conflict",
+      "Added Additional DMG and True DMG families",
+      "Refined healing and shield formulas",
+      "Added Summon, Memosprite, Joint ATK, and memomaster energy rules",
+      "Added current RES clamp candidate",
+      "Separated Weaken, Vulnerability, DMG Mitigation, and Final DMG Boost buckets",
+      "Split HP transitions into damage, consume, set, restore, distribute, and lethal interception",
+      "Added duration-policy evidence showing no universal decrement event",
+      "Added control-gate and out-of-bounds architecture requirements",
+      "Refined the universal damage pipeline ordering",
+      "Added generic Crowd Control family and current Type-debuff taxonomy",
+      "Added Freeze, Entanglement, and Imprisonment runtime semantics",
+      "Refined Extra Turn ordering, duration, and normal-AV semantics",
+      "Refined conventional Summon and Memosprite default policies",
+      "Added explicit per-wave reset/persist policies",
+      "Added Departed targetability/action-order semantics",
+      "Added Continuous Effect custom decrement policies",
+      "Locked Damage Distribution to a pre-damage-calculation phase",
+      "Locked natural DoT tick timing and chronological resolution order",
+      "Separated DoT detonation reference semantics from unresolved snapshot policy",
+      "Refined Frozen, Entanglement, and Imprisonment structural semantics",
+      "Added target-defeat termination behavior for queued DoTs",
+      "Added Downed and revive/interception lifecycle interfaces",
+      "Preserved Max HP/current HP coupling as unresolved",
+      "Expanded Extra Turn evidence conflict without rebinding production",
+      "Recovered historical exact formulas for elemental Weakness Break follow-up effects",
+      "Added explicit source-age/version gates for all historical break formulas",
+      "Separated current runtime primitives from 1.0-era numerical candidates",
+      "Added deterministic revalidation protocols for Break DoT, Entanglement, Imprisonment, Freeze, DoT snapshot, revive, wave transitions, and Extra Turn queue order",
+      "No unresolved current-version mechanic was silently upgraded from historical evidence",
+      "Split natural DoT ticks, manual detonations, and event-triggered DoT",
+      "Added current 4.x proof that a DoT family can trigger after ally attacks",
+      "Refined Extra Turn priority and stable trigger-order evidence",
+      "Added explicit no-Ultimate-on-Extra-Turn policy",
+      "Added countdown entities whose AV persists across waves",
+      "Added explicit Max-HP-change plus separate-heal pattern",
+      "Added lethal-intercept countdown and cleanup semantics",
+      "Preserved DoT snapshot and Max-HP/current-HP coupling as unresolved",
+      "Added Action/Attack/Hit hierarchy",
+      "Added Single Target, Blast, AoE, Bounce, Adjacent, Random, and Locked target policies",
+      "Separated Follow-Up Action and Counter trigger families",
+      "Added cleanse, enemy-buff removal, action-scoped resist, transform/replace, and remove-policy interfaces",
+      "Added stacking, duration-extension, non-stacking, and trigger-counter policy taxonomy",
+      "Added action-batch lethal interception and OnDowned cleanup",
+      "Added stateful enemy lock-on AI policy",
+      "Bound all new claims to fixed KQM-git/SRL snapshot de0e5c09...",
+      "Locked Follow-Up Action priority above Ultimates and Extra Actions",
+      "Locked Counter as a Follow-Up Attack subtype",
+      "Added Crowd-Control suppression of Follow-Up Actions",
+      "Added target invalidation and retarget policy taxonomy",
+      "Added debuff-immunity ordering before Effect RES/Debuff RES",
+      "Added default-removable plus explicit-unremovable status policy",
+      "Added custom removal events for Unremovable statuses",
+      "Added attacked/hit/damaged event separation",
+      "Added enemy phase/state machine and telegraphed-next-action primitives",
+      "Added action-batch lethal interception evidence",
+      "Preserved cleanse selection order and shield/counter edge cases as unresolved",
+      "Separated normal Shield, stackable same-family Shield, Collective Shield, and Barrier",
+      "Locked simultaneous absorption behavior for independent normal Shields",
+      "Added background Shield-break cleanup semantics",
+      "Added Barrier attack-contact nullification with DoT exception",
+      "Added Toughness Reduction bucket formula and 300% Weakness Break Efficiency cap",
+      "Separated Toughness Lock/Protection from ordinary zero Toughness damage",
+      "Added Exo-Toughness as a secondary breakable gauge",
+      "Updated Super Break pipeline for current Toughness Protection exceptions",
+      "Added confirmed fractional internal Toughness precision requirement",
+      "Added explicit rounding/quantization registry with unresolved display and HP/damage rounding",
+      "Added linked defensive pools and owner-linked cleanup interfaces",
+      "Closed the broad inventory phase and identified evidence-gated implementation tracks"
+    ],
+    "status_counts": {
+      "CONFIRMED": 107,
+      "PARTIAL": 81,
+      "UNKNOWN": 12
+    },
+    "framework_status": "RESEARCH_BASELINE_COMPLETE_FOR_ARCHITECTURE"
+  },
+  "formulas": [
+    {
+      "id": "STAT.TOTAL_STANDARD",
+      "category": "stats",
+      "status": "CONFIRMED",
+      "formula": "total_stat = (character_base + light_cone_base) * (1 + sum_percent_bonus) + sum_flat_bonus",
+      "applies_to": [
+        "HP",
+        "ATK",
+        "DEF"
+      ],
+      "notes": "Round/display behavior must be separated from internal precision."
+    },
+    {
+      "id": "STAT.SPEED",
+      "category": "stats",
+      "status": "CONFIRMED",
+      "formula": "speed = base_speed * (1 + sum_speed_percent) + sum_flat_speed",
+      "notes": "Speed has no Light Cone base component. Internal decimals may be hidden by UI."
+    },
+    {
+      "id": "TIMELINE.BASE_AV",
+      "category": "timeline",
+      "status": "CONFIRMED",
+      "formula": "base_av = 10000 / speed",
+      "notes": "Equivalent model: each AV tick grants speed action points; act at 10000 points."
+    },
+    {
+      "id": "TIMELINE.CURRENT_AV",
+      "category": "timeline",
+      "status": "CONFIRMED",
+      "formula": "current_av = remaining_action_distance / current_speed",
+      "notes": "Preserve remaining distance/progress as canonical state to avoid speed-change errors."
+    },
+    {
+      "id": "TIMELINE.SPEED_CHANGE",
+      "category": "timeline",
+      "status": "CONFIRMED",
+      "formula": "new_current_av = old_current_av * old_speed / new_speed",
+      "notes": "Valid when speed changes without changing progress/distance."
+    },
+    {
+      "id": "TIMELINE.ADVANCE",
+      "category": "timeline",
+      "status": "PARTIAL",
+      "formula": "av_after = max(0, av_before - (10000 / current_speed) * advance_fraction)",
+      "notes": "Strong community experimental support. Keep Immediate Action as a distinct primitive."
+    },
+    {
+      "id": "TIMELINE.DELAY",
+      "category": "timeline",
+      "status": "PARTIAL",
+      "formula": "av_after = av_before + (10000 / current_speed) * delay_fraction",
+      "notes": "Mirror of action advance; verify caps and special enemy effects separately."
+    },
+    {
+      "id": "TIMELINE.IMMEDIATE_ACTION",
+      "category": "timeline",
+      "status": "PARTIAL",
+      "formula": "av_after = 0",
+      "notes": "Not necessarily equivalent to 100% advance after prior delay. Queue ordering needs replay tests."
+    },
+    {
+      "id": "DAMAGE.BASE",
+      "category": "damage",
+      "status": "CONFIRMED",
+      "formula": "base_damage = sum(scaling_stat_i * coefficient_i) + flat_damage",
+      "notes": "Scaling stat can be ATK, HP, DEF, or multiple stats; coefficients are content data."
+    },
+    {
+      "id": "DAMAGE.DIRECT",
+      "category": "damage",
+      "status": "CONFIRMED",
+      "formula": "final_damage = base_damage * crit_multiplier * dmg_bonus_multiplier * def_multiplier * res_multiplier * vulnerability_multiplier * reduction_multiplier * special_multipliers",
+      "notes": "Each factor is a named bucket. Same-bucket modifiers are normally aggregated before cross-bucket multiplication."
+    },
+    {
+      "id": "DAMAGE.CRIT_ACTUAL",
+      "category": "damage",
+      "status": "CONFIRMED",
+      "formula": "crit_multiplier = 1 + crit_damage if critical else 1",
+      "notes": "Some damage categories cannot crit unless explicitly overridden."
+    },
+    {
+      "id": "DAMAGE.CRIT_EXPECTED",
+      "category": "damage",
+      "status": "CONFIRMED",
+      "formula": "expected_crit_multiplier = 1 + crit_rate * crit_damage",
+      "notes": "Only for expected-value analysis, not deterministic replay."
+    },
+    {
+      "id": "DAMAGE.DMG_BONUS_BUCKET",
+      "category": "damage",
+      "status": "CONFIRMED",
+      "formula": "dmg_bonus_multiplier = 1 + sum(applicable_damage_bonuses)",
+      "notes": "Generic, elemental, action-type, DoT, follow-up, summon, etc. must be filtered by tags before addition."
+    },
+    {
+      "id": "DAMAGE.VULNERABILITY_BUCKET",
+      "category": "damage",
+      "status": "CONFIRMED",
+      "formula": "vulnerability_multiplier = 1 + sum(applicable_vulnerability)",
+      "notes": "Vulnerability/DMG Taken is a target-side multiplier. Different applicable sources stack additively inside the vulnerability bucket. Scope filters include all-DMG, element, DoT, Break, action family, or conditional windows."
+    },
+    {
+      "id": "DAMAGE.DEF_MULTIPLIER",
+      "category": "damage",
+      "status": "CONFIRMED",
+      "formula": "def_multiplier = (attacker_level + 20) / ((attacker_level + 20) + (target_level + 20) * (1 + target_def_bonus - def_reduction - def_ignore))",
+      "notes": "Equivalent 10x-scaled form uses 10*level+200. Reduction plus ignore is bounded by engine rules; standard implementations cap effective reduction at 100%."
+    },
+    {
+      "id": "DAMAGE.RES_MULTIPLIER_NORMAL_RANGE",
+      "category": "damage",
+      "status": "PARTIAL",
+      "formula": "res_multiplier = 1 - (target_resistance - resistance_reduction - resistance_penetration)",
+      "notes": "Ordinary linear formula is strong. A current community mechanics page reports effective Damage RES bounded to [-100%, 90%], giving a multiplier range [2.0, 0.1], but this cap still needs an independent modern replay/data validation."
+    },
+    {
+      "id": "DAMAGE.REDUCTION_BUCKET",
+      "category": "damage",
+      "status": "CONFIRMED",
+      "formula": "mitigation_multiplier = product(1 - mitigation_i)",
+      "notes": "The current term is DMG Mitigation. Different mitigation sources stack multiplicatively. This is target-side mitigation and must remain distinct from source-side Weaken."
+    },
+    {
+      "id": "DAMAGE.TOUGHNESS_STATE",
+      "category": "damage",
+      "status": "CONFIRMED",
+      "formula": "toughness_state_multiplier = 0.9 if target_has_toughness else 1.0",
+      "notes": "Official material states enemies take 10% less damage while toughness remains."
+    },
+    {
+      "id": "EFFECT.ACTUAL_CHANCE",
+      "category": "effect_hit",
+      "status": "CONFIRMED",
+      "formula": "real_chance = base_chance * (1 + effect_hit_rate) * (1 - effect_resistance) * (1 - applicable_debuff_resistance)",
+      "notes": "The final resistance factor is a tagged Debuff RES / special resistance that applies only to the relevant debuff family. Immunity, fixed chance, and guaranteed application remain separate branches."
+    },
+    {
+      "id": "EFFECT.REQUIRED_EHR",
+      "category": "effect_hit",
+      "status": "CONFIRMED",
+      "formula": "required_ehr_for_certainty = 1 / (base_chance * (1 - effect_resistance) * (1 - special_resistance)) - 1",
+      "notes": "Derived from the confirmed hit formula; deterministic mode should bypass RNG with forced outcomes."
+    },
+    {
+      "id": "ENERGY.GAIN_WITH_ERR",
+      "category": "energy",
+      "status": "CONFIRMED",
+      "formula": "energy_gain = base_energy_gain * (1 + energy_regeneration_rate)",
+      "notes": "Only for energy sources flagged as ERR-applicable. Fixed restoration can explicitly ignore ERR."
+    },
+    {
+      "id": "RESOURCE.SP_TRANSITION",
+      "category": "resource",
+      "status": "CONFIRMED",
+      "formula": "sp_after = sp_before + gain - cost",
+      "notes": "Validate bounds strictly; content may define alternate skill-point resources or changed caps."
+    },
+    {
+      "id": "AGGRO.VALUE",
+      "category": "targeting",
+      "status": "PARTIAL",
+      "formula": "aggro_i = base_aggro_i * (1 + sum_aggro_increase_i - sum_aggro_decrease_i)",
+      "notes": "Taunt and forced-target states override weighted selection."
+    },
+    {
+      "id": "AGGRO.TARGET_PROBABILITY",
+      "category": "targeting",
+      "status": "CONFIRMED",
+      "formula": "P(target_i) = aggro_i / sum(valid_target_aggro)",
+      "notes": "Only for attacks that use aggro-weighted targeting."
+    },
+    {
+      "id": "BREAK.TOUGHNESS_COEFFICIENT",
+      "category": "break",
+      "status": "CONFIRMED",
+      "formula": "toughness_coefficient = (max_toughness_in_basic_attack_units + 2) / 4",
+      "notes": "If normal single-target basic toughness damage is 10 points, use max_toughness/10 as the unit input."
+    },
+    {
+      "id": "BREAK.INITIAL_DAMAGE",
+      "category": "break",
+      "status": "CONFIRMED",
+      "formula": "break_damage = level_break_base * element_break_multiplier * toughness_coefficient * (1 + break_effect) * def_multiplier * res_multiplier * vulnerability_multiplier * reduction_multiplier",
+      "notes": "Modern normalized element multipliers: Physical/Fire 2.0, Wind 1.5, Ice/Lightning 1.0, Quantum/Imaginary 0.5. Do not mix old and new toughness-unit conventions."
+    },
+    {
+      "id": "BREAK.FINAL_TOUGHNESS_DAMAGE",
+      "category": "break",
+      "status": "PARTIAL",
+      "formula": "final_toughness_damage = base_toughness_damage * (1 + weakness_break_efficiency) * other_toughness_modifiers",
+      "notes": "Keep modifier groups explicit; some special modifiers may be independent."
+    },
+    {
+      "id": "BREAK.SUPER_BREAK",
+      "category": "break",
+      "status": "CONFIRMED",
+      "formula": "super_break_damage = super_break_level_base * (1 + break_effect) * final_toughness_damage * (1 + super_break_damage_bonus) * vulnerability_multiplier * def_multiplier * res_multiplier * reduction_multiplier",
+      "notes": "At level 80, super-break level base is approximately 376.755 when normal single-target basic toughness damage is 10."
+    },
+    {
+      "id": "BREAK.ACTION_DELAY",
+      "category": "break",
+      "status": "CONFIRMED",
+      "formula": "break_delay_fraction = 0.25",
+      "notes": "Additional element-specific delays are separate effects."
+    },
+    {
+      "id": "HEAL.BASE",
+      "category": "healing",
+      "status": "PARTIAL",
+      "formula": "healing = (scaling_stat * coefficient + flat_heal) * (1 + outgoing_healing_boost + incoming_healing_boost - incoming_healing_reduction)",
+      "notes": "Current mechanics documentation gives an additive healing-boost bucket. Caps, rounding, overheal conversion, and special healing families remain policy data."
+    },
+    {
+      "id": "SHIELD.BASE",
+      "category": "shield",
+      "status": "PARTIAL",
+      "formula": "shield_value = (scaling_stat * coefficient + flat_shield) * (1 + shield_bonus)",
+      "notes": "Current mechanics documentation includes Shield Bonus. Separate shield instances do not normally sum into one pool; see SHIELD.MULTI_INSTANCE."
+    },
+    {
+      "id": "DOT.REGULAR",
+      "category": "dot",
+      "status": "PARTIAL",
+      "formula": "dot_damage = dot_base_scaling * applicable_dmg_bonus * def_multiplier * res_multiplier * vulnerability_multiplier * reduction_multiplier * stack_multiplier",
+      "notes": "Ordinary DoT normally does not crit unless explicitly overridden. Global snapshot-vs-dynamic behavior remains unresolved and must be event-tested."
+    },
+    {
+      "id": "ELATION.GENERIC",
+      "category": "elation",
+      "status": "UNKNOWN",
+      "formula": null,
+      "notes": "Version 4.x officially exposes Elation damage, Laughter points, Aha Moment, and related extra-turn/resource interactions. No universal formula is locked yet; model as an extension namespace rather than forcing it into ordinary direct damage."
+    },
+    {
+      "id": "DAMAGE.RES_CLAMP_CANDIDATE",
+      "category": "damage",
+      "status": "PARTIAL",
+      "formula": "effective_res = clamp(raw_effective_res, -1.0, 0.9); res_multiplier = 1 - effective_res",
+      "notes": "A current mechanics page reports Damage RES range -100% to 90%, hence multiplier 200% to 10%. Only one modern consolidated source was found; do not production-bind before independent validation."
+    },
+    {
+      "id": "SHIELD.MULTI_INSTANCE",
+      "category": "shield",
+      "status": "PARTIAL",
+      "formula": "effective_shield = max(remaining_shield_i); each shield_i_after = max(0, shield_i_before - incoming_damage); hp_overflow = max(0, incoming_damage - effective_shield_before)",
+      "notes": "Current mechanics documentation says different shields do not add, all absorb the same full damage simultaneously, and a lower shield may break in the background. Explicitly stackable or refreshing shields must override this default with an effect policy."
+    },
+    {
+      "id": "DOT.TICK_EVENT",
+      "category": "dot",
+      "status": "CONFIRMED",
+      "formula": null,
+      "notes": "Ordinary DoT is resolved at the beginning of the affected target's turn. Frozen and Entanglement start-turn damage are Additional DMG, not DoT."
+    },
+    {
+      "id": "DOT.CRIT_POLICY",
+      "category": "dot",
+      "status": "CONFIRMED",
+      "formula": "crit_multiplier = 1",
+      "notes": "Ordinary DoT cannot CRIT unless an explicit mechanic overrides the damage-family policy."
+    },
+    {
+      "id": "DOT.APPLICATION_ORDER",
+      "category": "dot",
+      "status": "PARTIAL",
+      "formula": null,
+      "notes": "A current mechanics page states DoT instances resolve chronologically by application time, with named exceptions such as Arcana resolving last. Encode stable application_sequence plus an optional explicit priority override."
+    },
+    {
+      "id": "DOT.DETONATION",
+      "category": "dot",
+      "status": "PARTIAL",
+      "formula": "detonation_damage = dot_original_damage * trigger_fraction",
+      "notes": "Detonation abilities immediately deal a percentage of the referenced DoT's 'original DMG'. Model as DotTriggerRequest referencing an existing DoT instance. The phrase does not prove whether the value is stored at application or recomputed from current source/target modifiers."
+    },
+    {
+      "id": "EXTRA_TURN.STATUS_AND_AV",
+      "category": "timeline",
+      "status": "PARTIAL",
+      "formula": null,
+      "notes": "Current consolidated mechanics documentation and older experiments agree that an Extra Turn does not tick status durations and does not change the unit's normal action-bar position. Modern exceptions should be content policies."
+    },
+    {
+      "id": "EXTRA_TURN.QUEUE_ORDER",
+      "category": "timeline",
+      "status": "PARTIAL",
+      "formula": "same_priority_queue = FIFO(trigger_sequence)",
+      "notes": "Two independent community mechanics sources describe same-priority inserted actions as resolving in trigger order. This conflicts with the project's currently locked LIFO extra-turn behavior. Do not silently alter production; run modern deterministic capture tests first.",
+      "semantic_conflict": "ENGINE_LOCKED_LIFO_VS_EVIDENCE_FIFO"
+    },
+    {
+      "id": "ACTION.INSERTION_PRIORITY_LEGACY_OBSERVATION",
+      "category": "timeline",
+      "status": "PARTIAL",
+      "formula": "follow_up > ultimate_or_path_echo_or_resurgence > does_not_end_turn_insert > normal_turn",
+      "notes": "Observed and published in 2023 experiments. Current mechanics documentation still places Follow-Up Actions above Extra Turns and normal turns, but the complete global priority table must be re-tested against modern mechanics."
+    },
+    {
+      "id": "DAMAGE.ADDITIONAL_CHARACTER",
+      "category": "damage",
+      "status": "PARTIAL",
+      "formula": "additional_damage = base_damage * crit_multiplier * elemental_or_all_dmg_bonus * def_multiplier * res_multiplier * vulnerability_multiplier * reduction_multiplier",
+      "notes": "Character Additional DMG is a separate damage instance and is not an attack. It can CRIT and uses elemental/all-type DMG boosts, but normally does not inherit Basic/Skill/Ultimate/Follow-Up/DoT tag boosts unless explicitly specified."
+    },
+    {
+      "id": "DAMAGE.ADDITIONAL_BREAK",
+      "category": "damage",
+      "status": "PARTIAL",
+      "formula": "break_additional_damage = break_family_formula_without_crit_or_ordinary_dmg_bonus",
+      "notes": "Frozen and Entanglement start-turn damage are categorized as Weakness Break Additional DMG, not ordinary DoT; they cannot CRIT and are not affected by ordinary DMG Boost."
+    },
+    {
+      "id": "DAMAGE.TRUE",
+      "category": "damage",
+      "status": "PARTIAL",
+      "formula": "true_damage = referenced_value * coefficient OR fixed_value",
+      "notes": "Current terminology defines True DMG as non-type damage not affected by effects and not counted as using an attack. It should bypass ordinary damage modifier resolution. Target immunity, scripted caps, encounter rules, and HP-floor behavior still require explicit policies."
+    },
+    {
+      "id": "ENERGY.MEMOSPRITE_HIT",
+      "category": "energy",
+      "status": "PARTIAL",
+      "formula": "memomaster_energy_gain = sum(hit_energy_event for memomaster_and_owned_memosprite_hits)",
+      "notes": "Current mechanics documentation states enemy hits on a memosprite restore Energy to the memomaster, and an AoE hitting both can generate Energy from both hit events."
+    },
+    {
+      "id": "SUMMON.DEFAULT_ENTITY_POLICY",
+      "category": "entity",
+      "status": "PARTIAL",
+      "formula": null,
+      "notes": "A conventional summon is a separate timeline unit with fixed SPD, reads the summoner's current stats for damage, and is generally not targetable. Every field must remain overridable."
+    },
+    {
+      "id": "MEMOSPRITE.DEFAULT_ENTITY_POLICY",
+      "category": "entity",
+      "status": "PARTIAL",
+      "formula": null,
+      "notes": "A memosprite is a separate targetable entity. By default it shares stats with the memomaster, has fixed SPD/action-order placement, can receive buffs/healing, and has aggro. Known zero-SPD or backup-unit exceptions require explicit policy flags."
+    },
+    {
+      "id": "ACTION.JOINT_ATTACK",
+      "category": "action_context",
+      "status": "PARTIAL",
+      "formula": "joint_action = ordered_list(child_attack_context_i)",
+      "notes": "Joint ATK is one action containing multiple attacks by ordered attackers. Once-per-action triggers should see one parent action; on-attack/on-hit triggers should see the relevant ordered child attacks/hits."
+    },
+    {
+      "id": "DAMAGE.WEAKEN",
+      "category": "damage",
+      "status": "CONFIRMED",
+      "formula": "weaken_multiplier = 1 - weaken",
+      "notes": "Weaken is a source-side outgoing-damage stat. Current mechanics documentation states that Weakness Break-related damage and Elation damage are not affected by Weaken."
+    },
+    {
+      "id": "DAMAGE.FINAL_DMG_BOOST",
+      "category": "damage",
+      "status": "PARTIAL",
+      "formula": "final_dmg_multiplier = 1 + final_dmg_boost",
+      "notes": "Final DMG Boost is explicitly separate from ordinary DMG Boost. Its exact stacking behavior with multiple sources and all content-specific restrictions still need locked tests."
+    },
+    {
+      "id": "DAMAGE.UNIVERSAL_PIPELINE_V0_3",
+      "category": "damage",
+      "status": "PARTIAL",
+      "formula": "final_damage = base_damage * crit_multiplier * dmg_bonus_multiplier * final_dmg_multiplier * weaken_multiplier * def_multiplier * res_multiplier * vulnerability_multiplier * toughness_state_multiplier * mitigation_multiplier * family_specific_multipliers",
+      "notes": "This is an architecture pipeline, not a claim that every damage family uses every bucket. Break-related, Elation, True DMG, Additional DMG, DoT, and encounter-scripted damage must declare which buckets they accept or bypass."
+    },
+    {
+      "id": "HP.CONSUME",
+      "category": "hp",
+      "status": "CONFIRMED",
+      "formula": "hp_after = max(hp_floor, hp_before - resolved_consumption); resolved_consumption = basis_value * fraction OR fixed_value",
+      "notes": "HP consumption is not ordinary incoming damage. Skills demonstrate current-HP and max-HP bases, plus explicit floors such as 1 HP. It should bypass shields and ordinary damage multipliers unless a skill explicitly says otherwise."
+    },
+    {
+      "id": "HP.SET_CURRENT",
+      "category": "hp",
+      "status": "CONFIRMED",
+      "formula": "hp_after = clamp(requested_hp, minimum_policy, current_max_hp)",
+      "notes": "Some abilities set current HP to a percentage of Max HP rather than dealing damage, consuming HP, or healing. This requires a separate SetHP request and separate trigger semantics."
+    },
+    {
+      "id": "HP.LOSS_EVENT",
+      "category": "hp",
+      "status": "PARTIAL",
+      "formula": "hp_lost = max(0, hp_before - hp_after)",
+      "notes": "HP-loss counters can observe both received damage and HP consumption in current content. The engine must emit an HP_LOST event with a cause field. Exact eligibility remains content policy."
+    },
+    {
+      "id": "HP.DISTRIBUTE_DAMAGE",
+      "category": "hp",
+      "status": "PARTIAL",
+      "formula": "primary_share = pre_distribution_damage * (1 - distributed_fraction); receiver_share = pre_distribution_damage * distributed_fraction",
+      "notes": "Distribution occurs before shield absorption, and distributed damage cannot be distributed again. The exact point relative to each target's DEF/RES/Vulnerability/Mitigation requires deterministic tests, so the pipeline phase remains unresolved."
+    },
+    {
+      "id": "LIFECYCLE.LETHAL_INTERCEPT",
+      "category": "lifecycle",
+      "status": "CONFIRMED",
+      "formula": null,
+      "notes": "A killing blow can be intercepted by a state or talent before entering Downed/Dead. Runtime requires BEFORE_LETHAL, LETHAL_INTERCEPTED, DOWNED, and DEATH events rather than directly setting dead=true when HP reaches zero."
+    },
+    {
+      "id": "DURATION.EXPLICIT_POLICY_REQUIRED",
+      "category": "duration",
+      "status": "CONFIRMED",
+      "formula": null,
+      "notes": "Current content explicitly uses different decrement events: start of source turn, start of target turn, after a special entity uses abilities, and custom countdown actions. There is no safe universal TurnEnd decrement default."
+    },
+    {
+      "id": "CONTROL.CROWD_CONTROL_GATE",
+      "category": "control",
+      "status": "PARTIAL",
+      "formula": null,
+      "notes": "Crowd Control is a tagged debuff family used by immunity, resistance, cleanse, and action-lock checks. Known members include Freeze, Entanglement, Imprisonment and multiple encounter-specific states. Individual action/AV effects must remain separate effect definitions."
+    },
+    {
+      "id": "ENTITY.OUT_OF_BOUNDS",
+      "category": "entity",
+      "status": "CONFIRMED",
+      "formula": null,
+      "notes": "Out-of-Bounds entities cannot be actively selected by allies or enemies. This is distinct from Dead, Departed, Untargetable-by-enemies-only, and absent-from-action-order policies."
+    },
+    {
+      "id": "MAX_HP.CHANGE_POLICY",
+      "category": "hp",
+      "status": "UNKNOWN",
+      "formula": null,
+      "notes": "The global rule for current-HP adjustment when Max HP rises or falls is not locked. Store an explicit preserve_current, preserve_ratio, add_delta, or content_defined policy; never infer one default from a character description."
+    },
+    {
+      "id": "CONTROL.CROWD_CONTROL_FAMILY",
+      "category": "control",
+      "status": "CONFIRMED",
+      "formula": null,
+      "notes": "Crowd Control is a debuff family that blocks extra actions and disables Ultimate use. Current listed members include Frozen, Entanglement, Imprisonment and multiple encounter-specific states. The family tag does not define each state's AV/damage behavior."
+    },
+    {
+      "id": "BREAK.TYPE_DEBUFF_BASE_CHANCE",
+      "category": "break",
+      "status": "CONFIRMED",
+      "formula": "weakness_break_type_debuff_base_chance = 1.5",
+      "notes": "Current mechanics documentation states Type debuffs associated with Weakness Break use 150% base chance. Final application still passes through EHR, Effect RES, and applicable Debuff RES unless an effect is fixed/guaranteed."
+    },
+    {
+      "id": "CONTROL.FROZEN_RUNTIME",
+      "category": "control",
+      "status": "CONFIRMED",
+      "formula": null,
+      "notes": "Frozen prevents action. On unfreezing, the target takes Ice Additional DMG, skips the current turn, and advances the next turn by 50%. Frozen damage is Additional DMG, not DoT."
+    },
+    {
+      "id": "CONTROL.FROZEN_DAMAGE_FORMULA",
+      "category": "control",
+      "status": "UNKNOWN",
+      "formula": null,
+      "notes": "The universal current-version coefficient for Weakness-Break Frozen Additional DMG was not locked in this pass. Keep a BreakAdditionalDamageRequest with content/version data."
+    },
+    {
+      "id": "CONTROL.ENTANGLEMENT_RUNTIME",
+      "category": "control",
+      "status": "CONFIRMED",
+      "formula": null,
+      "notes": "Entanglement delays action, prevents action while active, and deals Quantum Additional DMG at the beginning of the affected target's turn. It is not DoT. Exact break delay, stack growth, maximum stacks, and damage coefficient remain versioned content data."
+    },
+    {
+      "id": "CONTROL.IMPRISONMENT_RUNTIME",
+      "category": "control",
+      "status": "CONFIRMED",
+      "formula": null,
+      "notes": "Imprisonment delays action, reduces SPD, and prevents action while active. The primitive is confirmed; delay percentage, SPD reduction, duration, and application chance are content-defined."
+    },
+    {
+      "id": "EXTRA_TURN.CORE_SEMANTICS",
+      "category": "timeline",
+      "status": "CONFIRMED",
+      "formula": null,
+      "notes": "An Extra Turn occurs outside normal turn order, does not tick status effects, and does not change the unit's normal action-bar position. Ultimate use may be disallowed according to the Extra Turn definition/content."
+    },
+    {
+      "id": "EXTRA_TURN.PRIORITY_CLASSES",
+      "category": "timeline",
+      "status": "PARTIAL",
+      "formula": null,
+      "notes": "Current consolidated mechanics: Follow-Up Action > Extra Turn/Ultimate queue > regular turn. Actions described as 'does not end the current turn' are queued behind Extra Turns/Ultimates as if regular turns. A modern deterministic replay is still required before production rebinding."
+    },
+    {
+      "id": "EXTRA_TURN.SAME_PRIORITY_ORDER",
+      "category": "timeline",
+      "status": "PARTIAL",
+      "formula": "same_priority_execution_order = stable_sort(trigger_sequence_ascending)",
+      "notes": "Current documentation says multiple Extra Turns, including Ultimates, execute in trigger order. This strongly favors FIFO and conflicts with the repository's historical LIFO contract. Keep the conflict blocking until frame-level modern evidence is recorded.",
+      "semantic_conflict": "ENGINE_LOCKED_LIFO_VS_EVIDENCE_FIFO"
+    },
+    {
+      "id": "SUMMON.CONVENTIONAL_DEFAULT",
+      "category": "entity",
+      "status": "CONFIRMED",
+      "formula": null,
+      "notes": "Conventional summons are separate units, appear in Action Order with fixed SPD, read the summoner's current stats when dealing damage, and are generally not targetable by allies/enemies. All fields remain overrideable."
+    },
+    {
+      "id": "MEMOSPRITE.DEFAULT_IDENTITY",
+      "category": "entity",
+      "status": "CONFIRMED",
+      "formula": null,
+      "notes": "Memosprites are separate ally entities. By default they share the Memomaster's stats, have a fixed-SPD Action Order slot, can be buffed/healed and targeted by enemies, and carry aggro."
+    },
+    {
+      "id": "MEMOSPRITE.STATUS_SEPARATION",
+      "category": "entity",
+      "status": "CONFIRMED",
+      "formula": null,
+      "notes": "Memosprite and Memomaster receive Status Effects separately. Effects that target one do not automatically affect the other; effects targeting all allies affect both unless overridden."
+    },
+    {
+      "id": "MEMOSPRITE.STAT_INHERITANCE_POLICY",
+      "category": "entity",
+      "status": "PARTIAL",
+      "formula": null,
+      "notes": "Base combat stats are inherited by default, but most conditional relic-set bonuses are not automatically inherited. Runtime must separate base/shared-stat references from conditional modifier eligibility."
+    },
+    {
+      "id": "MEMOSPRITE.ZERO_SPEED_POLICY",
+      "category": "entity",
+      "status": "CONFIRMED",
+      "formula": null,
+      "notes": "Zero-SPD memosprites exist: they do not appear in Action Order and act only when granted Extra Turns. Timeline participation must therefore be a policy, not implied by entity type."
+    },
+    {
+      "id": "ENTITY.DEPARTED",
+      "category": "lifecycle",
+      "status": "CONFIRMED",
+      "formula": null,
+      "notes": "Departed entities cannot be designated as ability targets and do not appear in Action Order. Departed must remain distinct from Dead, Removed, Out-of-Bounds, and untargetable-by-enemies-only."
+    },
+    {
+      "id": "DURATION.CONTINUOUS_EFFECT_CUSTOM_DECREMENT",
+      "category": "duration",
+      "status": "CONFIRMED",
+      "formula": null,
+      "notes": "Current abilities can decrement all Continuous Effects after a special entity uses an ability. Duration processing must subscribe to explicit events rather than assume normal TurnStart/TurnEnd."
+    },
+    {
+      "id": "WAVE.STATE_POLICY",
+      "category": "wave",
+      "status": "CONFIRMED",
+      "formula": null,
+      "notes": "Current content demonstrates all three possibilities: per-wave trigger counts reset, some states end when a wave is cleared, and some countdown Action Values explicitly do not reset at wave start. Every state/resource/timeline object needs an explicit wave-transition policy."
+    },
+    {
+      "id": "WAVE.TRANSITION_SCHEMA",
+      "category": "wave",
+      "status": "PARTIAL",
+      "formula": null,
+      "notes": "Recommended policies: KEEP, RESET_COUNTER, REMOVE, REAPPLY, REBASE_AV, KEEP_AV, CONTENT_DEFINED. The global ordering of WaveEnd, entity cleanup, WaveStart, healing, and entry effects still needs deterministic capture."
+    },
+    {
+      "id": "DAMAGE.DISTRIBUTION_PHASE",
+      "category": "damage",
+      "status": "CONFIRMED",
+      "formula": "raw_share_primary = incoming_attack_payload * (1 - distributed_fraction); raw_share_receiver = incoming_attack_payload * distributed_fraction",
+      "notes": "The generic Distribute keyword states distribution occurs before DMG is calculated. Distributed shares cannot be distributed again. Resolve distribution before shield absorption."
+    },
+    {
+      "id": "DAMAGE.DISTRIBUTION_TARGET_RESOLUTION",
+      "category": "damage",
+      "status": "PARTIAL",
+      "formula": null,
+      "notes": "After raw payload splitting, each target should likely resolve target-side DEF/RES/Vulnerability/Mitigation and shield independently. This is the safest architectural inference, but exact rounding and source/target modifier timing need deterministic capture."
+    },
+    {
+      "id": "DAMAGE.DISTRIBUTION_RECURSION_GUARD",
+      "category": "damage",
+      "status": "CONFIRMED",
+      "formula": "distributed_share.distribution_eligible = false",
+      "notes": "Damage that has already been distributed cannot be distributed again."
+    },
+    {
+      "id": "DOT.NATURAL_TICK_TIMING",
+      "category": "dot",
+      "status": "CONFIRMED",
+      "formula": null,
+      "notes": "Ordinary natural DoT resolves at the beginning of the affected target's turn. This is not the only possible DoT trigger event: current 4.x content also defines event-triggered DoT after an ally attack."
+    },
+    {
+      "id": "DOT.NATURAL_RESOLUTION_ORDER",
+      "category": "dot",
+      "status": "CONFIRMED",
+      "formula": "order = stable_sort(application_sequence_ascending, explicit_priority_override)",
+      "notes": "DoTs resolve in chronological infliction order; earlier applications resolve first. Arcana is an explicit exception that resolves at the end of the DoT queue."
+    },
+    {
+      "id": "DOT.QUEUE_STOPS_ON_TARGET_DEFEAT",
+      "category": "dot",
+      "status": "CONFIRMED",
+      "formula": null,
+      "notes": "If a target is defeated by an earlier DoT in the same natural tick queue, remaining DoTs on that target are not dealt. Queue resolution requires a validity/death check after every instance."
+    },
+    {
+      "id": "DOT.DETONATION_REFERENCE",
+      "category": "dot",
+      "status": "PARTIAL",
+      "formula": "detonation_damage = referenced_dot_original_damage * trigger_fraction",
+      "notes": "Current ability wording consistently references a percentage of current DoT debuffs' original DMG. The request must reference the DoT instance and not recreate/reapply the debuff."
+    },
+    {
+      "id": "DOT.SNAPSHOT_POLICY",
+      "category": "dot",
+      "status": "UNKNOWN",
+      "formula": null,
+      "notes": "No sufficiently reliable multi-source evidence was found proving a universal application-time snapshot or trigger-time dynamic recomputation rule. The DoT instance must explicitly support SNAPSHOT, DYNAMIC, HYBRID, or CONTENT_DEFINED."
+    },
+    {
+      "id": "DOT.DETONATION_DURATION_POLICY",
+      "category": "dot",
+      "status": "PARTIAL",
+      "formula": null,
+      "notes": "Ordinary detonation text describes immediate damage from an existing DoT and does not state that duration is consumed. Default architecture should set consume_duration=false, but character/effect overrides and stack-consuming detonations remain possible."
+    },
+    {
+      "id": "CONTROL.FROZEN_TURN_TRANSITION",
+      "category": "control",
+      "status": "CONFIRMED",
+      "formula": "next_normal_turn_advance_fraction = 0.5",
+      "notes": "On unfreezing, the target takes Ice Additional DMG, skips the current turn, and advances the next normal turn by 50%. This must not be implemented as an ordinary DoT tick."
+    },
+    {
+      "id": "CONTROL.ENTANGLEMENT_DAMAGE_FAMILY",
+      "category": "control",
+      "status": "CONFIRMED",
+      "formula": null,
+      "notes": "Entanglement's turn-begin damage is Quantum Additional DMG, not DoT. It belongs to a break/control additional-damage request family."
+    },
+    {
+      "id": "CONTROL.IMPRISONMENT_PARAMETERIZATION",
+      "category": "control",
+      "status": "CONFIRMED",
+      "formula": null,
+      "notes": "Imprisonment requires content-defined action_delay, speed_reduction, duration, and chance fields. A single global percentage would be incorrect because multiple applied variants exist."
+    },
+    {
+      "id": "LIFECYCLE.DOWNED_BASELINE",
+      "category": "lifecycle",
+      "status": "CONFIRMED",
+      "formula": "if lethal_not_intercepted: lifecycle_state = DOWNED",
+      "notes": "Current terminology treats an ally reduced to 0 HP as incapacitated/Downed. A killing-blow interceptor can prevent this transition."
+    },
+    {
+      "id": "LIFECYCLE.KILLING_BLOW_INTERCEPT_PIPELINE",
+      "category": "lifecycle",
+      "status": "CONFIRMED",
+      "formula": null,
+      "notes": "Multiple current abilities explicitly prevent being knocked down on a killing blow, then remove a state/zone, restore HP, and optionally launch an immediate final action. Lethal interception must run before DOWNED."
+    },
+    {
+      "id": "LIFECYCLE.REVIVE_PIPELINE",
+      "category": "lifecycle",
+      "status": "PARTIAL",
+      "formula": null,
+      "notes": "Runtime must distinguish preventing Downed, delaying Downed, and reviving after Downed. The exact universal ordering for action cancellation, status cleanup, targetability, AV retention, and re-entry after a true revive remains unresolved."
+    },
+    {
+      "id": "MAX_HP.CURRENT_HP_COUPLING",
+      "category": "hp",
+      "status": "UNKNOWN",
+      "formula": null,
+      "notes": "Current content proves Max HP can change temporarily and dynamically, but text does not establish one global current-HP adjustment rule. Require explicit policies: PRESERVE_CURRENT, PRESERVE_RATIO, ADD_DELTA, CLAMP_ONLY, LINK_PERCENTAGE, or CONTENT_DEFINED."
+    },
+    {
+      "id": "ENTITY.HP_PERCENT_LINK",
+      "category": "entity",
+      "status": "CONFIRMED",
+      "formula": "linked_current_hp = linked_max_hp * source_current_hp / source_max_hp",
+      "notes": "Current content includes entities whose HP percentage mirrors another entity. This is an explicit link policy and must not be generalized to all summons or Max-HP changes."
+    },
+    {
+      "id": "EXTRA_TURN.EVIDENCE_FIFO_CANDIDATE",
+      "category": "timeline",
+      "status": "PARTIAL",
+      "formula": "same_priority_order = trigger_sequence_ascending",
+      "notes": "Current consolidated mechanics explicitly says multiple Extra Turns, including Ultimates, execute in trigger order. This agrees with an independently documented older experiment but still conflicts with the repository's historical LIFO contract. Production rebinding remains blocked pending current-version frame-level replay.",
+      "semantic_conflict": "ENGINE_LOCKED_LIFO_VS_EVIDENCE_FIFO"
+    },
+    {
+      "id": "BREAK_DOT.BURN_HISTORICAL_V1",
+      "category": "break_dot",
+      "status": "PARTIAL",
+      "formula": "burn_break_dot = level_break_base * 2.0 * (1 + break_effect) * def_multiplier * res_multiplier * vulnerability_multiplier * reduction_multiplier",
+      "notes": "Recovered from a 2023 Bilibili experimental write-up. Reported duration: 2 target turns. Does not use toughness coefficient. Historical candidate only; current-version revalidation required.",
+      "version_scope": "2023-05 / early-release-era",
+      "production_binding_allowed": false
+    },
+    {
+      "id": "BREAK_DOT.WIND_SHEAR_HISTORICAL_V1",
+      "category": "break_dot",
+      "status": "PARTIAL",
+      "formula": "wind_shear_break_dot = level_break_base * 2.0 * stack_count * (1 + break_effect) * def_multiplier * res_multiplier * vulnerability_multiplier * reduction_multiplier",
+      "notes": "Historical write-up reports 2-turn duration and 3 stacks on elite-or-higher enemies. Stack assignment, current enemy-rank mapping, and live coefficients require revalidation.",
+      "version_scope": "2023-05 / early-release-era",
+      "production_binding_allowed": false
+    },
+    {
+      "id": "BREAK_DOT.SHOCK_HISTORICAL_V1",
+      "category": "break_dot",
+      "status": "PARTIAL",
+      "formula": "shock_break_dot = level_break_base * 4.0 * (1 + break_effect) * def_multiplier * res_multiplier * vulnerability_multiplier * reduction_multiplier",
+      "notes": "Historical write-up reports 2-turn duration. Exact current multiplier and duration must be checked against live structured data and deterministic captures.",
+      "version_scope": "2023-05 / early-release-era",
+      "production_binding_allowed": false
+    },
+    {
+      "id": "BREAK_DOT.BLEED_HISTORICAL_V1",
+      "category": "break_dot",
+      "status": "PARTIAL",
+      "formula": "bleed_break_dot = target_max_hp * enemy_rank_ratio * (1 + break_effect) * def_multiplier * res_multiplier * vulnerability_multiplier * reduction_multiplier",
+      "notes": "Historical candidate ratios: 16% for normal enemies and 7% for elite-or-higher enemies; reported duration 2 turns. Missing possible caps and modern rank exceptions.",
+      "candidate_parameters": {
+        "normal_enemy_ratio": 0.16,
+        "elite_or_higher_ratio": 0.07,
+        "reported_duration_turns": 2
+      },
+      "version_scope": "2023-05 / early-release-era",
+      "production_binding_allowed": false
+    },
+    {
+      "id": "BREAK_CONTROL.ENTANGLEMENT_HISTORICAL_V1",
+      "category": "break_control",
+      "status": "PARTIAL",
+      "formula": "entanglement_damage = level_break_base * 1.2 * toughness_coefficient * entanglement_stack_count * (1 + break_effect) * def_multiplier * res_multiplier * vulnerability_multiplier * reduction_multiplier",
+      "notes": "Historical candidate: initial 1 stack, +1 per received attack, max 5; duration 1 turn; additional action delay = 20% * (1 + break_effect). The article also reports that this damage did not benefit from an old Quantum relic DEF-ignore effect. Every numeric claim requires current-version replay and data revalidation.",
+      "candidate_parameters": {
+        "initial_stacks": 1,
+        "stack_gain_per_attack": 1,
+        "max_stacks": 5,
+        "additional_delay_base": 0.2,
+        "reported_duration_turns": 1
+      },
+      "version_scope": "2023-05 / early-release-era",
+      "production_binding_allowed": false
+    },
+    {
+      "id": "BREAK_CONTROL.IMPRISONMENT_HISTORICAL_V1",
+      "category": "break_control",
+      "status": "PARTIAL",
+      "formula": "additional_delay_fraction = 0.30 * (1 + break_effect); speed_reduction_fraction = 0.10",
+      "notes": "Historical candidate reports 1-turn duration and no damage. The generic runtime primitive is already confirmed, but these exact numbers must remain versioned content candidates.",
+      "candidate_parameters": {
+        "additional_delay_base": 0.3,
+        "speed_reduction": 0.1,
+        "reported_duration_turns": 1
+      },
+      "version_scope": "2023-05 / early-release-era",
+      "production_binding_allowed": false
+    },
+    {
+      "id": "BREAK_CONTROL.FROZEN_HISTORICAL_V1",
+      "category": "break_control",
+      "status": "PARTIAL",
+      "formula": "frozen_break_additional_damage = level_break_base * 2.0 * (1 + break_effect) * def_multiplier * res_multiplier * vulnerability_multiplier * reduction_multiplier",
+      "notes": "Historical candidate reports 1-turn duration, inability to act for the frozen turn, and 50% advance of the following normal turn. The 50% next-turn advance has stronger support than the historical damage multiplier.",
+      "candidate_parameters": {
+        "damage_multiplier": 2.0,
+        "reported_duration_turns": 1,
+        "advance_next_normal_turn": 0.5
+      },
+      "version_scope": "2023-05 / early-release-era",
+      "production_binding_allowed": false
+    },
+    {
+      "id": "BREAK_DOT.NO_TOUGHNESS_COEFFICIENT_HISTORICAL",
+      "category": "break_dot",
+      "status": "PARTIAL",
+      "formula": null,
+      "notes": "The historical source explicitly reports that Burn/Wind Shear/Shock follow-up Break DoTs do not use the target toughness coefficient, while Entanglement does. This family split is architecturally useful but still requires live revalidation.",
+      "version_scope": "2023-05 / early-release-era",
+      "production_binding_allowed": false
+    },
+    {
+      "id": "BREAK.ELEMENT_MULTIPLIER_CONVENTION_HISTORICAL",
+      "category": "break",
+      "status": "CONFIRMED",
+      "formula": null,
+      "notes": "Historical sources may use doubled element multipliers (Physical/Fire 4, Wind 3, Ice/Lightning 2, Quantum/Imaginary 1) because their level-base convention differs. The normalized registry uses 2/1.5/1/0.5. Never mix the historical element table with the normalized modern base."
+    },
+    {
+      "id": "RESEARCH.HISTORICAL_FORMULA_GATE",
+      "category": "research_policy",
+      "status": "CONFIRMED",
+      "formula": null,
+      "notes": "A historical formula may reserve fields and create test candidates, but cannot bind production unless the game version, source locator, current structured data, and deterministic observation are all recorded."
+    },
+    {
+      "id": "DOT.TRIGGER_FAMILIES",
+      "category": "dot",
+      "status": "CONFIRMED",
+      "formula": null,
+      "notes": "Runtime must distinguish NATURAL_TICK, MANUAL_DETONATION, and EVENT_TRIGGERED_DOT. Current content proves a DoT can trigger at target turn start or after one ally attack."
+    },
+    {
+      "id": "DOT.EVENT_TRIGGERED_AFTER_ALLY_ATTACK",
+      "category": "dot",
+      "status": "CONFIRMED",
+      "formula": null,
+      "notes": "Current 4.x content contains a Physical DoT that triggers at the start of each turn or after one attack by an ally, with a per-effect trigger cap and no recursive triggering."
+    },
+    {
+      "id": "DOT.RECURSION_GUARD",
+      "category": "dot",
+      "status": "CONFIRMED",
+      "formula": "trigger_context.recursive_dot_trigger_allowed = false unless explicitly overridden",
+      "notes": "Current content explicitly says its event-triggered DoT cannot repeatedly trigger itself. Generic trigger contexts therefore require recursion guards and trigger-origin tags."
+    },
+    {
+      "id": "DOT.TRIGGER_CAP_POLICY",
+      "category": "dot",
+      "status": "CONFIRMED",
+      "formula": "if trigger_count >= trigger_cap: suppress_trigger",
+      "notes": "Current event-triggered DoT examples include a finite trigger cap. Cap scope must be explicit: per action, per turn, per effect duration, or per wave."
+    },
+    {
+      "id": "EXTRA_TURN.NO_ULTIMATE_POLICY",
+      "category": "timeline",
+      "status": "CONFIRMED",
+      "formula": null,
+      "notes": "The generic Extra Turn definition says no Ultimate can be used during that Extra Turn. Ultimate-generated inserted turns and content-specific exceptions should remain explicit."
+    },
+    {
+      "id": "EXTRA_TURN.PRIORITY_MODEL_CURRENT",
+      "category": "timeline",
+      "status": "PARTIAL",
+      "formula": null,
+      "notes": "Current consolidated mechanics: Follow-Up Actions > Extra Turns/Ultimates > regular turns. DoesNotEndTurn actions are pushed behind the Extra Turn/Ultimate queue. A frame-level current-version capture is still required before production rebinding."
+    },
+    {
+      "id": "EXTRA_TURN.STABLE_TRIGGER_ORDER",
+      "category": "timeline",
+      "status": "PARTIAL",
+      "formula": "same_priority_order = stable_sort(trigger_sequence_ascending)",
+      "notes": "Current mechanics documentation explicitly states multiple Extra Turns, including Ultimates, execute in trigger order. This agrees with an independent older experiment, but conflicts with the repository's historical LIFO contract.",
+      "semantic_conflict": "ENGINE_LOCKED_LIFO_VS_EVIDENCE_FIFO"
+    },
+    {
+      "id": "WAVE.COUNTDOWN_AV_PERSISTENCE",
+      "category": "wave",
+      "status": "CONFIRMED",
+      "formula": null,
+      "notes": "Current content includes countdown entities whose Action Value explicitly does not reset at the start of each wave. Timeline objects need KEEP_AV or REBASE_AV policies."
+    },
+    {
+      "id": "WAVE.PER_WAVE_TRIGGER_RESET",
+      "category": "wave",
+      "status": "CONFIRMED",
+      "formula": "trigger_count = 0 at WAVE_START when scope == PER_WAVE",
+      "notes": "Current light-cone and ability text explicitly defines once-per-wave effects. Reset scope must be stored on each trigger counter."
+    },
+    {
+      "id": "WAVE.START_HEAL_EVENT",
+      "category": "wave",
+      "status": "CONFIRMED",
+      "formula": "heal = lost_hp * restore_fraction",
+      "notes": "Current content includes healing at the start of every wave based on each ally's lost HP. WaveStart is therefore a first-class trigger event."
+    },
+    {
+      "id": "MAX_HP.CHANGE_AND_HEAL_ARE_SEPARATE",
+      "category": "hp",
+      "status": "CONFIRMED",
+      "formula": null,
+      "notes": "Current content often states Max HP increase and HP restoration as separate clauses. Do not infer that increasing Max HP automatically restores current HP."
+    },
+    {
+      "id": "MAX_HP.AUTO_CURRENT_HP_CHANGE",
+      "category": "hp",
+      "status": "UNKNOWN",
+      "formula": null,
+      "notes": "No universal rule was found for automatic current-HP adjustment when Max HP changes. The separate-clause pattern argues against assuming automatic healing, but does not prove the exact default for every system-level Max HP change."
+    },
+    {
+      "id": "LIFECYCLE.LETHAL_INTERCEPT_CLEANUP",
+      "category": "lifecycle",
+      "status": "CONFIRMED",
+      "formula": null,
+      "notes": "Current abilities explicitly handle killing blows by dispelling a zone/state, exiting a mode, and restoring HP instead of entering Downed. Interceptors need ordered cleanup and restoration steps."
+    },
+    {
+      "id": "LIFECYCLE.COUNTDOWN_STATE_EXPIRATION",
+      "category": "lifecycle",
+      "status": "CONFIRMED",
+      "formula": null,
+      "notes": "Current transformations can create a fixed-SPD countdown entity; at the start of the countdown's turn, the state/zone is removed. This is an explicit lifecycle timer, not a normal-turn duration."
+    },
+    {
+      "id": "CONTINUOUS_EFFECT.CUSTOM_GLOBAL_DECREMENT",
+      "category": "duration",
+      "status": "CONFIRMED",
+      "formula": null,
+      "notes": "Current content can decrement all Continuous Effects after a special entity uses an ability. Effect duration processing must subscribe to arbitrary named events."
+    },
+    {
+      "id": "ACTION.CONTEXT_HIERARCHY",
+      "category": "action_context",
+      "status": "PARTIAL",
+      "formula": null,
+      "notes": "Recommended hierarchy: ActionContext -> ordered AttackContext[] -> ordered HitContext[]. Structured skill data proves one action can contain multiple random bounce hits, all-enemy hits, primary+adjacent hits, or triggered follow-up/counter actions. Exact game-wide event emission boundaries still need deterministic captures.",
+      "production_binding_allowed": "interface_only"
+    },
+    {
+      "id": "TARGET.SINGLE_TARGET",
+      "category": "targeting",
+      "status": "PARTIAL",
+      "formula": "targets = [selected_valid_target]",
+      "notes": "Fixed structured data consistently distinguishes Single Target from other target patterns.",
+      "production_binding_allowed": "interface_only"
+    },
+    {
+      "id": "TARGET.BLAST",
+      "category": "targeting",
+      "status": "PARTIAL",
+      "formula": "targets = [primary] + valid_adjacent_enemies(primary)",
+      "notes": "Blast uses one selected primary target plus adjacent enemies. Primary and adjacent targets may have different damage coefficients and toughness damage.",
+      "production_binding_allowed": "interface_only"
+    },
+    {
+      "id": "TARGET.AOE",
+      "category": "targeting",
+      "status": "PARTIAL",
+      "formula": "targets = all_valid_targets_in_team_or_side",
+      "notes": "AoE applies to all valid targets on the designated side. Per-target damage/crit/status results must remain independent even when created by one action.",
+      "production_binding_allowed": "interface_only"
+    },
+    {
+      "id": "TARGET.BOUNCE",
+      "category": "targeting",
+      "status": "PARTIAL",
+      "formula": "hit_0_target = selected_primary; for i in 1..extra_hit_count: hit_i_target = rng.choice(valid_random_targets)",
+      "notes": "A bounce skill can hit the selected enemy first, then perform a fixed number of extra random hits. Each hit may use a different toughness coefficient from the initial hit.",
+      "production_binding_allowed": "interface_only"
+    },
+    {
+      "id": "TARGET.RANDOM_ALLY_BOUNCE",
+      "category": "targeting",
+      "status": "PARTIAL",
+      "formula": "for each extra_restore: target = rng.choice(valid_allies)",
+      "notes": "Random repeated target selection is not limited to damage; healing can also bounce to random allies with per-bounce value decay.",
+      "production_binding_allowed": "interface_only"
+    },
+    {
+      "id": "TARGET.LOCKED_OVERRIDE",
+      "category": "targeting",
+      "status": "PARTIAL",
+      "formula": "if valid_locked_target: target = locked_target else use_fallback_policy",
+      "notes": "Enemy content demonstrates random initial lock-on, retargeting when a unit uses Skill, and later attacking the locked target. Lock-on overrides ordinary aggro selection.",
+      "production_binding_allowed": "interface_only"
+    },
+    {
+      "id": "ATTACK.MULTI_HIT_PER_ACTION",
+      "category": "action_context",
+      "status": "PARTIAL",
+      "formula": "action_result = ordered_resolve(hit_0 ... hit_n)",
+      "notes": "One skill action may produce multiple ordered hits. Runtime trigger scopes must distinguish once_per_action, once_per_attack, once_per_hit, once_per_target, and once_per_distinct_target.",
+      "production_binding_allowed": "interface_only"
+    },
+    {
+      "id": "TRIGGER.FOLLOW_UP_ACTION",
+      "category": "trigger",
+      "status": "PARTIAL",
+      "formula": null,
+      "notes": "A follow-up attack is a new triggered action queued after a condition such as an ally attack crossing an enemy HP threshold. It must carry its own actor/source/action identity.",
+      "production_binding_allowed": "interface_only"
+    },
+    {
+      "id": "TRIGGER.COUNTER_ACTION",
+      "category": "trigger",
+      "status": "PARTIAL",
+      "formula": null,
+      "notes": "Counter is a reactive triggered attack tied to being attacked/hit. Enhanced counters can change target pattern from single target to primary plus adjacent damage and can have limited trigger counts.",
+      "production_binding_allowed": "interface_only"
+    },
+    {
+      "id": "TRIGGER.COUNTER_SOURCE_EVENT",
+      "category": "trigger",
+      "status": "UNKNOWN",
+      "formula": null,
+      "notes": "Skill text distinguishes 'attacked' and 'hit' in different effects, but a universal current event boundary for counter eligibility across miss, shield-only, redirected, distributed, DoT, and additional damage is not locked.",
+      "production_binding_allowed": false
+    },
+    {
+      "id": "EFFECT.REMOVE_DEBUFF",
+      "category": "effect",
+      "status": "PARTIAL",
+      "formula": "removed = select_removable_debuffs(target, count, filter, priority_policy)",
+      "notes": "Structured data proves single-target removal of a fixed number of debuffs and repeated cleanse triggered by healing. The universal selection priority among multiple debuffs remains unresolved.",
+      "production_binding_allowed": "interface_only"
+    },
+    {
+      "id": "EFFECT.REMOVE_ENEMY_BUFF",
+      "category": "effect",
+      "status": "PARTIAL",
+      "formula": "for enemy in targets: remove_n_eligible_buffs(enemy, count)",
+      "notes": "Enemy-buff removal and ally-debuff removal are separate request families. AoE buff removal may remove a fixed number from each enemy independently.",
+      "production_binding_allowed": "interface_only"
+    },
+    {
+      "id": "EFFECT.CLEANSE_VS_IMMUNITY",
+      "category": "effect",
+      "status": "CONFIRMED",
+      "formula": null,
+      "notes": "Cleanse/removal acts on an effect already present. Resist/immunity suppresses application before the debuff is added. They require different events and trace results."
+    },
+    {
+      "id": "EFFECT.ACTION_SCOPED_CC_RESIST",
+      "category": "effect",
+      "status": "PARTIAL",
+      "formula": null,
+      "notes": "A current structured example grants all allies resistance to all Crowd Control debuffs applied by one enemy during the current action, consuming one protection trigger. Runtime needs action-scoped application guards and grouped multi-target debuff resolution.",
+      "production_binding_allowed": "interface_only"
+    },
+    {
+      "id": "EFFECT.TRANSFORM_AND_REPLACE",
+      "category": "effect",
+      "status": "PARTIAL",
+      "formula": "remove(old_effect); apply(new_effect, inherited_or_new_metadata)",
+      "notes": "Enemy content demonstrates Reverberation transforming into Strong Reverberation after the afflicted target receives an attack, followed by removal of the old effect.",
+      "production_binding_allowed": "interface_only"
+    },
+    {
+      "id": "EFFECT.REMOVE_POLICY",
+      "category": "effect",
+      "status": "PARTIAL",
+      "formula": null,
+      "notes": "Every effect needs removable_by_cleanse, removable_by_dispel, removable_on_down, expiration_only, and transform_only policies. Exact global selection order for removable effects remains unresolved.",
+      "production_binding_allowed": "interface_only"
+    },
+    {
+      "id": "BUFF.STACK_POLICY_TAXONOMY",
+      "category": "buff",
+      "status": "PARTIAL",
+      "formula": null,
+      "notes": "Required policies: NON_STACKING, ADD_STACK, EXTEND_DURATION, REFRESH_DURATION, REPLACE_VALUE, INDEPENDENT_INSTANCES, and CONTENT_DEFINED. Structured examples prove non-stacking duration extension and capped additive stacks.",
+      "production_binding_allowed": "interface_only"
+    },
+    {
+      "id": "BUFF.NON_STACKING_EXTEND_DURATION",
+      "category": "buff",
+      "status": "PARTIAL",
+      "formula": "if absent: apply(base_duration); else: remaining_duration += extension_amount; stack_count remains 1",
+      "notes": "Invigoration is explicitly non-stacking; reapplication to an already affected ally extends duration rather than creating another stack.",
+      "production_binding_allowed": "interface_only"
+    },
+    {
+      "id": "BUFF.CAPPED_ADDITIVE_STACKS",
+      "category": "buff",
+      "status": "PARTIAL",
+      "formula": "stack_count = min(max_stacks, stack_count + gained_stacks)",
+      "notes": "Structured content contains effects that stack up to a fixed cap. Whether reapplication refreshes all stacks, only new stacks, or uses independent durations is effect-specific.",
+      "production_binding_allowed": "interface_only"
+    },
+    {
+      "id": "TRIGGER.COUNTER_SCOPE_AND_RESET",
+      "category": "trigger",
+      "status": "PARTIAL",
+      "formula": null,
+      "notes": "Trigger counters may be per effect activation, per battle, per action, or reset by recasting a skill. The counter object must store scope, cap, reset events, and current count.",
+      "production_binding_allowed": "interface_only"
+    },
+    {
+      "id": "LIFECYCLE.ACTION_BATCH_LETHAL_INTERCEPT",
+      "category": "lifecycle",
+      "status": "PARTIAL",
+      "formula": null,
+      "notes": "One action can inflict killing blows on multiple allies, and a protection effect can intercept all allies struck by a killing blow during that action. Lethal resolution therefore needs an action-batch phase rather than immediately finalizing each target in isolation.",
+      "production_binding_allowed": "interface_only"
+    },
+    {
+      "id": "LIFECYCLE.ON_DOWNED_CLEANUP",
+      "category": "lifecycle",
+      "status": "PARTIAL",
+      "formula": null,
+      "notes": "Fields and matrices can be explicitly dispelled when their owner is knocked down. OnDowned cleanup must occur through ordered lifecycle hooks.",
+      "production_binding_allowed": "interface_only"
+    },
+    {
+      "id": "AI.TARGET_POLICY_LAYER",
+      "category": "enemy_ai",
+      "status": "PARTIAL",
+      "formula": null,
+      "notes": "Enemy ability selection, target selection, lock-on state, aggro weighting, forced target, random target, and fallback behavior should be independent policy layers.",
+      "production_binding_allowed": "interface_only"
+    },
+    {
+      "id": "AI.STATEFUL_LOCK_ON",
+      "category": "enemy_ai",
+      "status": "PARTIAL",
+      "formula": null,
+      "notes": "An enemy may choose a random monitored target, replace that target when another unit uses Skill, accumulate a resource, and later consume it while attacking the locked target.",
+      "production_binding_allowed": "interface_only"
+    },
+    {
+      "id": "RNG.DRAW_PER_BOUNCE_HIT",
+      "category": "rng",
+      "status": "PARTIAL",
+      "formula": "target_i = deterministic_rng.draw(valid_targets, draw_id=action_id:hit_index)",
+      "notes": "Bounce and random healing require stable, replayable random draws per hit. Trace must record candidate set, draw index, selected target, and forced RNG override.",
+      "production_binding_allowed": "interface_only"
+    },
+    {
+      "id": "FOLLOW_UP.COUNTER_IS_SUBTYPE",
+      "category": "trigger",
+      "status": "CONFIRMED",
+      "formula": null,
+      "notes": "Current combat terminology defines Counter as an automatically triggered attack against the attacker when the target is attacked, and explicitly classifies Counter as a Follow-Up Attack."
+    },
+    {
+      "id": "FOLLOW_UP.PRIORITY_OVER_ULTIMATE_EXTRA_ACTION",
+      "category": "timeline",
+      "status": "CONFIRMED",
+      "formula": null,
+      "notes": "Current consolidated mechanics explicitly states Follow-Up Actions ignore turn order and have greater priority than Ultimates and Extra Actions. Relative ordering among simultaneous Follow-Up Actions still requires trigger-sequence policy."
+    },
+    {
+      "id": "FOLLOW_UP.CC_SUPPRESSION",
+      "category": "trigger",
+      "status": "CONFIRMED",
+      "formula": "if actor.has_tag(CROWD_CONTROL): suppress_follow_up_action",
+      "notes": "Follow-Up Actions cannot take place while the acting character is under a Crowd Control debuff. Queued-action cancellation versus temporary blocking should remain explicit in the queue policy."
+    },
+    {
+      "id": "FOLLOW_UP.NON_ATTACK_ACTION",
+      "category": "trigger",
+      "status": "CONFIRMED",
+      "formula": null,
+      "notes": "Follow-Up Action is a scheduling/action-context concept, not necessarily an attack. Current examples include healing or transformation actions produced through follow-up actions."
+    },
+    {
+      "id": "FOLLOW_UP.SUMMON_EXECUTION_EXCEPTION",
+      "category": "trigger",
+      "status": "PARTIAL",
+      "formula": null,
+      "notes": "Current terminology notes that summon-launched follow-up attacks are not always executed through the ordinary Follow-Up Action path. Summon action contexts need a separate execution policy.",
+      "production_binding_allowed": "interface_only"
+    },
+    {
+      "id": "TARGET.INVALIDATION_POLICY",
+      "category": "targeting",
+      "status": "CONFIRMED",
+      "formula": null,
+      "notes": "Current abilities demonstrate multiple behaviors when a pending Follow-Up target is defeated: retarget a random enemy, wait for new enemies entering the field, continue to a new marked target, or end immediately. Target invalidation must be content policy."
+    },
+    {
+      "id": "TARGET.RETARGET_RANDOM_VALID",
+      "category": "targeting",
+      "status": "CONFIRMED",
+      "formula": "if original_target_invalid: target = rng.choice(valid_enemy_targets)",
+      "notes": "Current Follow-Up abilities explicitly redirect to one random enemy when the original target is defeated before the Follow-Up Attack is launched."
+    },
+    {
+      "id": "TARGET.RETARGET_NEW_WAVE_OR_NEW_ENTRY",
+      "category": "targeting",
+      "status": "PARTIAL",
+      "formula": null,
+      "notes": "Some queued Follow-Up effects can redirect to newly entering enemy targets if the original target was defeated before execution. Queue entries may therefore persist through an enemy-entry boundary.",
+      "production_binding_allowed": "interface_only"
+    },
+    {
+      "id": "TARGET.ON_INVALID_ENUM",
+      "category": "targeting",
+      "status": "CONFIRMED",
+      "formula": null,
+      "notes": "Required policies: ABORT, RETARGET_RANDOM, RETARGET_LOCKED, RETARGET_MARKED, WAIT_FOR_NEW_TARGET, CONTINUE_CHAIN, and CONTENT_DEFINED."
+    },
+    {
+      "id": "EVENT.ATTACKED_HIT_DAMAGED_SEPARATION",
+      "category": "event",
+      "status": "PARTIAL",
+      "formula": null,
+      "notes": "Mechanic texts separately reference being attacked, being hit, receiving DMG, and losing HP. The Runtime should emit ATTACK_DECLARED/ATTACKED, HIT_RESOLVED, DAMAGE_RESOLVED, and HP_LOST as distinct events. Exact universal mapping for shield-nullified attacks and misses needs replay tests.",
+      "production_binding_allowed": "interface_only"
+    },
+    {
+      "id": "EVENT.ZERO_DAMAGE_ATTACK_CONTACT",
+      "category": "event",
+      "status": "PARTIAL",
+      "formula": null,
+      "notes": "Current enemy barriers can nullify all incoming non-DoT damage until after being attacked, proving that an attack/contact event may exist even when resolved damage is zero. Counter eligibility on such contact remains unresolved.",
+      "production_binding_allowed": "interface_only"
+    },
+    {
+      "id": "COUNTER.ELIGIBILITY_POLICY",
+      "category": "trigger",
+      "status": "UNKNOWN",
+      "formula": null,
+      "notes": "Generic Counter terminology uses 'attacked', while individual effects may use 'hit'. Eligibility for miss, zero damage, shield-only, distributed damage, redirected damage, DoT, Additional DMG, or each hit in a multi-hit action is not globally locked.",
+      "production_binding_allowed": false
+    },
+    {
+      "id": "STATUS.DEFAULT_REMOVABLE",
+      "category": "effect",
+      "status": "CONFIRMED",
+      "formula": null,
+      "notes": "Current status terminology states enemy buffs and debuffs can generally be removed unless specified otherwise. Removability is a default policy with explicit overrides."
+    },
+    {
+      "id": "STATUS.UNREMOVABLE_IS_NOT_PERMANENT",
+      "category": "effect",
+      "status": "CONFIRMED",
+      "formula": null,
+      "notes": "Unremovable means ordinary cleanse/dispel cannot remove the status. Current statuses still end through named events such as Weakness Break, killing blow, countdown turn, owner defeat, destroying linked enemies, or state-resource depletion."
+    },
+    {
+      "id": "STATUS.REMOVAL_CHANNELS",
+      "category": "effect",
+      "status": "CONFIRMED",
+      "formula": null,
+      "notes": "Required channels: CLEANSE, DISPEL, NATURAL_EXPIRATION, TRANSFORM, WEAKNESS_BREAK, KILLING_BLOW, OWNER_DOWNED, COUNTDOWN, RESOURCE_DEPLETION, LINKED_ENTITY_DEFEATED, PHASE_CHANGE, SCRIPTED."
+    },
+    {
+      "id": "STATUS.REMOVAL_PERMISSION_MATRIX",
+      "category": "effect",
+      "status": "PARTIAL",
+      "formula": null,
+      "notes": "Each status needs permissions per removal channel rather than one removable boolean. Exact selection order when removing only one of several eligible statuses remains unresolved.",
+      "production_binding_allowed": "interface_only"
+    },
+    {
+      "id": "DEBUFF.IMMUNITY_PRE_RESISTANCE_ORDER",
+      "category": "effect_hit",
+      "status": "CONFIRMED",
+      "formula": null,
+      "notes": "Limited Debuff Immunity chances are checked before Effect RES and Debuff RES calculations. Trace must distinguish immunity interception from probabilistic resistance."
+    },
+    {
+      "id": "DEBUFF.APPLICATION_PIPELINE_V0_9",
+      "category": "effect_hit",
+      "status": "PARTIAL",
+      "formula": null,
+      "notes": "Candidate pipeline: validate target -> check absolute immunity/application guard -> consume limited Debuff Immunity -> evaluate fixed/guaranteed application branch -> evaluate base chance/EHR/Effect RES/Debuff RES -> apply or resist. Exact ordering between fixed chance, guaranteed effects, and every immunity family remains content-defined.",
+      "production_binding_allowed": "interface_only"
+    },
+    {
+      "id": "REMOVE.SELECTION_PRIORITY",
+      "category": "effect",
+      "status": "UNKNOWN",
+      "formula": null,
+      "notes": "No reliable multi-source evidence was found for the global priority used when an ability removes exactly one buff/debuff from multiple eligible effects. The request must support EXPLICIT, RANDOM, OLDEST, NEWEST, PRIORITY_TAG, and CONTENT_DEFINED without choosing a production default.",
+      "production_binding_allowed": false
+    },
+    {
+      "id": "MULTI_HIT.LETHAL_CONTINUATION_POLICY",
+      "category": "action_context",
+      "status": "PARTIAL",
+      "formula": null,
+      "notes": "Current content proves some attacks stop when all enemies are defeated and some Follow-Up chains retarget after killing blows. Remaining-hit behavior must be explicit: STOP, RETARGET, CONTINUE_ON_CORPSE, CONTINUE_CHAIN, or CONTENT_DEFINED.",
+      "production_binding_allowed": "interface_only"
+    },
+    {
+      "id": "MULTI_HIT.TARGET_VALIDITY_CHECK",
+      "category": "action_context",
+      "status": "CONFIRMED",
+      "formula": "before_each_hit_or_child_attack: evaluate target_validity_policy",
+      "notes": "Current abilities explicitly branch on whether a target was defeated before a queued Follow-Up or during a repeat chain, proving target validity must be rechecked during execution."
+    },
+    {
+      "id": "BOUNCE.REPEAT_TARGET_POLICY",
+      "category": "targeting",
+      "status": "UNKNOWN",
+      "formula": null,
+      "notes": "Descriptions prove a fresh random enemy selection per extra hit but do not establish one universal rule for whether the same target may be selected repeatedly. Keep WITH_REPLACEMENT, WITHOUT_REPLACEMENT, WEIGHTED, and CONTENT_DEFINED.",
+      "production_binding_allowed": false
+    },
+    {
+      "id": "AI.PHASE_STATE_MACHINE",
+      "category": "enemy_ai",
+      "status": "CONFIRMED",
+      "formula": null,
+      "notes": "Current enemy statuses and abilities demonstrate named phases/modes, next-action telegraphs, lock-on, phase-protected toughness, state transitions on Weakness Break, and scripted cleanup. Enemy behavior requires a finite/stateful phase machine rather than one static ability list."
+    },
+    {
+      "id": "AI.TELEGRAPHED_NEXT_ACTION",
+      "category": "enemy_ai",
+      "status": "CONFIRMED",
+      "formula": null,
+      "notes": "Multiple statuses explicitly state which ability will be used in the next action. Telegraph state should constrain AbilitySelectionPolicy until removed or transformed."
+    },
+    {
+      "id": "AI.TRANSITION_EVENT_SET",
+      "category": "enemy_ai",
+      "status": "CONFIRMED",
+      "formula": null,
+      "notes": "Phase transitions can be driven by turn start, action end, Weakness Break, killing blow, linked entity defeat, resource threshold, countdown, or wave/phase script."
+    },
+    {
+      "id": "LIFECYCLE.ACTION_BATCH_INTERCEPT_CONFIRMED",
+      "category": "lifecycle",
+      "status": "CONFIRMED",
+      "formula": null,
+      "notes": "Fixed structured data explicitly states one protection effect prevents all allies struck by a killing blow during the same action from being knocked down, confirming action-batch lethal grouping."
+    },
+    {
+      "id": "SHIELD.NORMAL_VALUE",
+      "category": "shield",
+      "status": "CONFIRMED",
+      "formula": "shield_value = (scaling_stat * stat_scaling + additive_shield_bonus) * (1 + shield_bonus)",
+      "notes": "A normal Shield absorbs damage in place of HP. Damage exceeding the effective remaining Shield overflows to HP."
+    },
+    {
+      "id": "SHIELD.INDEPENDENT_SIMULTANEOUS_ABSORPTION",
+      "category": "shield",
+      "status": "CONFIRMED",
+      "formula": "effective_visible_shield = max(remaining_shield_i); for each independent shield_i: remaining_i_after = max(0, remaining_i_before - incoming_damage); hp_overflow = max(0, incoming_damage - effective_visible_shield_before)",
+      "notes": "Independent Shields do not add into one pool. Every active Shield absorbs the full incoming damage simultaneously; a weaker background Shield can break while a stronger Shield remains."
+    },
+    {
+      "id": "SHIELD.BACKGROUND_BREAK_CLEANUP",
+      "category": "shield",
+      "status": "CONFIRMED",
+      "formula": null,
+      "notes": "When a background Shield reaches zero, its Shield status and attached effects are removed even if another stronger Shield remains active."
+    },
+    {
+      "id": "SHIELD.STACKABLE_FAMILY_POOL",
+      "category": "shield",
+      "status": "CONFIRMED",
+      "formula": "stacked_family_shield_after = min(family_cap_reference * cap_multiplier, stacked_family_shield_before + newly_granted_shield)",
+      "notes": "Some explicitly named Shield families stack with repeated application and use a cap such as 200% or 300% of a reference Skill Shield. This is an override policy, not the default for all Shields."
+    },
+    {
+      "id": "SHIELD.COLLECTIVE_POOL",
+      "category": "shield",
+      "status": "PARTIAL",
+      "formula": "collective_pool_after = max(0, collective_pool_before - eligible_incoming_damage)",
+      "notes": "Current enemy content includes a shared Shield pool that absorbs damage taken by all linked allies and prevents their HP from decreasing until depleted or expired. Exact per-hit ordering, multi-target deduction order, and interaction with target-local Shields require deterministic capture.",
+      "production_binding_allowed": "interface_only"
+    },
+    {
+      "id": "BARRIER.ATTACK_DAMAGE_NULLIFICATION",
+      "category": "defense",
+      "status": "CONFIRMED",
+      "formula": "if damage_origin == ATTACK and damage_family != DOT_TRIGGER: resolved_damage = 0",
+      "notes": "Barrier nullifies all damage received from an attack, except DoT triggers, until after the target is attacked."
+    },
+    {
+      "id": "BARRIER.CONSUME_AFTER_ATTACK_CONTACT",
+      "category": "defense",
+      "status": "CONFIRMED",
+      "formula": null,
+      "notes": "Barrier is removed/ends after the protected target is attacked, even though the attack's damage is nullified. This confirms attack contact and damage resolution are separate events."
+    },
+    {
+      "id": "DEFENSE.MECHANISM_TAXONOMY",
+      "category": "defense",
+      "status": "CONFIRMED",
+      "formula": null,
+      "notes": "Required separate mechanisms: NORMAL_SHIELD_INSTANCE, STACKABLE_SHIELD_FAMILY, COLLECTIVE_SHIELD_POOL, BARRIER, DMG_MITIGATION, DAMAGE_DISTRIBUTION, HP_FLOOR, LETHAL_INTERCEPT, and SCRIPTED_INVULNERABILITY."
+    },
+    {
+      "id": "TOUGHNESS.REDUCTION_CURRENT",
+      "category": "toughness",
+      "status": "CONFIRMED",
+      "formula": "toughness_reduction = (base_toughness_reduction + additive_toughness_reduction) * (1 + toughness_reduction_increase) * (1 + weakness_break_efficiency + toughness_vulnerability) * ability_multiplier",
+      "notes": "Current consolidated mechanics separates additive Toughness Reduction, Toughness Reduction Increase, Weakness Break Efficiency, Toughness Vulnerability, and an Ability Multiplier."
+    },
+    {
+      "id": "TOUGHNESS.WBE_CAP",
+      "category": "toughness",
+      "status": "CONFIRMED",
+      "formula": "effective_weakness_break_efficiency = min(raw_weakness_break_efficiency, 3.0)",
+      "notes": "Current mechanics reports a 300% cap for Weakness Break Efficiency."
+    },
+    {
+      "id": "TOUGHNESS.LOCK_GATE",
+      "category": "toughness",
+      "status": "CONFIRMED",
+      "formula": null,
+      "notes": "Toughness Lock/Protection is a state gate preventing ordinary Toughness reduction until a named mechanic is removed. It must be checked before applying ordinary reduction and should not be modeled only as multiplying Toughness damage by zero."
+    },
+    {
+      "id": "TOUGHNESS.PROTECTION_DAMAGE_INDEPENDENCE",
+      "category": "toughness",
+      "status": "CONFIRMED",
+      "formula": null,
+      "notes": "Toughness Protection may coexist with ordinary HP damage, large damage mitigation, phase buffs, or collective Shields. HP damage permission and Toughness-reduction permission are independent gates."
+    },
+    {
+      "id": "TOUGHNESS.EXO_GAUGE",
+      "category": "toughness",
+      "status": "CONFIRMED",
+      "formula": null,
+      "notes": "Exo-Toughness is a secondary breakable gauge. After initial Toughness reaches zero, the secondary gauge can continue to be reduced and can trigger an additional Weakness Break event. It is restored when the enemy recovers from Weakness Break."
+    },
+    {
+      "id": "TOUGHNESS.MULTI_GAUGE_MODEL",
+      "category": "toughness",
+      "status": "CONFIRMED",
+      "formula": null,
+      "notes": "Runtime must support ordered ToughnessGauge[] with independent current/max values, unlock gates, break events, restore policies, and visibility."
+    },
+    {
+      "id": "SUPER_BREAK.CURRENT_PIPELINE",
+      "category": "break",
+      "status": "CONFIRMED",
+      "formula": "super_break_damage = (toughness_reduction / 10) * level_multiplier * ability_multiplier * (1 + break_effect) * (1 + break_damage_increase) * (1 + super_break_damage_increase) * def_multiplier * res_multiplier * vulnerability_multiplier * mitigation_multiplier * broken_multiplier",
+      "notes": "Super Break is Break DMG, cannot CRIT, and normally uses each target's Toughness Reduction. Certain explicit effects permit it against non-broken or Toughness-Protected enemies."
+    },
+    {
+      "id": "SUPER_BREAK.PROTECTION_OVERRIDE",
+      "category": "break",
+      "status": "CONFIRMED",
+      "formula": null,
+      "notes": "Toughness Protection does not universally forbid Super Break. A content effect may explicitly allow Super Break while the target is not Weakness Broken or is Toughness-Protected."
+    },
+    {
+      "id": "PRECISION.INTERNAL_FRACTIONAL_TOUGHNESS",
+      "category": "precision",
+      "status": "CONFIRMED",
+      "formula": null,
+      "notes": "Current Toughness values include repeating fractions such as 1.666..., 3.333..., and 6.666.... Internal Toughness state must preserve fractional precision and must not use integer-only storage."
+    },
+    {
+      "id": "PRECISION.NO_INTERMEDIATE_DISPLAY_ROUNDING",
+      "category": "precision",
+      "status": "CONFIRMED",
+      "formula": null,
+      "notes": "Architecture rule: calculations must preserve internal numeric values across modifier stages. UI display formatting cannot be fed back into simulation state."
+    },
+    {
+      "id": "PRECISION.ROUNDING_POLICY_REGISTRY",
+      "category": "precision",
+      "status": "CONFIRMED",
+      "formula": null,
+      "notes": "Every output family must declare an explicit quantization policy and stage: NONE, FLOOR, CEIL, ROUND_HALF_UP, ROUND_HALF_EVEN, TRUNCATE, DISPLAY_ONLY, or CONTENT_DEFINED."
+    },
+    {
+      "id": "PRECISION.DAMAGE_HP_ROUNDING",
+      "category": "precision",
+      "status": "UNKNOWN",
+      "formula": null,
+      "notes": "No reliable multi-source evidence was found for the universal hidden rounding stage of damage, healing, Shield, HP, and overflow values. Keep full precision internally and record displayed and observed integer values separately until controlled captures lock each family.",
+      "production_binding_allowed": false
+    },
+    {
+      "id": "PRECISION.AV_DISPLAY_VS_INTERNAL",
+      "category": "precision",
+      "status": "PARTIAL",
+      "formula": null,
+      "notes": "Action Value and SPD interfaces can hide decimals while internal ordering depends on them. Store rational/high-precision progress and treat displayed AV/SPD as presentation data.",
+      "production_binding_allowed": "interface_only"
+    },
+    {
+      "id": "LINKED_DEFENSE.OWNER_LINKED_CLEANUP",
+      "category": "entity",
+      "status": "CONFIRMED",
+      "formula": null,
+      "notes": "Shield families, collective pools, linked summons, matrices, and phase protections can end when an owner is Downed, a linked entity disappears, a Shield is depleted, or a phase state changes."
+    },
+    {
+      "id": "LINKED_DEFENSE.POOL_OWNER_MODEL",
+      "category": "entity",
+      "status": "PARTIAL",
+      "formula": null,
+      "notes": "Shared defensive resources need pool_id, owner_id, protected_entities, eligible_damage_families, deduction_order, expiration, and cleanup triggers. Exact simultaneous AoE deduction needs replay tests.",
+      "production_binding_allowed": "interface_only"
+    },
+    {
+      "id": "COUNTER.SHIELD_BARRIER_INTERACTION",
+      "category": "trigger",
+      "status": "UNKNOWN",
+      "formula": null,
+      "notes": "Barrier proves attack contact can occur at zero damage; normal Shield can absorb all HP damage. Whether every Counter listens to TARGET_ATTACKED, HIT_RESOLVED, SHIELD_DAMAGED, or HP_DAMAGED remains effect-specific and unresolved.",
+      "production_binding_allowed": false
+    },
+    {
+      "id": "DAMAGE_DISTRIBUTION.SHIELD_ORDER_LOCKED",
+      "category": "damage",
+      "status": "CONFIRMED",
+      "formula": null,
+      "notes": "Damage Distribution occurs before Shield mitigation. After distribution, local and linked Shield handling must resolve according to the resulting target shares."
+    },
+    {
+      "id": "FRAMEWORK.V1_IMPLEMENTATION_GATE",
+      "category": "research_policy",
+      "status": "CONFIRMED",
+      "formula": null,
+      "notes": "v1.0 completes the broad mechanism inventory for architecture. Production implementation may bind CONFIRMED interfaces and formulas, reserve PARTIAL interfaces without guessed defaults, and must block UNKNOWN semantics behind explicit unresolved policies and tests."
+    }
+  ],
+  "non_formula_mechanics_requiring_runtime_models": [
+    "Event ordering and interrupts",
+    "Normal turn vs extra turn vs extra action vs follow-up vs counter",
+    "Duration tick/expiration/refresh/stack policies",
+    "DoT snapshot vs dynamic evaluation",
+    "Summon and memosprite ownership/inheritance/timeline",
+    "Off-field / untargetable / removed / dead / revive lifecycle",
+    "Wave transitions and state persistence",
+    "Shield stacking and absorption order",
+    "Damage sharing, redirection, HP loss, HP consumption, and true damage",
+    "Bounce targeting and enemy-specific AI",
+    "Ultimate cost timing and energy overflow",
+    "Elation/Aha Moment global event semantics"
+  ],
+  "source_index": {
+    "official": [
+      "HoYoWiki: Speed",
+      "HoYoWiki: Skill Effect Chance",
+      "HoYoWiki: Toughness",
+      "HoYoWiki: Weakness Break",
+      "HoYoWiki: Super Break",
+      "HoYoverse Version 4.3 update information"
+    ],
+    "bilibili_and_experiments": [
+      "BV1qw4m1f7ry — speed/action-value explanation",
+      "BV1GXS7YNEVo — damage multiplier buckets",
+      "BV1VZ42147sN — break system",
+      "BV1sM411376F — energy formula",
+      "BV1uy411B7kt — formula compilation",
+      "Bilibili article cv23551872 — speed and action distance",
+      "Bilibili article cv25032917 — panel stats and aggro",
+      "Bilibili opus 795455800639225888 — break formulas and elemental break states"
+    ],
+    "community_mechanics_pages": [
+      "Bilibili BWIKI: Energy recovery mechanics",
+      "Bilibili BWIKI: Target probability mechanics",
+      "Huiji Wiki: Damage calculation",
+      "HoYoLAB direct mechanics experiments and guides"
+    ]
+  },
+  "semantic_conflicts": [
+    {
+      "id": "CONFLICT.EXTRA_TURN_ORDER_001",
+      "engine_behavior": "LIFO extra-turn stack",
+      "evidence_candidate": "Stable FIFO by trigger sequence for same-priority Extra Turns/Ultimates",
+      "status": "BLOCK_ENGINE_REBIND_PENDING_CURRENT_FRAME_CAPTURE",
+      "evidence": [
+        "Current consolidated mechanics explicitly states trigger-order execution",
+        "Independent older in-game experiment reports same-priority trigger-order execution"
+      ],
+      "remaining_gap": "No current-version frame-level capture in the research environment"
+    },
+    {
+      "id": "CONFLICT.HISTORICAL_BREAK_FORMULAS_001",
+      "historical_claim": "Exact early-release formulas and durations are available for Break DoTs and control effects.",
+      "current_status": "Useful as test candidates, but current 4.3 equality has not been independently proven.",
+      "status": "BLOCK_PRODUCTION_BINDING_PENDING_CURRENT_REVALIDATION"
+    }
+  ],
+  "source_index_v0_2": [
+    {
+      "claim_group": "Damage RES formula and candidate caps",
+      "source": "Honkai: Star Rail Wiki — Damage RES",
+      "url": "https://honkai-star-rail.fandom.com/wiki/Damage_RES"
+    },
+    {
+      "claim_group": "Shield formula and multi-instance behavior",
+      "source": "Honkai: Star Rail Wiki — Shield",
+      "url": "https://honkai-star-rail.fandom.com/wiki/Shield"
+    },
+    {
+      "claim_group": "Energy regeneration and memosprite hit energy",
+      "source": "Honkai: Star Rail Wiki — Energy",
+      "url": "https://honkai-star-rail.fandom.com/wiki/Energy"
+    },
+    {
+      "claim_group": "DoT tick, crit policy, categories and detonation terminology",
+      "source": "Honkai: Star Rail Wiki — DoT",
+      "url": "https://honkai-star-rail.fandom.com/wiki/DoT"
+    },
+    {
+      "claim_group": "Extra Turn status, AV, and trigger-order queue",
+      "source": "Honkai: Star Rail Wiki — Extra Turn",
+      "url": "https://honkai-star-rail.fandom.com/wiki/Extra_Turn"
+    },
+    {
+      "claim_group": "Legacy insertion priority experiments",
+      "source": "GamerSky repost of in-game experimental analysis",
+      "url": "https://www.gamersky.com/handbook/202305/1595351.shtml"
+    },
+    {
+      "claim_group": "Additional DMG families",
+      "source": "Honkai: Star Rail Wiki — Additional DMG",
+      "url": "https://honkai-star-rail.fandom.com/wiki/Additional_DMG"
+    },
+    {
+      "claim_group": "True DMG semantics",
+      "source": "Honkai: Star Rail Wiki — True DMG",
+      "url": "https://honkai-star-rail.fandom.com/wiki/True_DMG"
+    },
+    {
+      "claim_group": "Healing formula",
+      "source": "Honkai: Star Rail Wiki — Healing",
+      "url": "https://honkai-star-rail.fandom.com/wiki/Healing"
+    },
+    {
+      "claim_group": "Summon and memosprite entity defaults",
+      "source": "Honkai: Star Rail Wiki — Summon / Memosprite",
+      "url": "https://honkai-star-rail.fandom.com/wiki/Summon"
+    },
+    {
+      "claim_group": "Joint ATK parent/child action model",
+      "source": "Honkai: Star Rail Wiki — Joint ATK",
+      "url": "https://honkai-star-rail.fandom.com/wiki/Joint_ATK"
+    }
+  ],
+  "source_index_v0_3": [
+    {
+      "claim_group": "Weaken formula and exclusions",
+      "source": "Honkai: Star Rail Wiki — Weaken",
+      "url": "https://honkai-star-rail.fandom.com/wiki/Weaken"
+    },
+    {
+      "claim_group": "Vulnerability stacking",
+      "source": "Honkai: Star Rail Wiki — Vulnerability",
+      "url": "https://honkai-star-rail.fandom.com/wiki/Vulnerability"
+    },
+    {
+      "claim_group": "DMG Mitigation multiplicative stacking",
+      "source": "Honkai: Star Rail Wiki — DMG Mitigation",
+      "url": "https://honkai-star-rail.fandom.com/wiki/DMG_Mitigation"
+    },
+    {
+      "claim_group": "Final DMG Boost is separate from DMG Boost",
+      "source": "Honkai: Star Rail Wiki — Final DMG Boost",
+      "url": "https://honkai-star-rail.fandom.com/wiki/Final_DMG_Boost"
+    },
+    {
+      "claim_group": "HP formulas, HP consumption, damage distribution, lethal interception, duration-policy examples",
+      "source": "Honkai: Star Rail Wiki — HP",
+      "url": "https://honkai-star-rail.fandom.com/wiki/HP"
+    },
+    {
+      "claim_group": "Damage RES formula and bounds",
+      "source": "Honkai: Star Rail Wiki — Damage RES",
+      "url": "https://honkai-star-rail.fandom.com/wiki/Damage_RES"
+    }
+  ],
+  "source_index_v0_4": [
+    {
+      "claim_group": "Debuff hit formula, CC/DoT taxonomy, Type-debuff base chance, Frozen/Entanglement/Imprisonment semantics",
+      "source": "Honkai: Star Rail Wiki — Status Effect",
+      "url": "https://honkai-star-rail.fandom.com/wiki/Status_Effect",
+      "source_strength": "current consolidated mechanics page; contains live skill/data examples"
+    },
+    {
+      "claim_group": "Extra Turn duration, AV, priority, and trigger-order queue",
+      "source": "Honkai: Star Rail Wiki — Extra Turn",
+      "url": "https://honkai-star-rail.fandom.com/wiki/Extra_Turn",
+      "source_strength": "current consolidated mechanics page; conflicts with repository LIFO contract"
+    },
+    {
+      "claim_group": "Conventional summon default identity/timeline/stat read",
+      "source": "Honkai: Star Rail Wiki — Summon",
+      "url": "https://honkai-star-rail.fandom.com/wiki/Summon",
+      "source_strength": "current consolidated mechanics page"
+    },
+    {
+      "claim_group": "Memosprite identity, targetability, status separation and inheritance",
+      "source": "Honkai: Star Rail Wiki — Memosprite",
+      "url": "https://honkai-star-rail.fandom.com/wiki/Memosprite",
+      "source_strength": "current consolidated mechanics page with current content examples"
+    },
+    {
+      "claim_group": "HP, Departed/Out-of-Bounds examples, wave persistence examples, duration examples",
+      "source": "Honkai: Star Rail Wiki — HP and linked current content",
+      "url": "https://honkai-star-rail.fandom.com/wiki/HP",
+      "source_strength": "current consolidated mechanics page with current content examples"
+    }
+  ],
+  "source_index_v0_5": [
+    {
+      "claim_group": "Natural DoT tick, non-crit policy, chronological order, target-death termination, detonation wording",
+      "source": "Honkai: Star Rail Wiki — DoT",
+      "url": "https://honkai-star-rail.fandom.com/wiki/DoT",
+      "evidence_status": "current consolidated mechanics reference"
+    },
+    {
+      "claim_group": "Extra Turn status duration, normal AV, priority, trigger-order queue",
+      "source": "Honkai: Star Rail Wiki — Extra Turn",
+      "url": "https://honkai-star-rail.fandom.com/wiki/Extra_Turn",
+      "evidence_status": "current consolidated mechanics reference; conflicts with engine LIFO"
+    },
+    {
+      "claim_group": "Frozen, Entanglement, Imprisonment and Crowd Control taxonomy",
+      "source": "Honkai: Star Rail Wiki — Status Effect",
+      "url": "https://honkai-star-rail.fandom.com/wiki/Status_Effect",
+      "evidence_status": "current consolidated mechanics reference"
+    },
+    {
+      "claim_group": "Damage Distribution, HP consumption floors, lethal interception, Max HP examples, HP-percent link",
+      "source": "Honkai: Star Rail Wiki — HP",
+      "url": "https://honkai-star-rail.fandom.com/wiki/HP",
+      "evidence_status": "current consolidated mechanics reference with current ability text"
+    }
+  ],
+  "source_index_v0_6": [
+    {
+      "source_id": "bilibili_break_article_795455800639225888",
+      "source_type": "bilibili_experimental_writeup",
+      "title": "《崩坏：星穹铁道攻略——高等击破论》",
+      "url": "https://www.bilibili.com/opus/795455800639225888",
+      "published_or_edited": "2023-05-15",
+      "original_video_bvid": "BV1ZM4y14789",
+      "strengths": [
+        "contains explicit formulas",
+        "distinguishes damage families",
+        "records claimed test observations",
+        "provides original-video locator"
+      ],
+      "limitations": [
+        "early-release-era",
+        "single recovered write-up",
+        "original video frames not retrievable in current environment",
+        "not sufficient for current 4.3 production binding"
+      ]
+    },
+    {
+      "source_id": "project_handoff_v1",
+      "source_type": "project_handoff",
+      "file": "HSR_AI_AXIS_PLATFORM_HANDOFF_2026-07-12.docx",
+      "supports": [
+        "target current version 4.3",
+        "multi-source evidence discipline",
+        "Unknown > Guess",
+        "current formula and event research priority"
+      ]
+    }
+  ],
+  "source_index_v0_7": [
+    {
+      "source_id": "fandom_dot_current",
+      "source_type": "current_consolidated_mechanics",
+      "url": "https://honkai-star-rail.fandom.com/wiki/DoT",
+      "supports": [
+        "natural DoT at target turn beginning",
+        "DoT cannot crit",
+        "chronological resolution order",
+        "stop remaining DoTs after target defeat",
+        "event-triggered DoT after ally attack",
+        "trigger cap and recursion guard examples"
+      ]
+    },
+    {
+      "source_id": "fandom_extra_turn_current",
+      "source_type": "current_consolidated_mechanics",
+      "url": "https://honkai-star-rail.fandom.com/wiki/Extra_Turn",
+      "supports": [
+        "Extra Turn does not tick statuses",
+        "Extra Turn does not alter normal action position",
+        "no Ultimate during generic Extra Turn",
+        "priority classes",
+        "trigger-order queue",
+        "DoesNotEndTurn exception"
+      ]
+    },
+    {
+      "source_id": "fandom_hp_current",
+      "source_type": "current_consolidated_content_index",
+      "url": "https://honkai-star-rail.fandom.com/wiki/HP",
+      "supports": [
+        "separate HP consumption and damage",
+        "lethal interception cleanup and restoration",
+        "Max HP increase plus separate healing clauses",
+        "fixed-SPD countdown lifecycle",
+        "per-wave trigger reset and WaveStart healing examples",
+        "countdown AV persistence across waves"
+      ]
+    }
+  ],
+  "source_index_v0_8": [
+    {
+      "source_id": "KQM_SRL_FIXED_SNAPSHOT",
+      "source_type": "fixed_structured_skill_data",
+      "repository": "KQM-git/SRL",
+      "commit": "de0e5c09c8dbba9577367ad86e991fe91c4f0e36",
+      "locators": [
+        "src/data/characters/Asta.json — Bounce: selected target + 4 random hits; different target/bounce toughness",
+        "src/data/characters/Trailblazer_(Physical).json — Blast: primary + adjacent; separate toughness",
+        "src/data/characters/Herta.json — ally-attack threshold Follow-Up Action",
+        "src/data/characters/Clara.json — Counter, enhanced Counter, adjacent damage, trigger counts",
+        "src/data/characters/Bronya.json — remove ally debuff + Immediate Action; self exception",
+        "src/data/characters/Huohuo.json — cleanse count, trigger cap, reset on recast, lethal intercept",
+        "src/data/characters/Luocha.json — remove enemy buffs; Field dispelled on knocked down",
+        "src/data/characters/Fu_Xuan.json — damage distribution, action-scoped CC resist, action-batch lethal intercept",
+        "src/data/characters/Bailu.json — non-stacking duration extension, capped stacks, lethal intercept",
+        "src/data/enemies/Abundance_Sprite_Malefic_Ape.json — random lock-on and Skill-based retarget",
+        "src/data/enemies/Wraith_Warden.json — debuff transform and removal",
+        "src/data/enemies/Aurumaton_Spectral_Envoy.json — attack-triggered transform and locked follow-up target"
+      ],
+      "limitations": [
+        "one structured-data source",
+        "snapshot predates target live version 4.3",
+        "proves mechanic existence and schema needs, not all current global ordering",
+        "current-version Bilibili frame captures were not located in this pass"
+      ]
+    }
+  ],
+  "source_index_v0_9": [
+    {
+      "source_id": "HSR_WIKI_FOLLOW_UP_CURRENT",
+      "source_type": "current_consolidated_mechanics",
+      "url": "https://honkai-star-rail.fandom.com/wiki/Follow-Up_Attack",
+      "supports": [
+        "Counter is a Follow-Up Attack",
+        "Follow-Up Actions ignore turn order",
+        "Follow-Up Actions have greater priority than Ultimates and Extra Actions",
+        "Follow-Up Actions are suppressed by Crowd Control",
+        "Follow-Up Actions may be non-attacking",
+        "target invalidation/retarget examples"
+      ]
+    },
+    {
+      "source_id": "HSR_WIKI_STATUS_CURRENT",
+      "source_type": "current_consolidated_mechanics",
+      "url": "https://honkai-star-rail.fandom.com/wiki/Status_Effect",
+      "supports": [
+        "default removable buffs/debuffs unless stated otherwise",
+        "Unremovable status examples with custom removal events",
+        "Debuff Immunity before Effect RES and Debuff RES",
+        "zero-damage barrier after being attacked",
+        "phase and telegraphed-next-action states"
+      ]
+    },
+    {
+      "source_id": "KQM_SRL_FIXED_SNAPSHOT_V0_9",
+      "source_type": "fixed_structured_skill_data",
+      "repository": "KQM-git/SRL",
+      "commit": "de0e5c09c8dbba9577367ad86e991fe91c4f0e36",
+      "locators": [
+        "src/data/characters/Fu_Xuan.json — action-batch killing-blow interception",
+        "src/data/characters/Clara.json — attacked/hit Counter terminology",
+        "src/data/characters/Herta.json — Follow-Up trigger",
+        "src/data/enemies/Abundance_Sprite_Malefic_Ape.json — lock-on/retarget",
+        "src/data/enemies/Wraith_Warden.json — effect transform",
+        "src/data/enemies/Aurumaton_Spectral_Envoy.json — locked next action"
+      ]
+    }
+  ],
+  "source_index_v1_0": [
+    {
+      "source_id": "HSR_WIKI_SHIELD_CURRENT",
+      "source_type": "current_consolidated_mechanics",
+      "url": "https://honkai-star-rail.fandom.com/wiki/Shield",
+      "supports": [
+        "Shield value formula",
+        "overflow to HP",
+        "independent Shields do not add",
+        "all Shields absorb full damage simultaneously",
+        "background Shield break removes attached effects",
+        "explicit stackable Shield-family exceptions and caps"
+      ]
+    },
+    {
+      "source_id": "HSR_WIKI_BARRIER_CURRENT",
+      "source_type": "current_consolidated_mechanics",
+      "url": "https://honkai-star-rail.fandom.com/wiki/Barrier",
+      "supports": [
+        "attack damage nullification",
+        "DoT exception",
+        "Barrier ends after being attacked"
+      ]
+    },
+    {
+      "source_id": "HSR_WIKI_TOUGHNESS_CURRENT",
+      "source_type": "current_consolidated_mechanics",
+      "url": "https://honkai-star-rail.fandom.com/wiki/Toughness",
+      "supports": [
+        "fractional Toughness values",
+        "Toughness Reduction formula",
+        "300% Weakness Break Efficiency cap",
+        "Toughness lock",
+        "Exo-Toughness",
+        "current Break and Super Break formulas",
+        "Super Break override under Toughness Protection"
+      ]
+    },
+    {
+      "source_id": "HSR_WIKI_STATUS_CURRENT_V1",
+      "source_type": "current_content_index",
+      "url": "https://honkai-star-rail.fandom.com/wiki/Status_Effect",
+      "supports": [
+        "Collective Shield",
+        "Toughness Protection linked to shared Shield depletion",
+        "phase protection and unremovable cleanup examples"
+      ]
+    },
+    {
+      "source_id": "KQM_SRL_FIXED_SNAPSHOT_V1",
+      "source_type": "fixed_structured_skill_data",
+      "repository": "KQM-git/SRL",
+      "commit": "de0e5c09c8dbba9577367ad86e991fe91c4f0e36",
+      "supports": [
+        "damage distribution before Shields",
+        "owner-Downed cleanup",
+        "shield/content examples",
+        "action/hit/trigger field requirements"
+      ]
+    }
+  ]
+}

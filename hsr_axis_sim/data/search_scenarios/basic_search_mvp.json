@@ -1,0 +1,19 @@
+{
+  "id": "basic_search_mvp",
+  "name": "Basic Search MVP",
+  "description": "Small offline search scenario using existing sample characters.",
+  "characters_dir": "../sample_characters",
+  "team_path": "../sample_teams/bronya_seele_team.json",
+  "search": {
+    "max_depth": 2,
+    "beam_width": 3,
+    "profile": "generic_kill",
+    "include_ultimates": false,
+    "max_global_av": null,
+    "max_nodes_expanded": 100
+  },
+  "report": {
+    "format": "markdown",
+    "top_k": 5
+  }
+}

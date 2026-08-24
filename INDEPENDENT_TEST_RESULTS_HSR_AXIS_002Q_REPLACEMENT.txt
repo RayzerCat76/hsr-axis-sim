@@ -1,0 +1,112 @@
+HSR-AXIS-002Q Replacement — Independent Test Results
+=====================================================
+
+Review source:
+/mnt/data/hsr_axis_review_56/hsr_axis_001a_package
+
+1. Compilation
+--------------
+Command:
+python -m compileall -q hsr_axis_sim
+
+Result:
+PASS
+
+2. Complete pytest collection
+-----------------------------
+The complete 47-file test collection was executed in six non-overlapping groups because one monolithic invocation exceeded the review command window.
+
+Group 1, files 1-10:  71 passed
+Group 2, files 11-20: 94 passed
+Group 3, files 21-30: 131 passed
+Group 4, files 31-35: 89 passed
+Group 5, files 36-40: 196 passed
+Group 6, files 41-47: 68 passed
+
+Total: 649 / 649 passed
+
+3. Focused replacement-002Q tests
+---------------------------------
+Command:
+python -m pytest -q hsr_axis_sim/tests/test_tingyun_ultimate_turn_entry_duration_gap.py
+
+Result:
+76 passed in 5.69s
+
+4. Locked regression
+--------------------
+Command:
+python -m hsr_axis_sim.regression.runner --manifest hsr_axis_sim/data/regression_manifest.json --format text
+
+Result:
+PASS 12/12 golden replays
+PASS 2/2 manual checks
+PASS 2/2 search scenarios
+PASS 2/2 action-sequence trace checks
+PASS 2/2 trace evidence checks
+Total: PASS 20/20
+
+Manifest counts unchanged:
+replays=12
+manual=1
+scenarios=2
+action_sequence_traces=1
+trace_evidence=2
+
+5. Trace-evidence-only regression
+---------------------------------
+Command:
+python -m hsr_axis_sim.regression.runner --manifest hsr_axis_sim/data/regression_manifest.json --only trace_evidence --format text
+
+Result:
+PASS 2/2
+
+6. Deterministic reports
+------------------------
+Regenerated JSON SHA-256:
+af9aedfbb0f9fbdcc16e78f05b7929cae96932beea36779cc88afba54561da7b
+
+Regenerated Markdown SHA-256:
+6568ffdde296c3d96f0196480747b22c71ef84099076bdc8a210608b006eef60
+
+Both regenerated files are byte-identical to the committed reports.
+
+7. Preservation diff
+--------------------
+Comparison against package (55) found no modified production runtime file.
+Only the expected replacement-002Q references, evidence artifacts, tool, test, reports, package manifest, and LUMEN_RESULT were added or changed.
+
+8. Exploratory scalar mutation sweep
+------------------------------------
+Scalar leaves inspected: 349
+Controlled ValueError outcomes: 2,555
+Accepted same-type semantic mutations: 155
+Native exception leaks: 0
+No-op/same-value candidates: 82
+
+The accepted set includes harmless descriptive changes, but it also includes blocking semantic changes.
+
+9. Blocking semantic tamper reproduction
+----------------------------------------
+Tampered fields:
+- zero_counter_effect_lifetime.effect_active_during_entered_turn = "true"
+- extra_action_consumption.extra_action_consumes = "true"
+- extra_turn_consumption.extra_turn_consumes = "true"
+
+Observed:
+- build_report accepted the review
+- CLI exited 0
+- no stderr error
+- all invented assertions appeared in successful JSON output
+
+10. Locator-pin tamper reproduction
+-----------------------------------
+Replacing an accepted source locator string with "tampered" is accepted because the expected pin contracts contain only path and digest.
+
+Final result
+------------
+Core audit behavior: PASS
+Regression/preservation: PASS
+Strict semantic evidence integrity: FAIL
+
+Decision: NEEDS HSR-AXIS-002Q-FIX

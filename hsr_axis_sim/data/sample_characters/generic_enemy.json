@@ -1,0 +1,63 @@
+{
+  "id": "generic_enemy",
+  "name": "Generic Enemy",
+  "team": "enemy",
+  "element": null,
+  "path": null,
+  "base_stats": {
+    "hp": 1000,
+    "atk": 300,
+    "defense": 0,
+    "base_speed": 100,
+    "max_energy": 100,
+    "crit_rate": 0,
+    "crit_dmg": 0.5,
+    "dmg_bonus": 0,
+    "max_toughness": 60,
+    "weaknesses": ["quantum", "wind"]
+  },
+  "skills": [
+    {
+      "id": "basic",
+      "name": "Enemy Basic",
+      "skill_type": "basic",
+      "target_type": "single_enemy",
+      "sp_delta": 0,
+      "energy_delta": 0,
+      "ends_turn": true,
+      "effects": [
+        {"type": "DealDamage", "amount": 100, "target_ref": "action_targets"}
+      ]
+    },
+    {
+      "id": "heavy",
+      "name": "Enemy Heavy",
+      "skill_type": "skill",
+      "target_type": "single_enemy",
+      "sp_delta": 0,
+      "energy_delta": 0,
+      "ends_turn": true,
+      "effects": [
+        {"type": "DealDamage", "amount": 250, "target_ref": "action_targets"}
+      ]
+    },
+    {
+      "id": "wait",
+      "name": "Wait",
+      "skill_type": "special",
+      "target_type": "self",
+      "sp_delta": 0,
+      "energy_delta": 0,
+      "ends_turn": true,
+      "effects": []
+    }
+  ],
+  "triggers": [],
+  "enemy_ai": {
+    "repeat": true,
+    "pattern": [
+      {"skill_id": "basic", "target_strategy": "first_legal"},
+      {"skill_id": "heavy", "target_strategy": "lowest_hp_legal"}
+    ]
+  }
+}

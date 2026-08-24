@@ -1,0 +1,65 @@
+Task ID: HSR-AXIS-001A-FIX
+Reasoning: HIGH
+
+You are continuing the HSR Axis Simulator project after HSR-AXIS-001A.
+
+The 001A pytest suite passed, but before starting replay validation we need to harden the simulator core.
+
+Do NOT implement replay validation yet.
+Do NOT implement damage formula yet.
+Do NOT add real character data yet.
+Do NOT scrape Huroka or any external website yet.
+Do NOT implement AI search yet.
+
+Goal:
+Clean up and harden the 001A action-value simulator so it is safe for the next task, HSR-AXIS-001B Golden Replay Validator.
+
+Required changes:
+
+1. Add actor ownership validation in Action.execute()
+   - If a TurnContext is provided, require action.actor_id == turn_context.actor_id.
+   - If they do not match, raise ValueError with a clear message.
+   - Add a pytest test for this.
+
+2. Add strict resource validation
+   - Consuming skill points should raise ValueError if state.skill_points < amount.
+   - Consuming energy should raise ValueError if unit.energy < amount.
+   - Do not silently clamp resource consumption to zero.
+   - Resource gain may still clamp to max.
+   - Add pytest tests for insufficient SP and insufficient energy.
+
+3. Document and test extra-turn ordering
+   - Current implementation uses a LIFO extra_turn_stack.
+   - Keep LIFO for now.
+   - Add a test proving multiple extra turns resolve in documented LIFO order.
+   - Add a short code comment explaining this is an MVP policy and may be revised after golden replay testing.
+
+4. Add edge-case tests for self timeline effects
+   - Add a test showing what happens if the current actor applies ImmediateAction to itself during its own normal turn and then ends turn.
+   - Add a test showing what happens if the current actor advances itself during its own normal turn and then ends turn.
+   - If you choose to disallow these cases for now, raise ValueError and test that behavior.
+   - Prefer explicit behavior over silent ambiguity.
+
+5. Add minimal project metadata
+   - Add a root-level README.md with:
+     - project purpose
+     - how to run tests
+     - what is implemented
+     - what is intentionally not implemented
+   - Add pyproject.toml only if useful and simple. Do not over-engineer packaging.
+
+6. Update LUMEN_RESULT.md
+   It must include:
+   - files changed
+   - tests run
+   - exact pytest result
+   - known assumptions
+   - whether 001B is now safe to begin
+
+Testing:
+- Run pytest.
+- All old tests must still pass.
+- New tests must pass.
+
+Deliverable:
+A revised project package with passing tests and updated LUMEN_RESULT.md.

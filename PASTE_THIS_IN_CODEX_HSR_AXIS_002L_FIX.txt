@@ -1,0 +1,151 @@
+Task ID: HSR-AXIS-002L-FIX
+Task name: Reviewed Binding Validator Malformed-Input Hardening
+
+Codex Reasoning: MEDIUM
+Recommended model: GPT-5.6 Terra
+Escalate to GPT-5.6 Sol only if fixing this requires redesigning the reviewed registry public API. It should not.
+
+Current accepted state
+======================
+
+The normal 002L implementation has independently passed:
+
+- compileall;
+- full pytest: 381 passed;
+- locked regression: PASS 20/20;
+- trace-evidence-only regression: PASS 2/2;
+- deterministic registry v0.2 and Tingyun audit reports;
+- exact Tingyun synthetic interrupt/resource behavior.
+
+Do not rewrite or broaden the accepted 002L behavior.
+
+Blocking issue
+==============
+
+The reviewed registry still has an uncontrolled malformed-binding crash path.
+
+For example, a package-contained Tingyun binding containing:
+
+    "source_atomic_fact_ids": [{"bad": "value"}]
+
+causes Tingyun validation to call `set(source_ids)`, raising:
+
+    TypeError: unhashable type: 'dict'
+
+The registry CLI then prints a Python traceback.
+
+The older Pela validator has the same class of issue because it also performs set operations before validating list member types.
+
+Goal
+====
+
+Harden both reviewed binding validators so malformed JSON-compatible values always produce controlled `ValueError` validation failures and never leak `TypeError`, `AttributeError`, or traceback through the reviewed registry CLI.
+
+Required changes
+================
+
+1. Harden:
+
+- `hsr_axis_sim/real_bindings/tingyun_ultimate_v0_1.py`
+- `hsr_axis_sim/real_bindings/pela_skill_v0_1.py`
+
+2. Before any set conversion, set union, sorting, or dictionary-key construction, validate:
+
+- binding is an object;
+- atomic-fact artifact is an object;
+- `atomic_facts` is a list;
+- every atomic-fact item is an object;
+- every `atomic_fact_id` is a non-empty string;
+- atomic fact IDs are unique;
+- `source_atomic_fact_ids` is a list of unique, non-empty strings;
+- `unresolved_atomic_fact_ids` is a list of unique, non-empty strings;
+- `unresolved_fields`, where used, is a list of unique, non-empty strings.
+
+3. Malformed values must produce handler-specific `ValueError` messages, for example:
+
+- `Tingyun Ultimate partial binding validation failed: ...`
+- `Pela Skill partial binding validation failed: ...`
+
+4. Do not solve this only by broadly catching `TypeError` in the CLI. The validators themselves must be safe and deterministic.
+
+5. Registry loading and execution must continue using the handler-specific validator at both load and execution time.
+
+6. Keep the reviewed registry public API and static handler allow-list unchanged unless absolutely necessary.
+
+Required tests
+==============
+
+Add focused tests for both Tingyun and Pela covering at least:
+
+1. `source_atomic_fact_ids` containing an object;
+2. `source_atomic_fact_ids` containing a list;
+3. `unresolved_atomic_fact_ids` containing an object;
+4. `unresolved_fields` containing an object, where applicable;
+5. duplicate fact IDs;
+6. non-list fact-ID containers;
+7. `atomic_facts` containing a non-object item;
+8. an atomic fact whose `atomic_fact_id` is not a string;
+9. duplicate `atomic_fact_id` values;
+10. registry CLI with a package-contained malformed Tingyun binding:
+    - nonzero controlled validation exit;
+    - stderr contains no `Traceback`;
+11. registry CLI with a package-contained malformed Pela binding:
+    - nonzero controlled validation exit;
+    - stderr contains no `Traceback`.
+
+Preservation gates
+==================
+
+The fix must preserve:
+
+- Tingyun Energy `130 -> 0`;
+- selected ally Energy `40 -> 90`;
+- target max-Energy clamp;
+- fail-before-target-mutation on insufficient actor Energy;
+- SP unchanged;
+- global AV unchanged;
+- all normal timeline AV unchanged;
+- no normal turn end;
+- interrupt context and `should_end_turn=False`;
+- Pela execution exactly unchanged;
+- registry v0.2 exactly two entries;
+- static handler allow-list;
+- all historical v0.1 and Pela audit artifacts byte-identical;
+- committed registry v0.2 and Tingyun audit reports byte-identical unless a report change is strictly required. No report change is expected.
+
+Scope exclusions
+================
+
+Do not:
+
+- implement Tingyun's damage buff;
+- research or normalize new facts;
+- infer the real-video target;
+- implement a complete Tingyun or Pela skill;
+- change simulator/search/evaluator behavior;
+- change the locked regression manifest or counts;
+- begin HSR-AXIS-002M;
+- replace precise validation with a broad catch-all that hides programming errors.
+
+Required final checks
+=====================
+
+Run:
+
+python -m compileall -q hsr_axis_sim
+python -m pytest -q
+python -m hsr_axis_sim.regression.runner --manifest hsr_axis_sim/data/regression_manifest.json --format text
+python -m hsr_axis_sim.regression.runner --manifest hsr_axis_sim/data/regression_manifest.json --only trace_evidence --format text
+python -m hsr_axis_sim.real_bindings.registry --format markdown
+python -m hsr_axis_sim.real_bindings.registry --format json
+python -m hsr_axis_sim.real_bindings.tingyun_ultimate_v0_1 --format markdown
+python -m hsr_axis_sim.real_bindings.tingyun_ultimate_v0_1 --format json
+
+Update `hsr_axis_sim/LUMEN_RESULT.md` with:
+
+- exact files changed;
+- malformed-input cases added;
+- exact pytest and regression results;
+- confirmation that malformed registry fixtures fail without traceback;
+- confirmation that accepted Tingyun and Pela execution behavior is unchanged;
+- confirmation that no 002M work was started.

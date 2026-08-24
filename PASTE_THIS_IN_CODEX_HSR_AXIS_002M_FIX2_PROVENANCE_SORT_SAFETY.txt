@@ -1,0 +1,166 @@
+Task ID: HSR-AXIS-002M-FIX2
+Task name: Provenance Validation Before Sorting Hardening
+
+Codex Reasoning: MEDIUM
+Recommended model: GPT-5.6 Terra
+Escalate to GPT-5.6 Sol only if the fix unexpectedly requires redesigning the evidence-review validator. It should not.
+
+Current accepted state
+======================
+
+HSR-AXIS-002M-FIX has independently demonstrated:
+
+- compileall PASS;
+- complete pytest PASS: 419 tests;
+- locked regression PASS 20/20;
+- trace-evidence-only regression PASS 2/2;
+- committed Markdown and JSON reports byte-identical to regeneration;
+- readiness correctly changed to `blocked_by_both`;
+- strict individual malformed-input tests pass;
+- no executable Tingyun damage buff;
+- no change to Tingyun Energy, Pela, registry, simulator, search, evaluator, replay, or manifest behavior.
+
+Do not broaden the task.
+
+Blocking defect
+===============
+
+Malformed provenance rows can still trigger raw `TypeError` before the validator reaches its aggregated `ValueError` gate.
+
+Root cause:
+
+- `_validated_provenance(...)` records issues but constructs `FactProvenance` with an unsanitized non-string `field_locator`;
+- `_validated_facts(...)` sorts provenance rows using:
+
+  `sorted(provenance, key=lambda item: (item.source_id, item.field_locator))`
+
+- duplicate/equivalent source IDs force Python to compare malformed locator values such as `dict` versus `str`.
+
+Confirmed reproductions
+=======================
+
+1. Duplicate valid source ID plus object locator:
+
+```python
+p = copy.deepcopy(review["facts"][0]["provenance"][0])
+p["locator"] = {"bad": 1}
+review["facts"][0]["provenance"][1] = p
+build_report(sources, review)
+```
+
+Current result:
+
+```text
+TypeError: '<' not supported between instances of 'dict' and 'str'
+```
+
+2. Two invalid non-string source IDs plus mixed locator types:
+
+Current result:
+
+```text
+TypeError: '<' not supported between instances of 'str' and 'dict'
+```
+
+Required behavior for both:
+
+- direct `build_report(...)` raises controlled `ValueError`;
+- CLI returns validation exit code `1`;
+- stderr contains no traceback.
+
+Goal
+====
+
+Ensure every malformed JSON-compatible provenance document is validated before sorting, set conversion, comparison, or report construction.
+
+Required implementation
+=======================
+
+1. Harden only:
+
+- `hsr_axis_sim/tools/trace_tingyun_ultimate_damage_buff_review.py`;
+- focused 002M review tests;
+- `hsr_axis_sim/LUMEN_RESULT.md`.
+
+2. Preferred implementation contract:
+
+- validate provenance row fields into local typed variables first;
+- never place raw object/list values into `FactProvenance` string fields;
+- either append a provenance dataclass only when the complete row is valid, or use explicit deterministic typed fallback strings after recording issues;
+- ensure provenance sorting can only compare strings;
+- preserve duplicate-source detection;
+- let `build_report(...)` raise the existing aggregated `ValueError`.
+
+3. Do not solve this by merely wrapping `sorted(...)` in a broad exception handler. The task requirement is validation before unsafe operations.
+
+Required focused tests
+======================
+
+Add at least:
+
+1. duplicate valid source ID + object locator -> ValueError;
+2. duplicate valid source ID + list locator -> ValueError;
+3. two invalid source IDs + mixed object/string locators -> ValueError;
+4. two invalid source IDs + mixed list/string locators -> ValueError;
+5. combined malformed locator and evidence summary -> ValueError;
+6. no TypeError, AttributeError, or KeyError escapes direct validation;
+7. corresponding malformed CLI input exits `1` with no `Traceback`;
+8. normal committed report remains byte-identical;
+9. readiness remains `blocked_by_both`;
+10. current duration-boundary probe remains unchanged.
+
+Preservation gates
+==================
+
+Preserve exactly:
+
+- all six fact contracts;
+- `blocked_by_both` readiness;
+- blockers and report wording unless a deterministic formatting-only adjustment is unavoidable;
+- no executable damage buff;
+- existing Tingyun Energy binding;
+- existing Pela binding;
+- reviewed registry v0.2 with exactly two entries;
+- simulator/search/evaluator/replay behavior;
+- locked manifest and counts;
+- action-sequence and trace-evidence artifacts;
+- current duration-engine behavior;
+- unknown real-video target and trace level;
+- unresolved magnitude and effect order.
+
+Scope exclusions
+================
+
+Do not:
+
+- retrieve or add sources;
+- add a magnitude table;
+- choose buff-versus-Energy order;
+- verify or change same-current-turn semantics;
+- implement the damage buff;
+- change any reviewed binding;
+- start HSR-AXIS-002N.
+
+Required final checks
+=====================
+
+Run:
+
+python -m compileall -q hsr_axis_sim
+python -m pytest -q
+python -m hsr_axis_sim.regression.runner --manifest hsr_axis_sim/data/regression_manifest.json --format text
+python -m hsr_axis_sim.regression.runner --manifest hsr_axis_sim/data/regression_manifest.json --only trace_evidence --format text
+python -m hsr_axis_sim.tools.trace_tingyun_ultimate_damage_buff_review --format markdown
+python -m hsr_axis_sim.tools.trace_tingyun_ultimate_damage_buff_review --format json
+
+Confirm committed Markdown and JSON reports are byte-identical to regeneration.
+
+Update `hsr_axis_sim/LUMEN_RESULT.md` with:
+
+- exact files changed;
+- root cause and fix strategy;
+- new combined malformed-input tests;
+- exact pytest and regression results;
+- CLI/direct-validator results;
+- report determinism;
+- confirmation that no source research, executable buff, reviewed-binding change, or 002N work was added.

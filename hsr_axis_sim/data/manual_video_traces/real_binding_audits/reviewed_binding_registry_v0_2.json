@@ -1,0 +1,77 @@
+{
+  "registry_version": "0.2",
+  "reviewed_binding_count": 2,
+  "warning": "All reviewed bindings are partial, synthetic-only shells. Raw binding dictionaries are not the reviewed public execution contract, and the real trace is non-executable.",
+  "bindings": [
+    {
+      "registry_entry_id": "reviewed_pela_skill_partial_v0_1",
+      "binding_id": "pela_skill_partial_resource_target_dispel_shell_v0_1",
+      "version": "0.1",
+      "actor_id": "pela",
+      "action_category": "skill",
+      "binding_scope": "partial_resource_target_dispel_shell",
+      "binding_type": "partial_action_shell",
+      "handler_key": "pela_skill_partial_v0_1",
+      "accepted_atomic_fact_sha256": "b17a5f295cb8902883d6e8ddaa70c626bdbddf60572db8ce28da6eb3c555491f",
+      "source_atomic_fact_ids": [
+        "pela.skill.target_scope",
+        "pela.skill.sp_delta",
+        "pela.skill.energy_generation",
+        "pela.skill.dispel_count"
+      ],
+      "unresolved_atomic_fact_ids": [
+        "pela.skill.observed_target_and_level",
+        "pela.skill.toughness_native"
+      ],
+      "unresolved_fields": [
+        "damage_multiplier",
+        "final_damage",
+        "trace_level",
+        "build_assumptions",
+        "observed_real_video_target",
+        "normalized_toughness",
+        "debuff_application",
+        "eidolon_trace_light_cone_relic_team_interactions"
+      ],
+      "complete_game_skill": false,
+      "complete_character_kit": false,
+      "synthetic_only": true,
+      "real_trace_executable": false,
+      "damage_semantics_status": "not_implemented",
+      "toughness_semantics_status": "not_implemented"
+    },
+    {
+      "registry_entry_id": "reviewed_tingyun_ultimate_partial_v0_1",
+      "binding_id": "tingyun_ultimate_partial_resource_interrupt_shell_v0_1",
+      "version": "0.1",
+      "actor_id": "tingyun",
+      "action_category": "ultimate",
+      "binding_scope": "partial_resource_interrupt_shell",
+      "binding_type": "partial_action_shell",
+      "handler_key": "tingyun_ultimate_partial_v0_1",
+      "accepted_atomic_fact_sha256": "b17a5f295cb8902883d6e8ddaa70c626bdbddf60572db8ce28da6eb3c555491f",
+      "source_atomic_fact_ids": [
+        "tingyun.ultimate.target_scope",
+        "tingyun.ultimate.energy_cost",
+        "tingyun.ultimate.target_energy_restore"
+      ],
+      "unresolved_atomic_fact_ids": [
+        "tingyun.ultimate.damage_buff_duration",
+        "tingyun.ultimate.observed_target"
+      ],
+      "unresolved_fields": [
+        "damage_buff_magnitude",
+        "damage_buff_duration_decrement_and_expiration",
+        "observed_real_video_target",
+        "real_video_initial_energy_and_combat_state"
+      ],
+      "complete_game_skill": false,
+      "complete_character_kit": false,
+      "synthetic_only": true,
+      "real_trace_executable": false,
+      "damage_semantics_status": "not_implemented",
+      "toughness_semantics_status": "not_implemented"
+    }
+  ],
+  "real_trace_executable": false
+}

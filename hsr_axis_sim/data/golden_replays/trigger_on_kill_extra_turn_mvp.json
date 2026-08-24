@@ -1,0 +1,101 @@
+{
+  "name": "trigger_on_kill_extra_turn_mvp",
+  "tolerance": 0.001,
+  "initial_state": {
+    "global_av": 0,
+    "skill_points": 3,
+    "max_skill_points": 5,
+    "triggers": [
+      {
+        "id": "on_kill_extra_turn",
+        "owner_id": "seele_like",
+        "event_type": "unit_defeated",
+        "condition": {"type": "event_killer_is_owner"},
+        "effects": [{"type": "GrantExtraTurn"}],
+        "max_triggers_per_action": 1
+      }
+    ],
+    "units": [
+      {
+        "id": "seele_like",
+        "name": "Seele-like Unit",
+        "team": "ally",
+        "base_speed": 100,
+        "speed": 100,
+        "current_av": 0,
+        "hp": 3000,
+        "max_hp": 3000
+      },
+      {
+        "id": "enemy_1",
+        "name": "Training Enemy 1",
+        "team": "enemy",
+        "base_speed": 100,
+        "speed": 100,
+        "current_av": 100,
+        "hp": 500,
+        "max_hp": 500
+      },
+      {
+        "id": "enemy_2",
+        "name": "Training Enemy 2",
+        "team": "enemy",
+        "base_speed": 100,
+        "speed": 100,
+        "current_av": 100,
+        "hp": 1000,
+        "max_hp": 1000
+      }
+    ]
+  },
+  "actions": {
+    "kill_enemy": {
+      "id": "kill_enemy",
+      "name": "Kill Enemy",
+      "actor_id": "seele_like",
+      "target_ids": ["enemy_1"],
+      "ends_turn": true,
+      "effects": [{"type": "DealDamage", "amount": 500}]
+    },
+    "extra_hit": {
+      "id": "extra_hit",
+      "name": "Extra Hit",
+      "actor_id": "seele_like",
+      "target_ids": ["enemy_2"],
+      "ends_turn": true,
+      "effects": [{"type": "DealDamage", "amount": 100}]
+    }
+  },
+  "steps": [
+    {
+      "step": 1,
+      "expected_actor": "seele_like",
+      "action_id": "kill_enemy",
+      "target_ids": ["enemy_1"],
+      "expect": {
+        "global_av": 0,
+        "extra_turn_stack": ["seele_like"],
+        "logs_contains": ["trigger:on_kill_extra_turn"],
+        "units": {
+          "seele_like": {"current_av": 100},
+          "enemy_1": {"hp": 0, "is_alive": false},
+          "enemy_2": {"hp": 1000}
+        }
+      }
+    },
+    {
+      "step": 2,
+      "expected_actor": "seele_like",
+      "action_id": "extra_hit",
+      "target_ids": ["enemy_2"],
+      "expect": {
+        "global_av": 0,
+        "extra_turn_stack": [],
+        "units": {
+          "seele_like": {"current_av": 100},
+          "enemy_2": {"hp": 900}
+        }
+      }
+    }
+  ]
+}

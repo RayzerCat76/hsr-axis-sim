@@ -1,0 +1,164 @@
+{
+  "semantic_map_id": "real_video_trace_001_botu_dilemma_semantics_v0_1",
+  "source_trace": "real_video_trace_001_botu_dilemma_floor12_side1_action_sequence_only",
+  "status": "placeholder_semantics_only",
+  "version": "0.1",
+  "policy": {
+    "executable": false,
+    "numeric_claims_allowed": false,
+    "unknowns_allowed": true,
+    "do_not_use_for_damage_or_av_validation": true
+  },
+  "prebattle": [
+    {
+      "actor": "pela",
+      "action": "technique",
+      "semantic_label": "佩拉秘技开怪",
+      "category": "prebattle_technique",
+      "simulator_binding": "placeholder_only",
+      "known": [
+        "Pela technique was used to engage combat."
+      ],
+      "unknown": [
+        "Exact debuff state and target scope for this trace are not validated."
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "actor": "tingyun",
+      "action": "ultimate",
+      "semantic_label": "停云终结技",
+      "category": "ultimate_interrupt",
+      "simulator_binding": "placeholder_only",
+      "known": [
+        "Tingyun ultimate is observed as the first recorded action."
+      ],
+      "unknown": [
+        "Target, energy state, buff value, and exact resulting state are not validated."
+      ]
+    },
+    {
+      "step": 2,
+      "actor": "pela",
+      "action": "skill",
+      "semantic_label": "佩拉战技",
+      "category": "normal_skill",
+      "simulator_binding": "placeholder_only",
+      "known": [
+        "Pela skill is observed after Tingyun ultimate."
+      ],
+      "unknown": [
+        "Target, skill point state, enemy state, and debuff outcome are not validated."
+      ]
+    },
+    {
+      "step": 3,
+      "actor": "remembrance_trailblazer",
+      "action": "skill",
+      "semantic_label": "记忆主战技",
+      "category": "normal_skill",
+      "simulator_binding": "placeholder_only",
+      "known": [
+        "Remembrance Trailblazer skill is observed in the opening sequence."
+      ],
+      "unknown": [
+        "Target, Mem interaction state, skill point state, and resulting combat state are not validated."
+      ]
+    },
+    {
+      "step": 4,
+      "actor": "tingyun",
+      "action": "skill",
+      "semantic_label": "停云战技",
+      "category": "normal_skill",
+      "simulator_binding": "placeholder_only",
+      "known": [
+        "Tingyun skill is observed before Pela ultimate."
+      ],
+      "unknown": [
+        "Target, skill point state, buff value, and resulting combat state are not validated."
+      ]
+    },
+    {
+      "step": 5,
+      "actor": "pela",
+      "action": "ultimate",
+      "semantic_label": "佩拉终结技",
+      "category": "ultimate_interrupt",
+      "simulator_binding": "placeholder_only",
+      "known": [
+        "Pela ultimate is observed before Naxia ultimate."
+      ],
+      "unknown": [
+        "Target scope, energy state, debuff outcome, damage, and toughness effects are not validated."
+      ]
+    },
+    {
+      "step": 6,
+      "actor": "naxia",
+      "action": "ultimate",
+      "semantic_label": "那刻夏终结技",
+      "category": "ultimate_interrupt",
+      "simulator_binding": "placeholder_only",
+      "known": [
+        "Naxia ultimate is observed before Naxia's composite basic action."
+      ],
+      "unknown": [
+        "Target, energy state, damage, toughness effects, and follow-up conditions are not validated."
+      ]
+    },
+    {
+      "step": 7,
+      "actor": "naxia",
+      "action": "basic_plus_extra_skill",
+      "semantic_label": "那刻夏普攻 + 额外战技",
+      "category": "composite_action_placeholder",
+      "simulator_binding": "placeholder_only",
+      "known": [
+        "The trace records this as a composite observed action label."
+      ],
+      "unknown": [
+        "Executable split, target, resource state, trigger conditions, damage, and toughness effects are not validated."
+      ]
+    },
+    {
+      "step": 8,
+      "actor": "mem",
+      "action": "advance_naxia",
+      "semantic_label": "迷迷拉条那刻夏",
+      "category": "action_advance_placeholder",
+      "simulator_binding": "placeholder_only",
+      "known": [
+        "Mem is observed causing Naxia to act sooner in the sequence."
+      ],
+      "unknown": [
+        "Exact action advance amount, timing semantics, charge conditions, and executable binding are not validated."
+      ]
+    },
+    {
+      "step": 9,
+      "actor": "naxia",
+      "action": "skill_plus_extra_skill",
+      "semantic_label": "那刻夏战技 + 额外战技",
+      "category": "composite_action_placeholder",
+      "simulator_binding": "placeholder_only",
+      "known": [
+        "The trace records this as a composite observed action label after Mem's action."
+      ],
+      "unknown": [
+        "Executable split, target, resource state, trigger conditions, damage, and toughness effects are not validated."
+      ]
+    }
+  ],
+  "category_reference": [
+    "prebattle_technique",
+    "normal_skill",
+    "ultimate_interrupt",
+    "summon_or_companion_action",
+    "composite_action_placeholder",
+    "action_advance_placeholder",
+    "unknown_or_unbound"
+  ]
+}

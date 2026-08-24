@@ -1,0 +1,281 @@
+Task ID: HSR-AXIS-002Q-REPLACEMENT
+Task name: Tingyun Ultimate turn-entry duration evidence normalization and engine-gap audit
+
+Codex Reasoning: HIGH
+Recommended model: GPT-5.6 Sol
+Fallback model: GPT-5.6 Terra only after the evidence statuses, boundary vocabulary, and expected audit conclusion are fully fixed.
+
+Supersession notice
+===================
+
+The previous 002Q `Same-current-turn duration ambiguity isolation and dual-policy conformance harness` is obsolete.
+
+Do not execute or adapt the old Policy A / Policy B prompt. Its end-turn premise was corrected by the project owner.
+
+Starting point
+==============
+
+HSR-AXIS-002P passed independent review.
+
+002P established that, under the pinned current simulator contract, target Energy restoration and DMG-buff application order is not observable.
+
+Ray supplied the following project-domain correction:
+
+`Tingyun Ultimate duration settles when the target enters a turn, not when the turn ends.`
+
+The supplied evidence package classifies that statement as:
+
+`accepted_project_domain_correction_pending_independent_frame_verification`
+
+The two-turn duration count is independently source-cross-checked. The exact Bilibili frame/timestamp, zero-boundary effect lifetime, extra-turn behavior, and trigger ordering are not independently verified.
+
+Objective
+=========
+
+Create a non-executable, deterministic evidence-normalization and engine-gap audit that:
+
+1. records the accepted turn-entry correction without overstating its verification status;
+2. pins the current engine contract by path, digest, and locator;
+3. proves that the current engine ticks `target_normal_turns` at normal-turn end rather than normal-turn entry;
+4. enumerates every unresolved semantic required before a safe runtime migration;
+5. creates a deterministic synthetic boundary matrix showing which current engine boundaries exist and which required turn-entry boundaries are absent;
+6. preserves generic binding readiness as blocked and adds no executable Tingyun DMG buff.
+
+This is not a runtime implementation task.
+
+Authoritative supplied references
+=================================
+
+Consume and preserve the meaning of:
+
+- `LUMEN_RESEARCH_HSR_AXIS_002Q_TINGYUN_DURATION.md`
+- `REFERENCE_EXTERNAL_SOURCE_CAPTURE_HSR_AXIS_002Q.json`
+- `REFERENCE_CURRENT_ENGINE_SOURCE_PINS_HSR_AXIS_002Q.json`
+- `REFERENCE_002Q_RELEASE_GAME_VS_ENGINE_CONTRACT.md`
+- `OBSOLETE_OLD_002Q_NOTICE.md`
+
+Do not browse, replace, or upgrade the evidence status on your own.
+
+Required evidence model
+=======================
+
+Create a versioned non-executable input artifact with separate fields for:
+
+- `claim_id`
+- `claim_value`
+- `claim_scope`
+- `source_ids`
+- `verification_status`
+- `release_game_claim`
+- `current_engine_behavior`
+- `observable_boundary`
+- `counter_transition`
+- `effect_active_during_entered_turn`
+- `extra_action_consumes`
+- `extra_turn_consumes`
+- `refresh_behavior`
+- `event_order_relative_to_turn_started`
+- `unresolved_fields`
+- `simulator_binding_allowed`
+
+Required exact statuses
+=======================
+
+The audit must preserve these statuses:
+
+- duration count 2: `source_cross_checked`
+- turn-entry settlement: `accepted_project_domain_correction_pending_independent_frame_verification`
+- Bilibili candidate: `candidate_identified_page_or_frames_not_retrieved`
+- effect active when counter reaches zero: `unresolved`
+- extra action consumption: `unresolved_not_infer_from_normal_turn_entry`
+- extra turn consumption: `unresolved_not_infer_from_normal_turn_entry`
+- release-game event order relative to `turn_started`: `unresolved`
+- simulator binding allowed: `false`
+
+Do not convert the user correction to `video_verified`, `official`, `release_game_proven`, or equivalent.
+
+Current-engine audit
+====================
+
+Pin and inspect at least:
+
+- `hsr_axis_sim/sim/timeline.py`
+- `hsr_axis_sim/sim/unit.py`
+- `hsr_axis_sim/sim/buffs.py`
+- `hsr_axis_sim/sim/effects.py`
+- `hsr_axis_sim/sim/action.py`
+- `hsr_axis_sim/sim/ultimate_windows.py`
+- `hsr_axis_sim/sim/state.py`
+- `hsr_axis_sim/sim/events.py`
+- `hsr_axis_sim/sim/turn_context.py`
+- accepted 002O semantic-readiness evidence/report
+- accepted 002P effect-order evidence/report
+- reviewed registry and locked manifest
+
+A byte change in a pinned project source must invalidate a successful report.
+
+The report must explicitly identify:
+
+- normal-turn actor selection;
+- normal-turn `turn_started` emission;
+- extra-turn `turn_started` emission;
+- the existing end-turn `target_normal_turns` tick;
+- current-turn expiration behavior;
+- same-ID refresh behavior;
+- absence of an application-turn marker on `Buff`;
+- absence of a target-normal-turn-entry tick path.
+
+Required synthetic boundary matrix
+==================================
+
+Build deterministic audit-only cases. Do not add runtime policy fields or fork production Timeline behavior.
+
+At minimum include:
+
+1. two-turn probe buff applied before the target's next normal turn;
+2. probe applied by an Ultimate interrupt during the target's already-active normal turn;
+3. same-ID refresh during the target's already-active normal turn;
+4. target receives a non-ending extra action;
+5. target receives a granted extra turn;
+6. target is action-advanced into its next normal turn;
+7. target reaches candidate counter transitions `2 → 1` and `1 → 0` at normal-turn entry in the evidence model;
+8. unrelated statuses, units, AV, Energy, HP, toughness, SP, logs, events, triggers, extra-turn stack, and enemy-AI state remain nontrivial.
+
+For each case record:
+
+- what the accepted evidence model says is the settlement boundary;
+- what the current engine actually mutates and at which boundary;
+- whether the case is fully decidable from supplied evidence;
+- exact unresolved fields;
+- whether a runtime assertion would be unsafe.
+
+Do not invent expected release-game outputs for unresolved fields.
+
+Required gap classification
+===========================
+
+Use exact gap IDs or equivalent stable identifiers:
+
+- `GAP_TARGET_NORMAL_TURN_TICK_BOUNDARY`
+- `GAP_ZERO_COUNTER_EFFECT_LIFETIME`
+- `GAP_EXTRA_TURN_CONSUMPTION`
+- `GAP_EXTRA_ACTION_CONSUMPTION`
+- `GAP_TURN_STARTED_EVENT_ORDER`
+- `GAP_SAME_ID_REFRESH_AT_ACTIVE_TURN`
+- `GAP_GLOBAL_MIGRATION_IMPACT`
+
+The first gap is proven from the accepted claim plus pinned source. The remaining gaps must stay unresolved unless directly supported by supplied evidence.
+
+Required conclusion
+===================
+
+A successful report must conclude exactly:
+
+`turn_entry_claim_normalized_current_engine_gap_confirmed_runtime_change_blocked`
+
+It must also state:
+
+- old 002Q is obsolete;
+- no end-turn dual policy is selected;
+- `release_game_duration_policy = null` as an executable policy;
+- `accepted_project_domain_boundary = target_normal_turn_entry`;
+- independent frame verification remains pending;
+- generic readiness remains `blocked_by_duration_semantics`;
+- accepted-video readiness remains `blocked_by_unknown_target_and_trace_level`;
+- simulator binding remains disallowed.
+
+New artifacts
+=============
+
+Create, for example:
+
+`hsr_axis_sim/data/manual_video_traces/normalized_character_facts/tingyun_ultimate_turn_entry_duration_gap_v0_1.json`
+
+`hsr_axis_sim/data/manual_video_traces/real_binding_audits/tingyun_ultimate_turn_entry_duration_gap_v0_1.json`
+
+`hsr_axis_sim/data/manual_video_traces/real_binding_audits/tingyun_ultimate_turn_entry_duration_gap_v0_1.md`
+
+`hsr_axis_sim/tools/trace_tingyun_ultimate_turn_entry_duration_gap.py`
+
+and one dedicated focused test file.
+
+Also add a versioned Bilibili evidence-intake template requiring:
+
+- BV ID and direct URL;
+- video title and uploader;
+- publication date and game version/build where knowable;
+- exact timestamp/frame range;
+- proof of the target and its active-turn state;
+- visible buff icon/counter or damage-based observable;
+- target normal-turn entry boundaries;
+- `2 → 1` and `1 → 0` observations;
+- whether effect remains active during the entered turn;
+- extra action and extra turn classification;
+- exclusions and uncertainty notes.
+
+Do not fill unknown fields with guesses.
+
+Strict validation requirements
+==============================
+
+Treat all new JSON as untrusted input.
+
+- Type-check before membership, hashing, sorting, tuple unpacking, numeric comparison, path operations, or dictionary-key construction.
+- Reject duplicate IDs, duplicate paths, stale digests, unknown executable keys, malformed statuses, inconsistent gap classifications, and unsupported successful conclusions.
+- Reject any claim that the Bilibili candidate has a verified timestamp or frame sequence.
+- Reject any claim that the community simulator is release-game authority.
+- Reject any executable duration policy, executable Tingyun DMG buff, reviewed registry entry, selected trace level, or inferred accepted-video target.
+- Object/list/bool/number/null mutations of every scalar field must produce controlled `ValueError`, never native exception leakage.
+- Readable invalid CLI input: exit 1, no traceback.
+- Missing/unreadable/invalid-JSON input: exit 2, no traceback.
+- Valid output must be deterministic under reversed unordered collections.
+
+Required negative tests
+=======================
+
+Reject at least:
+
+- old 002Q Policy A or Policy B included as accepted policy;
+- settlement boundary changed back to end-turn;
+- turn-entry claim marked independently video verified;
+- fabricated Bilibili timestamp or uploader;
+- zero-counter lifetime asserted as known;
+- extra-turn or extra-action consumption asserted as known;
+- current engine described as already conforming;
+- missing proven tick-boundary gap;
+- stale source digest;
+- executable AddBuff wiring or registry entry;
+- modification of accepted 002O/002P artifacts;
+- registry or manifest change.
+
+Preservation requirements
+=========================
+
+Do not change:
+
+- Timeline, Unit, Buff, AddBuff, Action, interrupt, event, trigger, target, or state runtime implementation;
+- existing Tingyun Energy partial binding;
+- Pela partial binding;
+- reviewed registry version or entries;
+- accepted 002O or 002P evidence/reports;
+- magnitude table;
+- accepted-video trace;
+- replay/search/evaluator behavior;
+- locked regression manifest.
+
+Do not implement HSR-AXIS-002R.
+
+Required result file
+====================
+
+Update `hsr_axis_sim/LUMEN_RESULT.md` with:
+
+- exact task status;
+- files added/changed;
+- tests executed and results;
+- generated report paths;
+- preserved digests;
+- exact successful conclusion or blockers;
+- explicit statement that no production duration behavior or executable Tingyun DMG buff was added.
+
+Stop after HSR-AXIS-002Q-REPLACEMENT.

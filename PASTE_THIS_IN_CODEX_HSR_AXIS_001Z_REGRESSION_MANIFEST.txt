@@ -1,0 +1,183 @@
+Task ID: HSR-AXIS-001Z
+Task name: Regression Manifest / Baseline Lock MVP
+
+Codex Reasoning: Medium
+ChatGPT Model suggestion: GPT-5.5
+Reason: This task is mostly regression infrastructure, manifest loading, CLI/report metadata, and tests. It should not modify combat-core mechanics, so GPT-5.5 Thinking is not necessary unless you discover a deeper architectural problem.
+
+Context:
+You are continuing the HSR Axis Simulator project. 001Y added a batch regression runner that discovers and validates:
+- golden replay fixtures
+- manual video trace fixtures
+- search scenario fixtures
+
+001Y passed Lumen review. The next step is to make regression baselines explicit and reproducible.
+
+Goal:
+Add a manifest-backed regression baseline so the project can lock a known-good fixture set before real manual-video traces are added.
+
+Do NOT change combat-core logic.
+Do NOT change timeline, damage, break, buff/debuff, target legality, enemy AI, action generation, ultimate windows, or beam search behavior.
+Do NOT scrape websites.
+Do NOT import real Huroka/Yatta data.
+Do NOT add real Bilibili video traces in this task.
+
+Required deliverables:
+
+1. Add a regression manifest JSON file.
+
+Create:
+
+hsr_axis_sim/data/regression_manifest.json
+
+It should explicitly list the current baseline fixtures:
+
+Golden replays:
+- hsr_axis_sim/data/golden_replays/break_damage_elemental_mvp.json
+- hsr_axis_sim/data/golden_replays/bronya_seele_multistep_mvp.json
+- hsr_axis_sim/data/golden_replays/bronya_seele_timeline_mvp.json
+- hsr_axis_sim/data/golden_replays/buff_duration_mvp.json
+- hsr_axis_sim/data/golden_replays/character_kit_001_mvp.json
+- hsr_axis_sim/data/golden_replays/damage_formula_v1_mvp.json
+- hsr_axis_sim/data/golden_replays/damage_rng_mvp.json
+- hsr_axis_sim/data/golden_replays/data_loaded_bronya_seele_mvp.json
+- hsr_axis_sim/data/golden_replays/enemy_ai_mvp.json
+- hsr_axis_sim/data/golden_replays/toughness_break_mvp.json
+- hsr_axis_sim/data/golden_replays/trigger_on_kill_extra_turn_mvp.json
+- hsr_axis_sim/data/golden_replays/ultimate_interrupt_mvp.json
+
+Manual video traces:
+- hsr_axis_sim/data/manual_video_traces/samples/manual_video_trace_sample_mvp.json
+
+Search scenarios:
+- hsr_axis_sim/data/search_scenarios/basic_search_mvp.json
+- hsr_axis_sim/data/search_scenarios/constrained_search_mvp.json
+
+Suggested manifest shape:
+
+{
+  "manifest_id": "HSR_AXIS_REGRESSION_BASELINE_001Z",
+  "project": "hsr-axis-simulator",
+  "description": "Locked MVP regression baseline before real manual-video trace intake.",
+  "groups": {
+    "replays": [
+      {
+        "id": "break_damage_elemental_mvp",
+        "path": "hsr_axis_sim/data/golden_replays/break_damage_elemental_mvp.json"
+      }
+    ],
+    "manual": [
+      {
+        "id": "manual_video_trace_sample_mvp",
+        "path": "hsr_axis_sim/data/manual_video_traces/samples/manual_video_trace_sample_mvp.json"
+      }
+    ],
+    "scenarios": [
+      {
+        "id": "basic_search_mvp",
+        "path": "hsr_axis_sim/data/search_scenarios/basic_search_mvp.json"
+      }
+    ]
+  }
+}
+
+You may add optional fields such as notes or expected_counts, but keep the manifest simple and human-editable.
+
+2. Add manifest loading and validation.
+
+Create or update:
+
+hsr_axis_sim/regression/manifest.py
+
+Required behavior:
+- Load manifest JSON from a path.
+- Validate top-level shape.
+- Validate supported groups: replays, manual, scenarios.
+- Validate each entry has an id and path.
+- Reject duplicate ids within the same group.
+- Resolve relative fixture paths relative to the project root, not current working directory.
+- Fail clearly when a listed file is missing.
+- Return grouped Path lists that can be passed to the existing regression runner.
+
+3. Extend the regression runner.
+
+Update:
+
+hsr_axis_sim/regression/runner.py
+
+Required behavior:
+- Keep existing discovery behavior working.
+- Add CLI support for:
+
+  --manifest PATH
+
+- When `--manifest PATH` is supplied, use the manifest entries instead of directory discovery.
+- Preserve `--only replays|manual|scenarios` with manifest mode.
+- Preserve `--format text|markdown|json`.
+- Preserve `--output`.
+- Preserve `--fail-fast`.
+- Report manifest metadata in text, markdown, and json outputs when manifest mode is used.
+
+Suggested output additions:
+- manifest_id
+- manifest_path
+- group fixture counts
+
+4. Add tests.
+
+Add or update tests in:
+
+hsr_axis_sim/tests/test_regression_runner.py
+
+or create:
+
+hsr_axis_sim/tests/test_regression_manifest.py
+
+Required tests:
+- Loading the default manifest succeeds.
+- Manifest mode regression passes with the default manifest.
+- `--manifest hsr_axis_sim/data/regression_manifest.json --format json` returns valid JSON with manifest metadata.
+- `--manifest ... --only replays` only runs replay checks.
+- Duplicate entry ids are rejected clearly.
+- Missing fixture path is rejected clearly.
+- Invalid group name is rejected clearly.
+- Existing discovery-mode tests still pass.
+
+5. Add LUMEN_RESULT.md.
+
+Update:
+
+hsr_axis_sim/LUMEN_RESULT.md
+
+It must include:
+- Files changed
+- Tests run
+- Exact pass/fail results
+- Regression manifest summary
+- What is intentionally not implemented
+- Known limitations
+- Whether 002A is safe to begin after Lumen review
+
+Expected test command:
+
+python -m pytest -q
+
+Also run:
+
+python -m hsr_axis_sim.regression.runner --manifest hsr_axis_sim/data/regression_manifest.json --format text
+python -m hsr_axis_sim.regression.runner --manifest hsr_axis_sim/data/regression_manifest.json --format markdown
+python -m hsr_axis_sim.regression.runner --manifest hsr_axis_sim/data/regression_manifest.json --format json
+python -m hsr_axis_sim.regression.runner --manifest hsr_axis_sim/data/regression_manifest.json --only replays
+python -m hsr_axis_sim.regression.runner --manifest hsr_axis_sim/data/regression_manifest.json --only manual
+python -m hsr_axis_sim.regression.runner --manifest hsr_axis_sim/data/regression_manifest.json --only scenarios
+
+Acceptance criteria:
+- All existing tests pass.
+- New manifest tests pass.
+- Regression runner still works without manifest.
+- Regression runner works with manifest.
+- Manifest output is present in text/markdown/json when manifest mode is used.
+- No combat-core behavior changes.
+
+After this task:
+The project should be ready to start phase 002A: first real manually recorded video trace intake.

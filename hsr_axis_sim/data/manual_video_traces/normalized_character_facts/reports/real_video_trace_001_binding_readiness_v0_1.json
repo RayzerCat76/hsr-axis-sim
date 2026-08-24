@@ -1,0 +1,2469 @@
+{
+  "normalization_id": "real_video_trace_001_atomic_character_facts_v0_1",
+  "version": "0.1",
+  "policy": {
+    "non_executable": true,
+    "simulator_binding_allowed": false,
+    "warning": "Non-executable atomic fact normalization only. No record is a character kit, effect, trigger, executable action, or simulator-binding authorization."
+  },
+  "vocabularies": {
+    "action_categories": [
+      "basic_attack",
+      "memosprite_skill",
+      "passive_trigger",
+      "skill",
+      "summon_skill",
+      "technique_attack",
+      "ultimate"
+    ],
+    "target_scopes": [
+      "all_allies",
+      "all_enemies",
+      "bounce_from_selected_enemy",
+      "companion_mem",
+      "random_enemy",
+      "self",
+      "single_ally",
+      "single_enemy",
+      "unknown"
+    ],
+    "resource_kinds": [
+      "charge",
+      "energy",
+      "none",
+      "skill_point"
+    ],
+    "timing_classifications": [
+      "action_advance_target",
+      "additional_skill_cast",
+      "immediate_action_self",
+      "non_recursive_additional_cast",
+      "normal_action",
+      "ultimate_interrupt",
+      "unknown"
+    ],
+    "duration_anchors": [
+      "fixed_turn_count",
+      "source_turn_end",
+      "source_turn_start",
+      "target_turn_end",
+      "target_turn_start",
+      "unknown",
+      "until_target_turn_start"
+    ],
+    "readiness_statuses": [
+      "not_ready",
+      "source_and_trace_ready_engine_review_required",
+      "source_ready_trace_blocked"
+    ]
+  },
+  "atomic_facts": [
+    {
+      "atomic_fact_id": "anaxa.basic.extra_skill_non_recursive",
+      "source_registry_fact_ids": [
+        "anaxa_basic_extra_skill_structure"
+      ],
+      "internal_actor_id": "naxia",
+      "action_scope": "basic_plus_extra_skill",
+      "normalized_field_name": "additional_skill_recursive",
+      "normalized_value": false,
+      "value_type": "boolean",
+      "unit": null,
+      "source_native_value": "cannot trigger this effect again",
+      "verification_status": "verified_structured_data",
+      "provenance": [
+        {
+          "source_registry_fact_id": "anaxa_basic_extra_skill_structure",
+          "source_id": "gachabase_anaxa",
+          "relationship": "supports_exact_field",
+          "evidence_summary": "Structured Talent explicitly denies recursion."
+        }
+      ],
+      "version_applicability": "current structured data; 3.4 raw revision unavailable",
+      "trace_link": {
+        "location": "step_7",
+        "step": 7,
+        "actor": "naxia",
+        "action": "basic_plus_extra_skill"
+      },
+      "unresolved_notes": "Downgraded from compound corroboration.",
+      "simulator_binding_allowed": false,
+      "action_category": null,
+      "target_scope": null,
+      "resource_change": null,
+      "duration": null,
+      "timing": {
+        "classification": "non_recursive_additional_cast"
+      },
+      "toughness": null
+    },
+    {
+      "atomic_fact_id": "anaxa.basic.extra_skill_trigger",
+      "source_registry_fact_ids": [
+        "anaxa_basic_extra_skill_structure"
+      ],
+      "internal_actor_id": "naxia",
+      "action_scope": "basic_plus_extra_skill",
+      "normalized_field_name": "additional_skill_trigger",
+      "normalized_value": "after_basic_or_skill_hits_qualitative_disclosure_target",
+      "value_type": "condition",
+      "unit": null,
+      "source_native_value": "after Basic ATK or Skill on Qualitative Disclosure target",
+      "verification_status": "corroborated",
+      "provenance": [
+        {
+          "source_registry_fact_id": "anaxa_basic_extra_skill_structure",
+          "source_id": "gachabase_anaxa",
+          "relationship": "supports_exact_field",
+          "evidence_summary": "Structured Talent gives exact trigger."
+        },
+        {
+          "source_registry_fact_id": "anaxa_basic_extra_skill_structure",
+          "source_id": "hoyolab_anaxa_v3_2",
+          "relationship": "supports_exact_field",
+          "evidence_summary": "Version 3.2 guide corroborates trigger."
+        }
+      ],
+      "version_applicability": "3.2 mechanic applicable to 3.4",
+      "trace_link": {
+        "location": "step_7",
+        "step": 7,
+        "actor": "naxia",
+        "action": "basic_plus_extra_skill"
+      },
+      "unresolved_notes": "Trace Qualitative Disclosure state unknown.",
+      "simulator_binding_allowed": false,
+      "action_category": "passive_trigger",
+      "target_scope": null,
+      "resource_change": null,
+      "duration": null,
+      "timing": {
+        "classification": "additional_skill_cast"
+      },
+      "toughness": null
+    },
+    {
+      "atomic_fact_id": "anaxa.basic.sp_delta",
+      "source_registry_fact_ids": [
+        "anaxa_basic_extra_skill_structure"
+      ],
+      "internal_actor_id": "naxia",
+      "action_scope": "basic_plus_extra_skill",
+      "normalized_field_name": "basic_skill_point_delta",
+      "normalized_value": 1,
+      "value_type": "integer",
+      "unit": "skill_point",
+      "source_native_value": 1,
+      "verification_status": "verified_structured_data",
+      "provenance": [
+        {
+          "source_registry_fact_id": "anaxa_basic_extra_skill_structure",
+          "source_id": "gachabase_anaxa",
+          "relationship": "supports_exact_field",
+          "evidence_summary": "Structured Basic resource field lists +1 SP."
+        }
+      ],
+      "version_applicability": "current structured data; 3.4 raw revision unavailable",
+      "trace_link": {
+        "location": "step_7",
+        "step": 7,
+        "actor": "naxia",
+        "action": "basic_plus_extra_skill"
+      },
+      "unresolved_notes": "Downgraded from compound corroboration.",
+      "simulator_binding_allowed": false,
+      "action_category": "basic_attack",
+      "target_scope": "single_enemy",
+      "resource_change": {
+        "resource_kind": "skill_point",
+        "amount": 1,
+        "unit": "skill_point"
+      },
+      "duration": null,
+      "timing": {
+        "classification": "normal_action"
+      },
+      "toughness": null
+    },
+    {
+      "atomic_fact_id": "anaxa.basic.trace_conditions",
+      "source_registry_fact_ids": [
+        "anaxa_basic_extra_skill_trace_conditions"
+      ],
+      "internal_actor_id": "naxia",
+      "action_scope": "basic_plus_extra_skill",
+      "normalized_field_name": "observed_target_and_trigger_state",
+      "normalized_value": null,
+      "value_type": "unknown",
+      "unit": null,
+      "source_native_value": null,
+      "verification_status": "missing",
+      "provenance": [
+        {
+          "source_registry_fact_id": "anaxa_basic_extra_skill_trace_conditions",
+          "source_id": "local_evidence_report",
+          "relationship": "limits",
+          "evidence_summary": "Composite target and condition absent."
+        }
+      ],
+      "version_applicability": "3.4 trace",
+      "trace_link": {
+        "location": "step_7",
+        "step": 7,
+        "actor": "naxia",
+        "action": "basic_plus_extra_skill"
+      },
+      "unresolved_notes": "Composite remains non-executable.",
+      "simulator_binding_allowed": false,
+      "action_category": null,
+      "target_scope": "unknown",
+      "resource_change": null,
+      "duration": null,
+      "timing": null,
+      "toughness": null
+    },
+    {
+      "atomic_fact_id": "anaxa.skill.extra_skill_non_recursive",
+      "source_registry_fact_ids": [
+        "anaxa_skill_extra_skill_structure"
+      ],
+      "internal_actor_id": "naxia",
+      "action_scope": "skill_plus_extra_skill",
+      "normalized_field_name": "additional_skill_recursive",
+      "normalized_value": false,
+      "value_type": "boolean",
+      "unit": null,
+      "source_native_value": "cannot trigger this effect again",
+      "verification_status": "verified_structured_data",
+      "provenance": [
+        {
+          "source_registry_fact_id": "anaxa_skill_extra_skill_structure",
+          "source_id": "gachabase_anaxa",
+          "relationship": "supports_exact_field",
+          "evidence_summary": "Structured Talent denies recursion."
+        }
+      ],
+      "version_applicability": "current structured data; 3.4 raw revision unavailable",
+      "trace_link": {
+        "location": "step_9",
+        "step": 9,
+        "actor": "naxia",
+        "action": "skill_plus_extra_skill"
+      },
+      "unresolved_notes": "Downgraded from compound corroboration.",
+      "simulator_binding_allowed": false,
+      "action_category": null,
+      "target_scope": null,
+      "resource_change": null,
+      "duration": null,
+      "timing": {
+        "classification": "non_recursive_additional_cast"
+      },
+      "toughness": null
+    },
+    {
+      "atomic_fact_id": "anaxa.skill.extra_skill_trigger",
+      "source_registry_fact_ids": [
+        "anaxa_skill_extra_skill_structure"
+      ],
+      "internal_actor_id": "naxia",
+      "action_scope": "skill_plus_extra_skill",
+      "normalized_field_name": "additional_skill_trigger",
+      "normalized_value": "after_basic_or_skill_hits_qualitative_disclosure_target",
+      "value_type": "condition",
+      "unit": null,
+      "source_native_value": "after Basic ATK or Skill on Qualitative Disclosure target",
+      "verification_status": "corroborated",
+      "provenance": [
+        {
+          "source_registry_fact_id": "anaxa_skill_extra_skill_structure",
+          "source_id": "gachabase_anaxa",
+          "relationship": "supports_exact_field",
+          "evidence_summary": "Structured Talent gives exact trigger."
+        },
+        {
+          "source_registry_fact_id": "anaxa_skill_extra_skill_structure",
+          "source_id": "hoyolab_anaxa_v3_2",
+          "relationship": "supports_exact_field",
+          "evidence_summary": "Guide corroborates trigger."
+        }
+      ],
+      "version_applicability": "3.2 mechanic applicable to 3.4",
+      "trace_link": {
+        "location": "step_9",
+        "step": 9,
+        "actor": "naxia",
+        "action": "skill_plus_extra_skill"
+      },
+      "unresolved_notes": "Qualitative Disclosure state unknown.",
+      "simulator_binding_allowed": false,
+      "action_category": "passive_trigger",
+      "target_scope": null,
+      "resource_change": null,
+      "duration": null,
+      "timing": {
+        "classification": "additional_skill_cast"
+      },
+      "toughness": null
+    },
+    {
+      "atomic_fact_id": "anaxa.skill.sp_delta",
+      "source_registry_fact_ids": [
+        "anaxa_skill_extra_skill_structure"
+      ],
+      "internal_actor_id": "naxia",
+      "action_scope": "skill_plus_extra_skill",
+      "normalized_field_name": "skill_point_delta",
+      "normalized_value": -1,
+      "value_type": "integer",
+      "unit": "skill_point",
+      "source_native_value": -1,
+      "verification_status": "verified_structured_data",
+      "provenance": [
+        {
+          "source_registry_fact_id": "anaxa_skill_extra_skill_structure",
+          "source_id": "gachabase_anaxa",
+          "relationship": "supports_exact_field",
+          "evidence_summary": "Structured Skill resource field lists -1 SP."
+        }
+      ],
+      "version_applicability": "current structured data; 3.4 raw revision unavailable",
+      "trace_link": {
+        "location": "step_9",
+        "step": 9,
+        "actor": "naxia",
+        "action": "skill_plus_extra_skill"
+      },
+      "unresolved_notes": "Downgraded from compound corroboration.",
+      "simulator_binding_allowed": false,
+      "action_category": null,
+      "target_scope": null,
+      "resource_change": {
+        "resource_kind": "skill_point",
+        "amount": -1,
+        "unit": "skill_point"
+      },
+      "duration": null,
+      "timing": null,
+      "toughness": null
+    },
+    {
+      "atomic_fact_id": "anaxa.skill.target_scope",
+      "source_registry_fact_ids": [
+        "anaxa_skill_extra_skill_structure"
+      ],
+      "internal_actor_id": "naxia",
+      "action_scope": "skill_plus_extra_skill",
+      "normalized_field_name": "target_scope",
+      "normalized_value": "bounce_from_selected_enemy",
+      "value_type": "target_scope",
+      "unit": null,
+      "source_native_value": "one designated enemy plus four bounces",
+      "verification_status": "corroborated",
+      "provenance": [
+        {
+          "source_registry_fact_id": "anaxa_skill_extra_skill_structure",
+          "source_id": "gachabase_anaxa",
+          "relationship": "supports_exact_field",
+          "evidence_summary": "Structured Skill defines selected target and bounces."
+        },
+        {
+          "source_registry_fact_id": "anaxa_skill_extra_skill_structure",
+          "source_id": "hoyolab_anaxa_v3_2",
+          "relationship": "supports_exact_field",
+          "evidence_summary": "Version 3.2 guide defines same bounce pattern."
+        }
+      ],
+      "version_applicability": "3.2 mechanic applicable to 3.4",
+      "trace_link": {
+        "location": "step_9",
+        "step": 9,
+        "actor": "naxia",
+        "action": "skill_plus_extra_skill"
+      },
+      "unresolved_notes": "Observed targets and bounce path unknown.",
+      "simulator_binding_allowed": false,
+      "action_category": "skill",
+      "target_scope": "bounce_from_selected_enemy",
+      "resource_change": null,
+      "duration": null,
+      "timing": {
+        "classification": "normal_action"
+      },
+      "toughness": null
+    },
+    {
+      "atomic_fact_id": "anaxa.skill.toughness_native",
+      "source_registry_fact_ids": [
+        "anaxa_skill_extra_skill_structure"
+      ],
+      "internal_actor_id": "naxia",
+      "action_scope": "skill_plus_extra_skill",
+      "normalized_field_name": "initial_target_toughness_value",
+      "normalized_value": null,
+      "value_type": "toughness",
+      "unit": null,
+      "source_native_value": 10,
+      "verification_status": "verified_structured_data",
+      "provenance": [
+        {
+          "source_registry_fact_id": "anaxa_skill_extra_skill_structure",
+          "source_id": "gachabase_anaxa",
+          "relationship": "supports_exact_field",
+          "evidence_summary": "Gachabase displays Break (In-Game) 10 for selected target."
+        }
+      ],
+      "version_applicability": "current structured data; 3.4 raw revision unavailable",
+      "trace_link": {
+        "location": "step_9",
+        "step": 9,
+        "actor": "naxia",
+        "action": "skill_plus_extra_skill"
+      },
+      "unresolved_notes": "No documented conversion or bounce toughness values.",
+      "simulator_binding_allowed": false,
+      "action_category": null,
+      "target_scope": null,
+      "resource_change": null,
+      "duration": null,
+      "timing": null,
+      "toughness": {
+        "source_native_value": 10,
+        "source_native_unit": "gachabase_break_in_game_display_selected_target",
+        "normalized_value": null,
+        "normalized_unit": null,
+        "conversion_rule": null,
+        "ambiguity_note": "Native selected-target display retained without conversion."
+      }
+    },
+    {
+      "atomic_fact_id": "anaxa.skill.trace_conditions",
+      "source_registry_fact_ids": [
+        "anaxa_skill_extra_skill_trace_conditions"
+      ],
+      "internal_actor_id": "naxia",
+      "action_scope": "skill_plus_extra_skill",
+      "normalized_field_name": "observed_targets_trigger_state_and_level",
+      "normalized_value": null,
+      "value_type": "unknown",
+      "unit": null,
+      "source_native_value": null,
+      "verification_status": "missing",
+      "provenance": [
+        {
+          "source_registry_fact_id": "anaxa_skill_extra_skill_trace_conditions",
+          "source_id": "local_evidence_report",
+          "relationship": "limits",
+          "evidence_summary": "Targets, trigger state, and level absent."
+        }
+      ],
+      "version_applicability": "3.4 trace",
+      "trace_link": {
+        "location": "step_9",
+        "step": 9,
+        "actor": "naxia",
+        "action": "skill_plus_extra_skill"
+      },
+      "unresolved_notes": "Composite remains non-executable.",
+      "simulator_binding_allowed": false,
+      "action_category": null,
+      "target_scope": "unknown",
+      "resource_change": null,
+      "duration": null,
+      "timing": null,
+      "toughness": null
+    },
+    {
+      "atomic_fact_id": "anaxa.ultimate.energy_cost",
+      "source_registry_fact_ids": [
+        "anaxa_ultimate_structure"
+      ],
+      "internal_actor_id": "naxia",
+      "action_scope": "ultimate",
+      "normalized_field_name": "energy_cost",
+      "normalized_value": 140,
+      "value_type": "integer",
+      "unit": "energy",
+      "source_native_value": 140,
+      "verification_status": "verified_structured_data",
+      "provenance": [
+        {
+          "source_registry_fact_id": "anaxa_ultimate_structure",
+          "source_id": "gachabase_anaxa",
+          "relationship": "supports_exact_field",
+          "evidence_summary": "Structured resource field lists 140."
+        }
+      ],
+      "version_applicability": "current structured data; 3.4 raw revision unavailable",
+      "trace_link": {
+        "location": "step_6",
+        "step": 6,
+        "actor": "naxia",
+        "action": "ultimate"
+      },
+      "unresolved_notes": "Downgraded from compound corroboration; trace energy unknown.",
+      "simulator_binding_allowed": false,
+      "action_category": null,
+      "target_scope": null,
+      "resource_change": {
+        "resource_kind": "energy",
+        "amount": -140,
+        "unit": "energy"
+      },
+      "duration": null,
+      "timing": null,
+      "toughness": null
+    },
+    {
+      "atomic_fact_id": "anaxa.ultimate.sublimation_duration",
+      "source_registry_fact_ids": [
+        "anaxa_ultimate_structure"
+      ],
+      "internal_actor_id": "naxia",
+      "action_scope": "ultimate",
+      "normalized_field_name": "sublimation_duration_anchor",
+      "normalized_value": "until_target_turn_start",
+      "value_type": "duration_anchor",
+      "unit": null,
+      "source_native_value": "until start of target turn",
+      "verification_status": "corroborated",
+      "provenance": [
+        {
+          "source_registry_fact_id": "anaxa_ultimate_structure",
+          "source_id": "gachabase_anaxa",
+          "relationship": "supports_exact_field",
+          "evidence_summary": "Structured text gives target-turn-start expiry."
+        },
+        {
+          "source_registry_fact_id": "anaxa_ultimate_structure",
+          "source_id": "hoyolab_anaxa_v3_2",
+          "relationship": "supports_exact_field",
+          "evidence_summary": "Guide gives same expiry."
+        }
+      ],
+      "version_applicability": "3.2 mechanic applicable to 3.4",
+      "trace_link": {
+        "location": "step_6",
+        "step": 6,
+        "actor": "naxia",
+        "action": "ultimate"
+      },
+      "unresolved_notes": "Target turn state absent.",
+      "simulator_binding_allowed": false,
+      "action_category": null,
+      "target_scope": null,
+      "resource_change": null,
+      "duration": {
+        "value": null,
+        "unit": "event",
+        "anchor": "until_target_turn_start"
+      },
+      "timing": null,
+      "toughness": null
+    },
+    {
+      "atomic_fact_id": "anaxa.ultimate.target_scope",
+      "source_registry_fact_ids": [
+        "anaxa_ultimate_structure"
+      ],
+      "internal_actor_id": "naxia",
+      "action_scope": "ultimate",
+      "normalized_field_name": "target_scope",
+      "normalized_value": "all_enemies",
+      "value_type": "target_scope",
+      "unit": null,
+      "source_native_value": "all enemies",
+      "verification_status": "corroborated",
+      "provenance": [
+        {
+          "source_registry_fact_id": "anaxa_ultimate_structure",
+          "source_id": "gachabase_anaxa",
+          "relationship": "supports_exact_field",
+          "evidence_summary": "Structured Ultimate is AoE."
+        },
+        {
+          "source_registry_fact_id": "anaxa_ultimate_structure",
+          "source_id": "hoyolab_anaxa_v3_2",
+          "relationship": "supports_exact_field",
+          "evidence_summary": "Version 3.2 guide confirms all enemies."
+        }
+      ],
+      "version_applicability": "3.2 mechanic applicable to 3.4",
+      "trace_link": {
+        "location": "step_6",
+        "step": 6,
+        "actor": "naxia",
+        "action": "ultimate"
+      },
+      "unresolved_notes": "Enemy state unknown.",
+      "simulator_binding_allowed": false,
+      "action_category": "ultimate",
+      "target_scope": "all_enemies",
+      "resource_change": null,
+      "duration": null,
+      "timing": {
+        "classification": "ultimate_interrupt"
+      },
+      "toughness": null
+    },
+    {
+      "atomic_fact_id": "anaxa.ultimate.toughness_native",
+      "source_registry_fact_ids": [
+        "anaxa_ultimate_structure"
+      ],
+      "internal_actor_id": "naxia",
+      "action_scope": "ultimate",
+      "normalized_field_name": "toughness_value",
+      "normalized_value": null,
+      "value_type": "toughness",
+      "unit": null,
+      "source_native_value": 20,
+      "verification_status": "verified_structured_data",
+      "provenance": [
+        {
+          "source_registry_fact_id": "anaxa_ultimate_structure",
+          "source_id": "gachabase_anaxa",
+          "relationship": "supports_exact_field",
+          "evidence_summary": "Gachabase displays Break (In-Game) 20 AoE."
+        }
+      ],
+      "version_applicability": "current structured data; 3.4 raw revision unavailable",
+      "trace_link": {
+        "location": "step_6",
+        "step": 6,
+        "actor": "naxia",
+        "action": "ultimate"
+      },
+      "unresolved_notes": "No documented conversion to simulator units.",
+      "simulator_binding_allowed": false,
+      "action_category": null,
+      "target_scope": null,
+      "resource_change": null,
+      "duration": null,
+      "timing": null,
+      "toughness": {
+        "source_native_value": 20,
+        "source_native_unit": "gachabase_break_in_game_display_aoe",
+        "normalized_value": null,
+        "normalized_unit": null,
+        "conversion_rule": null,
+        "ambiguity_note": "Native AoE display retained without conversion."
+      }
+    },
+    {
+      "atomic_fact_id": "anaxa.ultimate.trace_state",
+      "source_registry_fact_ids": [
+        "anaxa_ultimate_trace_state"
+      ],
+      "internal_actor_id": "naxia",
+      "action_scope": "ultimate",
+      "normalized_field_name": "trace_level_and_resulting_state",
+      "normalized_value": null,
+      "value_type": "unknown",
+      "unit": null,
+      "source_native_value": null,
+      "verification_status": "missing",
+      "provenance": [
+        {
+          "source_registry_fact_id": "anaxa_ultimate_trace_state",
+          "source_id": "local_evidence_report",
+          "relationship": "limits",
+          "evidence_summary": "Resulting state absent."
+        }
+      ],
+      "version_applicability": "3.4 trace",
+      "trace_link": {
+        "location": "step_6",
+        "step": 6,
+        "actor": "naxia",
+        "action": "ultimate"
+      },
+      "unresolved_notes": "Control RES and enemy state unknown.",
+      "simulator_binding_allowed": false,
+      "action_category": null,
+      "target_scope": null,
+      "resource_change": null,
+      "duration": null,
+      "timing": null,
+      "toughness": null
+    },
+    {
+      "atomic_fact_id": "mem.support.charge_cost",
+      "source_registry_fact_ids": [
+        "mem_support_action_structure"
+      ],
+      "internal_actor_id": "mem",
+      "action_scope": "advance_naxia",
+      "normalized_field_name": "charge_consumption_cost",
+      "normalized_value": null,
+      "value_type": "unknown",
+      "unit": "percent_charge",
+      "source_native_value": null,
+      "verification_status": "missing",
+      "provenance": [],
+      "version_applicability": "3.4 trace requirement",
+      "trace_link": {
+        "location": "step_8",
+        "step": 8,
+        "actor": "mem",
+        "action": "advance_naxia"
+      },
+      "unresolved_notes": "No accepted field-specific provenance directly establishes consumption; threshold is not inherited as cost.",
+      "simulator_binding_allowed": false,
+      "action_category": null,
+      "target_scope": null,
+      "resource_change": {
+        "resource_kind": "charge",
+        "amount": null,
+        "unit": "percent_charge"
+      },
+      "duration": null,
+      "timing": null,
+      "toughness": null
+    },
+    {
+      "atomic_fact_id": "mem.support.charge_readiness_threshold",
+      "source_registry_fact_ids": [
+        "mem_support_action_structure"
+      ],
+      "internal_actor_id": "mem",
+      "action_scope": "advance_naxia",
+      "normalized_field_name": "charge_readiness_threshold",
+      "normalized_value": 100,
+      "value_type": "integer",
+      "unit": "percent_charge",
+      "source_native_value": "Charge reaches 100%",
+      "verification_status": "corroborated",
+      "provenance": [
+        {
+          "source_registry_fact_id": "mem_support_action_structure",
+          "source_id": "gachabase_rtb_4_1",
+          "relationship": "supports_exact_field",
+          "evidence_summary": "Structured Talent uses 100% readiness."
+        },
+        {
+          "source_registry_fact_id": "mem_support_action_structure",
+          "source_id": "hoyolab_rtb_v3_0",
+          "relationship": "supports_exact_field",
+          "evidence_summary": "Version 3.0 guide uses 100% readiness."
+        }
+      ],
+      "version_applicability": "3.0 core applicable to 3.4",
+      "trace_link": {
+        "location": "step_8",
+        "step": 8,
+        "actor": "mem",
+        "action": "advance_naxia"
+      },
+      "unresolved_notes": "Threshold is not evidence of consumption.",
+      "simulator_binding_allowed": false,
+      "action_category": null,
+      "target_scope": null,
+      "resource_change": {
+        "resource_kind": "charge",
+        "amount": 100,
+        "unit": "percent_charge"
+      },
+      "duration": null,
+      "timing": null,
+      "toughness": null
+    },
+    {
+      "atomic_fact_id": "mem.support.duration",
+      "source_registry_fact_ids": [
+        "mem_support_action_structure"
+      ],
+      "internal_actor_id": "mem",
+      "action_scope": "advance_naxia",
+      "normalized_field_name": "support_duration",
+      "normalized_value": 3,
+      "value_type": "integer",
+      "unit": "turn",
+      "source_native_value": 3,
+      "verification_status": "corroborated",
+      "provenance": [
+        {
+          "source_registry_fact_id": "mem_support_action_structure",
+          "source_id": "gachabase_rtb_4_1",
+          "relationship": "supports_exact_field",
+          "evidence_summary": "Structured skill gives three turns."
+        },
+        {
+          "source_registry_fact_id": "mem_support_action_structure",
+          "source_id": "hoyolab_rtb_v3_0",
+          "relationship": "supports_exact_field",
+          "evidence_summary": "Guide gives three turns."
+        }
+      ],
+      "version_applicability": "3.0 core applicable to 3.4",
+      "trace_link": {
+        "location": "step_8",
+        "step": 8,
+        "actor": "mem",
+        "action": "advance_naxia"
+      },
+      "unresolved_notes": "Duration decrement semantics need later review.",
+      "simulator_binding_allowed": false,
+      "action_category": null,
+      "target_scope": null,
+      "resource_change": null,
+      "duration": {
+        "value": 3,
+        "unit": "turn",
+        "anchor": "fixed_turn_count"
+      },
+      "timing": null,
+      "toughness": null
+    },
+    {
+      "atomic_fact_id": "mem.support.own_immediate_action",
+      "source_registry_fact_ids": [
+        "mem_support_action_structure"
+      ],
+      "internal_actor_id": "mem",
+      "action_scope": "advance_naxia",
+      "normalized_field_name": "mem_own_timing",
+      "normalized_value": "immediate_action_self",
+      "value_type": "timing_classification",
+      "unit": null,
+      "source_native_value": "Mem immediately takes action when Charge reaches 100%",
+      "verification_status": "corroborated",
+      "provenance": [
+        {
+          "source_registry_fact_id": "mem_support_action_structure",
+          "source_id": "gachabase_rtb_4_1",
+          "relationship": "supports_exact_field",
+          "evidence_summary": "Structured Talent says Mem immediately takes action."
+        },
+        {
+          "source_registry_fact_id": "mem_support_action_structure",
+          "source_id": "hoyolab_rtb_v3_0",
+          "relationship": "supports_exact_field",
+          "evidence_summary": "Version 3.0 guide says Mem immediately takes action."
+        }
+      ],
+      "version_applicability": "3.0 core applicable to 3.4",
+      "trace_link": {
+        "location": "step_8",
+        "step": 8,
+        "actor": "mem",
+        "action": "advance_naxia"
+      },
+      "unresolved_notes": "This timing applies to Mem, not the selected ally.",
+      "simulator_binding_allowed": false,
+      "action_category": "passive_trigger",
+      "target_scope": null,
+      "resource_change": null,
+      "duration": null,
+      "timing": {
+        "classification": "immediate_action_self"
+      },
+      "toughness": null
+    },
+    {
+      "atomic_fact_id": "mem.support.self_target_suppression",
+      "source_registry_fact_ids": [
+        "mem_support_action_structure"
+      ],
+      "internal_actor_id": "mem",
+      "action_scope": "advance_naxia",
+      "normalized_field_name": "self_target_suppresses_action_advance",
+      "normalized_value": true,
+      "value_type": "boolean",
+      "unit": null,
+      "source_native_value": "when used on this unit, cannot trigger action advance",
+      "verification_status": "corroborated",
+      "provenance": [
+        {
+          "source_registry_fact_id": "mem_support_action_structure",
+          "source_id": "gachabase_rtb_4_1",
+          "relationship": "supports_exact_field",
+          "evidence_summary": "Structured Memosprite Skill includes self-target exception."
+        },
+        {
+          "source_registry_fact_id": "mem_support_action_structure",
+          "source_id": "hoyolab_rtb_v3_0",
+          "relationship": "supports_exact_field",
+          "evidence_summary": "Version 3.0 guide includes same exception."
+        }
+      ],
+      "version_applicability": "3.0 core applicable to 3.4",
+      "trace_link": {
+        "location": "step_8",
+        "step": 8,
+        "actor": "mem",
+        "action": "advance_naxia"
+      },
+      "unresolved_notes": "Not activated in trace because accepted target is Naxia.",
+      "simulator_binding_allowed": false,
+      "action_category": null,
+      "target_scope": "self",
+      "resource_change": null,
+      "duration": null,
+      "timing": null,
+      "toughness": null
+    },
+    {
+      "atomic_fact_id": "mem.support.target_action_advance",
+      "source_registry_fact_ids": [
+        "mem_support_action_structure"
+      ],
+      "internal_actor_id": "mem",
+      "action_scope": "advance_naxia",
+      "normalized_field_name": "selected_ally_action_advance",
+      "normalized_value": 100,
+      "value_type": "integer",
+      "unit": "percent_action_advance",
+      "source_native_value": "advances one designated ally by 100%",
+      "verification_status": "corroborated",
+      "provenance": [
+        {
+          "source_registry_fact_id": "mem_support_action_structure",
+          "source_id": "gachabase_rtb_4_1",
+          "relationship": "supports_exact_field",
+          "evidence_summary": "Structured Memosprite Skill specifies 100%."
+        },
+        {
+          "source_registry_fact_id": "mem_support_action_structure",
+          "source_id": "hoyolab_rtb_v3_0",
+          "relationship": "supports_exact_field",
+          "evidence_summary": "Version 3.0 guide specifies 100%."
+        }
+      ],
+      "version_applicability": "3.0 core applicable to 3.4",
+      "trace_link": {
+        "location": "step_8",
+        "step": 8,
+        "actor": "mem",
+        "action": "advance_naxia"
+      },
+      "unresolved_notes": "This is target advance, not Mem's own immediate action.",
+      "simulator_binding_allowed": false,
+      "action_category": "memosprite_skill",
+      "target_scope": "single_ally",
+      "resource_change": null,
+      "duration": null,
+      "timing": {
+        "classification": "action_advance_target"
+      },
+      "toughness": null
+    },
+    {
+      "atomic_fact_id": "mem.support.trace_charge_state",
+      "source_registry_fact_ids": [
+        "mem_support_trace_charge_state"
+      ],
+      "internal_actor_id": "mem",
+      "action_scope": "advance_naxia",
+      "normalized_field_name": "observed_charge_and_timeline_state",
+      "normalized_value": null,
+      "value_type": "unknown",
+      "unit": null,
+      "source_native_value": null,
+      "verification_status": "missing",
+      "provenance": [
+        {
+          "source_registry_fact_id": "mem_support_trace_charge_state",
+          "source_id": "local_evidence_report",
+          "relationship": "limits",
+          "evidence_summary": "Charge and timing state absent."
+        }
+      ],
+      "version_applicability": "3.4 trace",
+      "trace_link": {
+        "location": "step_8",
+        "step": 8,
+        "actor": "mem",
+        "action": "advance_naxia"
+      },
+      "unresolved_notes": "Charge history and AV state remain unknown.",
+      "simulator_binding_allowed": false,
+      "action_category": null,
+      "target_scope": null,
+      "resource_change": null,
+      "duration": null,
+      "timing": null,
+      "toughness": null
+    },
+    {
+      "atomic_fact_id": "pela.skill.dispel_count",
+      "source_registry_fact_ids": [
+        "pela_skill_structure"
+      ],
+      "internal_actor_id": "pela",
+      "action_scope": "skill",
+      "normalized_field_name": "dispel_count",
+      "normalized_value": 1,
+      "value_type": "integer",
+      "unit": "buff",
+      "source_native_value": 1,
+      "verification_status": "corroborated",
+      "provenance": [
+        {
+          "source_registry_fact_id": "pela_skill_structure",
+          "source_id": "gachabase_pela",
+          "relationship": "supports_exact_field",
+          "evidence_summary": "Structured text states one buff."
+        },
+        {
+          "source_registry_fact_id": "pela_skill_structure",
+          "source_id": "hoyolab_pela_v2_1",
+          "relationship": "supports_exact_field",
+          "evidence_summary": "Guide states one buff."
+        }
+      ],
+      "version_applicability": "stable pre-3.4 core",
+      "trace_link": {
+        "location": "step_2",
+        "step": 2,
+        "actor": "pela",
+        "action": "skill"
+      },
+      "unresolved_notes": "Enemy buff state unknown.",
+      "simulator_binding_allowed": false,
+      "action_category": null,
+      "target_scope": null,
+      "resource_change": null,
+      "duration": null,
+      "timing": null,
+      "toughness": null
+    },
+    {
+      "atomic_fact_id": "pela.skill.energy_generation",
+      "source_registry_fact_ids": [
+        "pela_skill_structure"
+      ],
+      "internal_actor_id": "pela",
+      "action_scope": "skill",
+      "normalized_field_name": "energy_generation",
+      "normalized_value": 30,
+      "value_type": "integer",
+      "unit": "energy",
+      "source_native_value": 30,
+      "verification_status": "verified_structured_data",
+      "provenance": [
+        {
+          "source_registry_fact_id": "pela_skill_structure",
+          "source_id": "gachabase_pela",
+          "relationship": "supports_exact_field",
+          "evidence_summary": "Structured resource field lists 30 Energy."
+        }
+      ],
+      "version_applicability": "current structured data; exact 3.4 revision unavailable",
+      "trace_link": {
+        "location": "step_2",
+        "step": 2,
+        "actor": "pela",
+        "action": "skill"
+      },
+      "unresolved_notes": "Downgraded from compound corroboration; one exact-field source.",
+      "simulator_binding_allowed": false,
+      "action_category": null,
+      "target_scope": null,
+      "resource_change": {
+        "resource_kind": "energy",
+        "amount": 30,
+        "unit": "energy"
+      },
+      "duration": null,
+      "timing": null,
+      "toughness": null
+    },
+    {
+      "atomic_fact_id": "pela.skill.observed_target_and_level",
+      "source_registry_fact_ids": [
+        "pela_skill_trace_target_and_level"
+      ],
+      "internal_actor_id": "pela",
+      "action_scope": "skill",
+      "normalized_field_name": "observed_target_and_trace_level",
+      "normalized_value": null,
+      "value_type": "unknown",
+      "unit": null,
+      "source_native_value": null,
+      "verification_status": "missing",
+      "provenance": [
+        {
+          "source_registry_fact_id": "pela_skill_trace_target_and_level",
+          "source_id": "local_evidence_report",
+          "relationship": "limits",
+          "evidence_summary": "Target and level absent."
+        }
+      ],
+      "version_applicability": "3.4 trace",
+      "trace_link": {
+        "location": "step_2",
+        "step": 2,
+        "actor": "pela",
+        "action": "skill"
+      },
+      "unresolved_notes": "Target and trace level remain unknown.",
+      "simulator_binding_allowed": false,
+      "action_category": null,
+      "target_scope": "unknown",
+      "resource_change": null,
+      "duration": null,
+      "timing": null,
+      "toughness": null
+    },
+    {
+      "atomic_fact_id": "pela.skill.sp_delta",
+      "source_registry_fact_ids": [
+        "pela_skill_structure"
+      ],
+      "internal_actor_id": "pela",
+      "action_scope": "skill",
+      "normalized_field_name": "skill_point_delta",
+      "normalized_value": -1,
+      "value_type": "integer",
+      "unit": "skill_point",
+      "source_native_value": -1,
+      "verification_status": "verified_structured_data",
+      "provenance": [
+        {
+          "source_registry_fact_id": "pela_skill_structure",
+          "source_id": "gachabase_pela",
+          "relationship": "supports_exact_field",
+          "evidence_summary": "Structured resource field lists -1 SP."
+        }
+      ],
+      "version_applicability": "current structured data; exact 3.4 revision unavailable",
+      "trace_link": {
+        "location": "step_2",
+        "step": 2,
+        "actor": "pela",
+        "action": "skill"
+      },
+      "unresolved_notes": "Downgraded from compound corroboration: guide did not directly expose SP field.",
+      "simulator_binding_allowed": false,
+      "action_category": null,
+      "target_scope": null,
+      "resource_change": {
+        "resource_kind": "skill_point",
+        "amount": -1,
+        "unit": "skill_point"
+      },
+      "duration": null,
+      "timing": null,
+      "toughness": null
+    },
+    {
+      "atomic_fact_id": "pela.skill.target_scope",
+      "source_registry_fact_ids": [
+        "pela_skill_structure"
+      ],
+      "internal_actor_id": "pela",
+      "action_scope": "skill",
+      "normalized_field_name": "target_scope",
+      "normalized_value": "single_enemy",
+      "value_type": "target_scope",
+      "unit": null,
+      "source_native_value": "single enemy",
+      "verification_status": "corroborated",
+      "provenance": [
+        {
+          "source_registry_fact_id": "pela_skill_structure",
+          "source_id": "gachabase_pela",
+          "relationship": "supports_exact_field",
+          "evidence_summary": "Structured field specifies one enemy."
+        },
+        {
+          "source_registry_fact_id": "pela_skill_structure",
+          "source_id": "hoyolab_pela_v2_1",
+          "relationship": "supports_exact_field",
+          "evidence_summary": "Guide specifies one enemy."
+        }
+      ],
+      "version_applicability": "stable pre-3.4 core",
+      "trace_link": {
+        "location": "step_2",
+        "step": 2,
+        "actor": "pela",
+        "action": "skill"
+      },
+      "unresolved_notes": "Observed target unknown.",
+      "simulator_binding_allowed": false,
+      "action_category": "skill",
+      "target_scope": "single_enemy",
+      "resource_change": null,
+      "duration": null,
+      "timing": {
+        "classification": "normal_action"
+      },
+      "toughness": null
+    },
+    {
+      "atomic_fact_id": "pela.skill.toughness_native",
+      "source_registry_fact_ids": [
+        "pela_skill_structure"
+      ],
+      "internal_actor_id": "pela",
+      "action_scope": "skill",
+      "normalized_field_name": "toughness_value",
+      "normalized_value": null,
+      "value_type": "toughness",
+      "unit": null,
+      "source_native_value": 20,
+      "verification_status": "verified_structured_data",
+      "provenance": [
+        {
+          "source_registry_fact_id": "pela_skill_structure",
+          "source_id": "gachabase_pela",
+          "relationship": "supports_exact_field",
+          "evidence_summary": "Gachabase displays Break (In-Game) 20."
+        }
+      ],
+      "version_applicability": "current structured data; exact 3.4 revision unavailable",
+      "trace_link": {
+        "location": "step_2",
+        "step": 2,
+        "actor": "pela",
+        "action": "skill"
+      },
+      "unresolved_notes": "No documented conversion to simulator toughness units.",
+      "simulator_binding_allowed": false,
+      "action_category": null,
+      "target_scope": null,
+      "resource_change": null,
+      "duration": null,
+      "timing": null,
+      "toughness": {
+        "source_native_value": 20,
+        "source_native_unit": "gachabase_break_in_game_display",
+        "normalized_value": null,
+        "normalized_unit": null,
+        "conversion_rule": null,
+        "ambiguity_note": "Source-native display retained; no conversion is assumed."
+      }
+    },
+    {
+      "atomic_fact_id": "pela.technique.debuff_scope",
+      "source_registry_fact_ids": [
+        "pela_technique_structure"
+      ],
+      "internal_actor_id": "pela",
+      "action_scope": "technique",
+      "normalized_field_name": "debuff_target_scope",
+      "normalized_value": "all_enemies",
+      "value_type": "target_scope",
+      "unit": null,
+      "source_native_value": "all enemies",
+      "verification_status": "corroborated",
+      "provenance": [
+        {
+          "source_registry_fact_id": "pela_technique_structure",
+          "source_id": "gachabase_pela",
+          "relationship": "supports_exact_field",
+          "evidence_summary": "Structured text specifies all enemies."
+        },
+        {
+          "source_registry_fact_id": "pela_technique_structure",
+          "source_id": "hoyolab_pela_v2_1",
+          "relationship": "supports_exact_field",
+          "evidence_summary": "Guide specifies all-enemy DEF reduction."
+        }
+      ],
+      "version_applicability": "stable pre-3.4 core",
+      "trace_link": {
+        "location": "prebattle",
+        "step": null,
+        "actor": "pela",
+        "action": "technique"
+      },
+      "unresolved_notes": null,
+      "simulator_binding_allowed": false,
+      "action_category": null,
+      "target_scope": "all_enemies",
+      "resource_change": null,
+      "duration": null,
+      "timing": null,
+      "toughness": null
+    },
+    {
+      "atomic_fact_id": "pela.technique.target_scope",
+      "source_registry_fact_ids": [
+        "pela_technique_structure"
+      ],
+      "internal_actor_id": "pela",
+      "action_scope": "technique",
+      "normalized_field_name": "target_scope",
+      "normalized_value": "random_enemy",
+      "value_type": "target_scope",
+      "unit": null,
+      "source_native_value": "random enemy",
+      "verification_status": "corroborated",
+      "provenance": [
+        {
+          "source_registry_fact_id": "pela_technique_structure",
+          "source_id": "gachabase_pela",
+          "relationship": "supports_exact_field",
+          "evidence_summary": "Structured technique text specifies a random enemy."
+        },
+        {
+          "source_registry_fact_id": "pela_technique_structure",
+          "source_id": "hoyolab_pela_v2_1",
+          "relationship": "supports_exact_field",
+          "evidence_summary": "Version 2.1 guide specifies random-enemy damage."
+        }
+      ],
+      "version_applicability": "stable pre-3.4 core",
+      "trace_link": {
+        "location": "prebattle",
+        "step": null,
+        "actor": "pela",
+        "action": "technique"
+      },
+      "unresolved_notes": null,
+      "simulator_binding_allowed": false,
+      "action_category": "technique_attack",
+      "target_scope": "random_enemy",
+      "resource_change": null,
+      "duration": null,
+      "timing": {
+        "classification": "normal_action"
+      },
+      "toughness": null
+    },
+    {
+      "atomic_fact_id": "pela.technique.trace_assumptions",
+      "source_registry_fact_ids": [
+        "pela_technique_trace_assumptions"
+      ],
+      "internal_actor_id": "pela",
+      "action_scope": "technique",
+      "normalized_field_name": "trace_level_and_build",
+      "normalized_value": null,
+      "value_type": "unknown",
+      "unit": null,
+      "source_native_value": null,
+      "verification_status": "missing",
+      "provenance": [
+        {
+          "source_registry_fact_id": "pela_technique_trace_assumptions",
+          "source_id": "local_evidence_report",
+          "relationship": "limits",
+          "evidence_summary": "No accepted build or trace level."
+        }
+      ],
+      "version_applicability": "3.4 trace",
+      "trace_link": {
+        "location": "prebattle",
+        "step": null,
+        "actor": "pela",
+        "action": "technique"
+      },
+      "unresolved_notes": "Build, trace level, and enemy state remain unknown.",
+      "simulator_binding_allowed": false,
+      "action_category": null,
+      "target_scope": null,
+      "resource_change": null,
+      "duration": null,
+      "timing": null,
+      "toughness": null
+    },
+    {
+      "atomic_fact_id": "pela.ultimate.energy_cost",
+      "source_registry_fact_ids": [
+        "pela_ultimate_structure"
+      ],
+      "internal_actor_id": "pela",
+      "action_scope": "ultimate",
+      "normalized_field_name": "energy_cost",
+      "normalized_value": 110,
+      "value_type": "integer",
+      "unit": "energy",
+      "source_native_value": 110,
+      "verification_status": "verified_structured_data",
+      "provenance": [
+        {
+          "source_registry_fact_id": "pela_ultimate_structure",
+          "source_id": "gachabase_pela",
+          "relationship": "supports_exact_field",
+          "evidence_summary": "Structured resource field lists 110."
+        }
+      ],
+      "version_applicability": "current structured data; exact 3.4 revision unavailable",
+      "trace_link": {
+        "location": "step_5",
+        "step": 5,
+        "actor": "pela",
+        "action": "ultimate"
+      },
+      "unresolved_notes": "Downgraded from compound corroboration; trace energy unknown.",
+      "simulator_binding_allowed": false,
+      "action_category": null,
+      "target_scope": null,
+      "resource_change": {
+        "resource_kind": "energy",
+        "amount": -110,
+        "unit": "energy"
+      },
+      "duration": null,
+      "timing": null,
+      "toughness": null
+    },
+    {
+      "atomic_fact_id": "pela.ultimate.exposed_duration",
+      "source_registry_fact_ids": [
+        "pela_ultimate_structure"
+      ],
+      "internal_actor_id": "pela",
+      "action_scope": "ultimate",
+      "normalized_field_name": "exposed_duration",
+      "normalized_value": 2,
+      "value_type": "integer",
+      "unit": "turn",
+      "source_native_value": 2,
+      "verification_status": "corroborated",
+      "provenance": [
+        {
+          "source_registry_fact_id": "pela_ultimate_structure",
+          "source_id": "gachabase_pela",
+          "relationship": "supports_exact_field",
+          "evidence_summary": "Structured text gives two turns."
+        },
+        {
+          "source_registry_fact_id": "pela_ultimate_structure",
+          "source_id": "hoyolab_pela_v2_1",
+          "relationship": "supports_exact_field",
+          "evidence_summary": "Guide gives two turns."
+        }
+      ],
+      "version_applicability": "stable pre-3.4 core",
+      "trace_link": {
+        "location": "step_5",
+        "step": 5,
+        "actor": "pela",
+        "action": "ultimate"
+      },
+      "unresolved_notes": "Duration anchor requires later engine review.",
+      "simulator_binding_allowed": false,
+      "action_category": null,
+      "target_scope": null,
+      "resource_change": null,
+      "duration": {
+        "value": 2,
+        "unit": "turn",
+        "anchor": "fixed_turn_count"
+      },
+      "timing": null,
+      "toughness": null
+    },
+    {
+      "atomic_fact_id": "pela.ultimate.target_scope",
+      "source_registry_fact_ids": [
+        "pela_ultimate_structure"
+      ],
+      "internal_actor_id": "pela",
+      "action_scope": "ultimate",
+      "normalized_field_name": "target_scope",
+      "normalized_value": "all_enemies",
+      "value_type": "target_scope",
+      "unit": null,
+      "source_native_value": "all enemies",
+      "verification_status": "corroborated",
+      "provenance": [
+        {
+          "source_registry_fact_id": "pela_ultimate_structure",
+          "source_id": "gachabase_pela",
+          "relationship": "supports_exact_field",
+          "evidence_summary": "Structured Ultimate is AoE."
+        },
+        {
+          "source_registry_fact_id": "pela_ultimate_structure",
+          "source_id": "hoyolab_pela_v2_1",
+          "relationship": "supports_exact_field",
+          "evidence_summary": "Guide Ultimate targets all enemies."
+        }
+      ],
+      "version_applicability": "stable pre-3.4 core",
+      "trace_link": {
+        "location": "step_5",
+        "step": 5,
+        "actor": "pela",
+        "action": "ultimate"
+      },
+      "unresolved_notes": "Resulting enemy state unknown.",
+      "simulator_binding_allowed": false,
+      "action_category": "ultimate",
+      "target_scope": "all_enemies",
+      "resource_change": null,
+      "duration": null,
+      "timing": {
+        "classification": "ultimate_interrupt"
+      },
+      "toughness": null
+    },
+    {
+      "atomic_fact_id": "pela.ultimate.trace_assumptions",
+      "source_registry_fact_ids": [
+        "pela_ultimate_trace_assumptions"
+      ],
+      "internal_actor_id": "pela",
+      "action_scope": "ultimate",
+      "normalized_field_name": "trace_level_and_resulting_state",
+      "normalized_value": null,
+      "value_type": "unknown",
+      "unit": null,
+      "source_native_value": null,
+      "verification_status": "missing",
+      "provenance": [
+        {
+          "source_registry_fact_id": "pela_ultimate_trace_assumptions",
+          "source_id": "local_evidence_report",
+          "relationship": "limits",
+          "evidence_summary": "Level and resulting state absent."
+        }
+      ],
+      "version_applicability": "3.4 trace",
+      "trace_link": {
+        "location": "step_5",
+        "step": 5,
+        "actor": "pela",
+        "action": "ultimate"
+      },
+      "unresolved_notes": "Do not use level-10 DEF value as trace value.",
+      "simulator_binding_allowed": false,
+      "action_category": null,
+      "target_scope": null,
+      "resource_change": null,
+      "duration": null,
+      "timing": null,
+      "toughness": null
+    },
+    {
+      "atomic_fact_id": "rtb.skill.observed_companion_state",
+      "source_registry_fact_ids": [
+        "rtb_skill_companion_state"
+      ],
+      "internal_actor_id": "remembrance_trailblazer",
+      "action_scope": "skill",
+      "normalized_field_name": "observed_mem_state_before_skill",
+      "normalized_value": null,
+      "value_type": "unknown",
+      "unit": null,
+      "source_native_value": null,
+      "verification_status": "missing",
+      "provenance": [
+        {
+          "source_registry_fact_id": "rtb_skill_companion_state",
+          "source_id": "local_evidence_report",
+          "relationship": "limits",
+          "evidence_summary": "Mem state is not validated."
+        }
+      ],
+      "version_applicability": "3.4 trace",
+      "trace_link": {
+        "location": "step_3",
+        "step": 3,
+        "actor": "remembrance_trailblazer",
+        "action": "skill"
+      },
+      "unresolved_notes": "Cannot choose summon versus restore/charge branch.",
+      "simulator_binding_allowed": false,
+      "action_category": null,
+      "target_scope": null,
+      "resource_change": null,
+      "duration": null,
+      "timing": null,
+      "toughness": null
+    },
+    {
+      "atomic_fact_id": "rtb.skill.present_mem_charge_gain",
+      "source_registry_fact_ids": [
+        "rtb_skill_structure"
+      ],
+      "internal_actor_id": "remembrance_trailblazer",
+      "action_scope": "skill",
+      "normalized_field_name": "present_mem_charge_gain",
+      "normalized_value": 10,
+      "value_type": "integer",
+      "unit": "percent_charge",
+      "source_native_value": "10% Charge",
+      "verification_status": "corroborated",
+      "provenance": [
+        {
+          "source_registry_fact_id": "rtb_skill_structure",
+          "source_id": "gachabase_rtb_4_1",
+          "relationship": "supports_exact_field",
+          "evidence_summary": "Structured branch grants 10% Charge."
+        },
+        {
+          "source_registry_fact_id": "rtb_skill_structure",
+          "source_id": "hoyolab_rtb_v3_0",
+          "relationship": "supports_exact_field",
+          "evidence_summary": "Version 3.0 guide grants 10% Charge."
+        }
+      ],
+      "version_applicability": "3.0 core applicable to 3.4",
+      "trace_link": {
+        "location": "step_3",
+        "step": 3,
+        "actor": "remembrance_trailblazer",
+        "action": "skill"
+      },
+      "unresolved_notes": "Only applies if Mem is already present.",
+      "simulator_binding_allowed": false,
+      "action_category": null,
+      "target_scope": null,
+      "resource_change": {
+        "resource_kind": "charge",
+        "amount": 10,
+        "unit": "percent_charge"
+      },
+      "duration": null,
+      "timing": null,
+      "toughness": null
+    },
+    {
+      "atomic_fact_id": "rtb.skill.sp_delta",
+      "source_registry_fact_ids": [
+        "rtb_skill_structure"
+      ],
+      "internal_actor_id": "remembrance_trailblazer",
+      "action_scope": "skill",
+      "normalized_field_name": "skill_point_delta",
+      "normalized_value": -1,
+      "value_type": "integer",
+      "unit": "skill_point",
+      "source_native_value": -1,
+      "verification_status": "verified_structured_data",
+      "provenance": [
+        {
+          "source_registry_fact_id": "rtb_skill_structure",
+          "source_id": "gachabase_rtb_4_1",
+          "relationship": "supports_exact_field",
+          "evidence_summary": "Structured resource field lists -1 SP."
+        }
+      ],
+      "version_applicability": "4.1 structured snapshot; 3.4 raw revision unavailable",
+      "trace_link": {
+        "location": "step_3",
+        "step": 3,
+        "actor": "remembrance_trailblazer",
+        "action": "skill"
+      },
+      "unresolved_notes": "Downgraded from compound corroboration; guide did not directly expose SP field.",
+      "simulator_binding_allowed": false,
+      "action_category": null,
+      "target_scope": null,
+      "resource_change": {
+        "resource_kind": "skill_point",
+        "amount": -1,
+        "unit": "skill_point"
+      },
+      "duration": null,
+      "timing": null,
+      "toughness": null
+    },
+    {
+      "atomic_fact_id": "rtb.skill.target_scope",
+      "source_registry_fact_ids": [
+        "rtb_skill_structure"
+      ],
+      "internal_actor_id": "remembrance_trailblazer",
+      "action_scope": "skill",
+      "normalized_field_name": "target_scope",
+      "normalized_value": "companion_mem",
+      "value_type": "target_scope",
+      "unit": null,
+      "source_native_value": "Mem",
+      "verification_status": "corroborated",
+      "provenance": [
+        {
+          "source_registry_fact_id": "rtb_skill_structure",
+          "source_id": "gachabase_rtb_4_1",
+          "relationship": "supports_exact_field",
+          "evidence_summary": "Structured skill targets/summons Mem."
+        },
+        {
+          "source_registry_fact_id": "rtb_skill_structure",
+          "source_id": "hoyolab_rtb_v3_0",
+          "relationship": "supports_exact_field",
+          "evidence_summary": "Version 3.0 guide targets/summons Mem."
+        }
+      ],
+      "version_applicability": "3.0 core applicable to 3.4",
+      "trace_link": {
+        "location": "step_3",
+        "step": 3,
+        "actor": "remembrance_trailblazer",
+        "action": "skill"
+      },
+      "unresolved_notes": "Pre-skill companion state unknown.",
+      "simulator_binding_allowed": false,
+      "action_category": "summon_skill",
+      "target_scope": "companion_mem",
+      "resource_change": null,
+      "duration": null,
+      "timing": {
+        "classification": "normal_action"
+      },
+      "toughness": null
+    },
+    {
+      "atomic_fact_id": "tingyun.skill.benediction_duration",
+      "source_registry_fact_ids": [
+        "tingyun_skill_structure"
+      ],
+      "internal_actor_id": "tingyun",
+      "action_scope": "skill",
+      "normalized_field_name": "benediction_duration",
+      "normalized_value": 3,
+      "value_type": "integer",
+      "unit": "turn",
+      "source_native_value": 3,
+      "verification_status": "corroborated",
+      "provenance": [
+        {
+          "source_registry_fact_id": "tingyun_skill_structure",
+          "source_id": "gachabase_tingyun",
+          "relationship": "supports_exact_field",
+          "evidence_summary": "Structured text gives three turns."
+        },
+        {
+          "source_registry_fact_id": "tingyun_skill_structure",
+          "source_id": "hoyolab_tingyun_v1",
+          "relationship": "supports_exact_field",
+          "evidence_summary": "Guide gives three turns."
+        }
+      ],
+      "version_applicability": "stable 1.0 core applicable to 3.4",
+      "trace_link": {
+        "location": "step_4",
+        "step": 4,
+        "actor": "tingyun",
+        "action": "skill"
+      },
+      "unresolved_notes": "Duration decrement semantics need later review.",
+      "simulator_binding_allowed": false,
+      "action_category": null,
+      "target_scope": null,
+      "resource_change": null,
+      "duration": {
+        "value": 3,
+        "unit": "turn",
+        "anchor": "fixed_turn_count"
+      },
+      "timing": null,
+      "toughness": null
+    },
+    {
+      "atomic_fact_id": "tingyun.skill.observed_target_and_level",
+      "source_registry_fact_ids": [
+        "tingyun_skill_trace_target_and_level"
+      ],
+      "internal_actor_id": "tingyun",
+      "action_scope": "skill",
+      "normalized_field_name": "observed_target_and_trace_level",
+      "normalized_value": null,
+      "value_type": "unknown",
+      "unit": null,
+      "source_native_value": null,
+      "verification_status": "missing",
+      "provenance": [
+        {
+          "source_registry_fact_id": "tingyun_skill_trace_target_and_level",
+          "source_id": "local_evidence_report",
+          "relationship": "limits",
+          "evidence_summary": "Target and level absent."
+        }
+      ],
+      "version_applicability": "3.4 trace",
+      "trace_link": {
+        "location": "step_4",
+        "step": 4,
+        "actor": "tingyun",
+        "action": "skill"
+      },
+      "unresolved_notes": "Target and trace level remain unknown.",
+      "simulator_binding_allowed": false,
+      "action_category": null,
+      "target_scope": "unknown",
+      "resource_change": null,
+      "duration": null,
+      "timing": null,
+      "toughness": null
+    },
+    {
+      "atomic_fact_id": "tingyun.skill.sp_delta",
+      "source_registry_fact_ids": [
+        "tingyun_skill_structure"
+      ],
+      "internal_actor_id": "tingyun",
+      "action_scope": "skill",
+      "normalized_field_name": "skill_point_delta",
+      "normalized_value": -1,
+      "value_type": "integer",
+      "unit": "skill_point",
+      "source_native_value": -1,
+      "verification_status": "verified_structured_data",
+      "provenance": [
+        {
+          "source_registry_fact_id": "tingyun_skill_structure",
+          "source_id": "gachabase_tingyun",
+          "relationship": "supports_exact_field",
+          "evidence_summary": "Structured resource field lists -1 SP."
+        }
+      ],
+      "version_applicability": "current structured data; exact 3.4 revision unavailable",
+      "trace_link": {
+        "location": "step_4",
+        "step": 4,
+        "actor": "tingyun",
+        "action": "skill"
+      },
+      "unresolved_notes": "Downgraded from compound corroboration.",
+      "simulator_binding_allowed": false,
+      "action_category": null,
+      "target_scope": null,
+      "resource_change": {
+        "resource_kind": "skill_point",
+        "amount": -1,
+        "unit": "skill_point"
+      },
+      "duration": null,
+      "timing": null,
+      "toughness": null
+    },
+    {
+      "atomic_fact_id": "tingyun.skill.target_scope",
+      "source_registry_fact_ids": [
+        "tingyun_skill_structure"
+      ],
+      "internal_actor_id": "tingyun",
+      "action_scope": "skill",
+      "normalized_field_name": "target_scope",
+      "normalized_value": "single_ally",
+      "value_type": "target_scope",
+      "unit": null,
+      "source_native_value": "single ally",
+      "verification_status": "corroborated",
+      "provenance": [
+        {
+          "source_registry_fact_id": "tingyun_skill_structure",
+          "source_id": "gachabase_tingyun",
+          "relationship": "supports_exact_field",
+          "evidence_summary": "Structured skill targets one ally."
+        },
+        {
+          "source_registry_fact_id": "tingyun_skill_structure",
+          "source_id": "hoyolab_tingyun_v1",
+          "relationship": "supports_exact_field",
+          "evidence_summary": "Guide targets one ally."
+        }
+      ],
+      "version_applicability": "stable 1.0 core applicable to 3.4",
+      "trace_link": {
+        "location": "step_4",
+        "step": 4,
+        "actor": "tingyun",
+        "action": "skill"
+      },
+      "unresolved_notes": "Observed ally unknown.",
+      "simulator_binding_allowed": false,
+      "action_category": "skill",
+      "target_scope": "single_ally",
+      "resource_change": null,
+      "duration": null,
+      "timing": {
+        "classification": "normal_action"
+      },
+      "toughness": null
+    },
+    {
+      "atomic_fact_id": "tingyun.ultimate.damage_buff_duration",
+      "source_registry_fact_ids": [
+        "tingyun_ultimate_structure"
+      ],
+      "internal_actor_id": "tingyun",
+      "action_scope": "ultimate",
+      "normalized_field_name": "damage_buff_duration",
+      "normalized_value": 2,
+      "value_type": "integer",
+      "unit": "turn",
+      "source_native_value": 2,
+      "verification_status": "corroborated",
+      "provenance": [
+        {
+          "source_registry_fact_id": "tingyun_ultimate_structure",
+          "source_id": "gachabase_tingyun",
+          "relationship": "supports_exact_field",
+          "evidence_summary": "Structured field specifies two turns."
+        },
+        {
+          "source_registry_fact_id": "tingyun_ultimate_structure",
+          "source_id": "hoyolab_tingyun_v1",
+          "relationship": "supports_exact_field",
+          "evidence_summary": "Guide specifies two turns."
+        }
+      ],
+      "version_applicability": "stable 1.0 core applicable to 3.4",
+      "trace_link": {
+        "location": "step_1",
+        "step": 1,
+        "actor": "tingyun",
+        "action": "ultimate"
+      },
+      "unresolved_notes": "Exact duration decrement semantics require later engine review.",
+      "simulator_binding_allowed": false,
+      "action_category": null,
+      "target_scope": null,
+      "resource_change": null,
+      "duration": {
+        "value": 2,
+        "unit": "turn",
+        "anchor": "fixed_turn_count"
+      },
+      "timing": null,
+      "toughness": null
+    },
+    {
+      "atomic_fact_id": "tingyun.ultimate.energy_cost",
+      "source_registry_fact_ids": [
+        "tingyun_ultimate_cost"
+      ],
+      "internal_actor_id": "tingyun",
+      "action_scope": "ultimate",
+      "normalized_field_name": "energy_cost",
+      "normalized_value": 130,
+      "value_type": "integer",
+      "unit": "energy",
+      "source_native_value": 130,
+      "verification_status": "corroborated",
+      "provenance": [
+        {
+          "source_registry_fact_id": "tingyun_ultimate_cost",
+          "source_id": "gachabase_tingyun",
+          "relationship": "supports_exact_field",
+          "evidence_summary": "Structured data lists 130."
+        },
+        {
+          "source_registry_fact_id": "tingyun_ultimate_cost",
+          "source_id": "hoyolab_tingyun_v1",
+          "relationship": "supports_exact_field",
+          "evidence_summary": "Guide lists 130."
+        }
+      ],
+      "version_applicability": "stable 1.0 core applicable to 3.4",
+      "trace_link": {
+        "location": "step_1",
+        "step": 1,
+        "actor": "tingyun",
+        "action": "ultimate"
+      },
+      "unresolved_notes": "Trace energy state unknown.",
+      "simulator_binding_allowed": false,
+      "action_category": null,
+      "target_scope": null,
+      "resource_change": {
+        "resource_kind": "energy",
+        "amount": -130,
+        "unit": "energy"
+      },
+      "duration": null,
+      "timing": null,
+      "toughness": null
+    },
+    {
+      "atomic_fact_id": "tingyun.ultimate.observed_target",
+      "source_registry_fact_ids": [
+        "tingyun_ultimate_trace_target"
+      ],
+      "internal_actor_id": "tingyun",
+      "action_scope": "ultimate",
+      "normalized_field_name": "observed_target",
+      "normalized_value": null,
+      "value_type": "actor_id",
+      "unit": null,
+      "source_native_value": null,
+      "verification_status": "missing",
+      "provenance": [
+        {
+          "source_registry_fact_id": "tingyun_ultimate_trace_target",
+          "source_id": "local_evidence_report",
+          "relationship": "limits",
+          "evidence_summary": "Step 1 target is unknown."
+        }
+      ],
+      "version_applicability": "3.4 trace",
+      "trace_link": {
+        "location": "step_1",
+        "step": 1,
+        "actor": "tingyun",
+        "action": "ultimate"
+      },
+      "unresolved_notes": "Do not infer target.",
+      "simulator_binding_allowed": false,
+      "action_category": null,
+      "target_scope": "unknown",
+      "resource_change": null,
+      "duration": null,
+      "timing": null,
+      "toughness": null
+    },
+    {
+      "atomic_fact_id": "tingyun.ultimate.target_energy_restore",
+      "source_registry_fact_ids": [
+        "tingyun_ultimate_structure"
+      ],
+      "internal_actor_id": "tingyun",
+      "action_scope": "ultimate",
+      "normalized_field_name": "target_energy_restore",
+      "normalized_value": 50,
+      "value_type": "integer",
+      "unit": "energy",
+      "source_native_value": 50,
+      "verification_status": "corroborated",
+      "provenance": [
+        {
+          "source_registry_fact_id": "tingyun_ultimate_structure",
+          "source_id": "gachabase_tingyun",
+          "relationship": "supports_exact_field",
+          "evidence_summary": "Structured data specifies 50 target Energy."
+        },
+        {
+          "source_registry_fact_id": "tingyun_ultimate_structure",
+          "source_id": "hoyolab_tingyun_v1",
+          "relationship": "supports_exact_field",
+          "evidence_summary": "Guide specifies 50 target Energy."
+        }
+      ],
+      "version_applicability": "stable 1.0 core applicable to 3.4",
+      "trace_link": {
+        "location": "step_1",
+        "step": 1,
+        "actor": "tingyun",
+        "action": "ultimate"
+      },
+      "unresolved_notes": "Target is unknown.",
+      "simulator_binding_allowed": false,
+      "action_category": null,
+      "target_scope": null,
+      "resource_change": {
+        "resource_kind": "energy",
+        "amount": 50,
+        "unit": "energy"
+      },
+      "duration": null,
+      "timing": null,
+      "toughness": null
+    },
+    {
+      "atomic_fact_id": "tingyun.ultimate.target_scope",
+      "source_registry_fact_ids": [
+        "tingyun_ultimate_structure"
+      ],
+      "internal_actor_id": "tingyun",
+      "action_scope": "ultimate",
+      "normalized_field_name": "target_scope",
+      "normalized_value": "single_ally",
+      "value_type": "target_scope",
+      "unit": null,
+      "source_native_value": "single ally",
+      "verification_status": "corroborated",
+      "provenance": [
+        {
+          "source_registry_fact_id": "tingyun_ultimate_structure",
+          "source_id": "gachabase_tingyun",
+          "relationship": "supports_exact_field",
+          "evidence_summary": "Structured data specifies one ally."
+        },
+        {
+          "source_registry_fact_id": "tingyun_ultimate_structure",
+          "source_id": "hoyolab_tingyun_v1",
+          "relationship": "supports_exact_field",
+          "evidence_summary": "Guide specifies one ally."
+        }
+      ],
+      "version_applicability": "stable 1.0 core applicable to 3.4",
+      "trace_link": {
+        "location": "step_1",
+        "step": 1,
+        "actor": "tingyun",
+        "action": "ultimate"
+      },
+      "unresolved_notes": "Observed ally remains unknown.",
+      "simulator_binding_allowed": false,
+      "action_category": "ultimate",
+      "target_scope": "single_ally",
+      "resource_change": null,
+      "duration": null,
+      "timing": {
+        "classification": "ultimate_interrupt"
+      },
+      "toughness": null
+    }
+  ],
+  "readiness": [
+    {
+      "location": "prebattle",
+      "step": null,
+      "actor": "pela",
+      "action": "technique",
+      "required_atomic_fact_ids": [
+        "pela.technique.debuff_scope",
+        "pela.technique.target_scope",
+        "pela.technique.trace_assumptions"
+      ],
+      "source_resolved_atomic_fact_ids": [
+        "pela.technique.debuff_scope",
+        "pela.technique.target_scope"
+      ],
+      "partial_atomic_fact_ids": [],
+      "missing_or_conflicting_atomic_fact_ids": [
+        "pela.technique.trace_assumptions"
+      ],
+      "trace_observation_blockers": [
+        "Initial enemy state and prebattle debuff state.",
+        "The accepted trace records technique use but not validated effect values or scope.",
+        "target scope unknown"
+      ],
+      "source_version_blockers": [
+        "Build, trace level, and enemy state remain unknown."
+      ],
+      "engine_capability_blockers": [
+        "Character-specific binding and engine capability review have not been performed."
+      ],
+      "readiness_status": "not_ready",
+      "simulator_binding_allowed": false
+    },
+    {
+      "location": "step_1",
+      "step": 1,
+      "actor": "tingyun",
+      "action": "ultimate",
+      "required_atomic_fact_ids": [
+        "tingyun.ultimate.damage_buff_duration",
+        "tingyun.ultimate.energy_cost",
+        "tingyun.ultimate.observed_target",
+        "tingyun.ultimate.target_energy_restore",
+        "tingyun.ultimate.target_scope"
+      ],
+      "source_resolved_atomic_fact_ids": [
+        "tingyun.ultimate.damage_buff_duration",
+        "tingyun.ultimate.energy_cost",
+        "tingyun.ultimate.target_energy_restore",
+        "tingyun.ultimate.target_scope"
+      ],
+      "partial_atomic_fact_ids": [],
+      "missing_or_conflicting_atomic_fact_ids": [
+        "tingyun.ultimate.observed_target"
+      ],
+      "trace_observation_blockers": [
+        "Initial Tingyun energy and team state.",
+        "The accepted trace does not identify Tingyun ultimate target or resulting state.",
+        "unknown target"
+      ],
+      "source_version_blockers": [
+        "Do not infer target."
+      ],
+      "engine_capability_blockers": [
+        "Character-specific binding and engine capability review have not been performed."
+      ],
+      "readiness_status": "not_ready",
+      "simulator_binding_allowed": false
+    },
+    {
+      "location": "step_2",
+      "step": 2,
+      "actor": "pela",
+      "action": "skill",
+      "required_atomic_fact_ids": [
+        "pela.skill.dispel_count",
+        "pela.skill.energy_generation",
+        "pela.skill.observed_target_and_level",
+        "pela.skill.sp_delta",
+        "pela.skill.target_scope",
+        "pela.skill.toughness_native"
+      ],
+      "source_resolved_atomic_fact_ids": [
+        "pela.skill.dispel_count",
+        "pela.skill.energy_generation",
+        "pela.skill.sp_delta",
+        "pela.skill.target_scope",
+        "pela.skill.toughness_native"
+      ],
+      "partial_atomic_fact_ids": [],
+      "missing_or_conflicting_atomic_fact_ids": [
+        "pela.skill.observed_target_and_level"
+      ],
+      "trace_observation_blockers": [
+        "Initial SP, enemy state, and buff/debuff state.",
+        "The accepted trace does not identify Pela skill target or outcome.",
+        "unknown target"
+      ],
+      "source_version_blockers": [
+        "Target and trace level remain unknown."
+      ],
+      "engine_capability_blockers": [
+        "Character-specific binding and engine capability review have not been performed."
+      ],
+      "readiness_status": "not_ready",
+      "simulator_binding_allowed": false
+    },
+    {
+      "location": "step_3",
+      "step": 3,
+      "actor": "remembrance_trailblazer",
+      "action": "skill",
+      "required_atomic_fact_ids": [
+        "rtb.skill.observed_companion_state",
+        "rtb.skill.present_mem_charge_gain",
+        "rtb.skill.sp_delta",
+        "rtb.skill.target_scope"
+      ],
+      "source_resolved_atomic_fact_ids": [
+        "rtb.skill.present_mem_charge_gain",
+        "rtb.skill.sp_delta",
+        "rtb.skill.target_scope"
+      ],
+      "partial_atomic_fact_ids": [],
+      "missing_or_conflicting_atomic_fact_ids": [
+        "rtb.skill.observed_companion_state"
+      ],
+      "trace_observation_blockers": [
+        "Initial SP, companion state, and enemy state.",
+        "The accepted trace does not validate target or companion state.",
+        "unknown target and companion state"
+      ],
+      "source_version_blockers": [
+        "Cannot choose summon versus restore/charge branch."
+      ],
+      "engine_capability_blockers": [
+        "Character-specific binding and engine capability review have not been performed."
+      ],
+      "readiness_status": "not_ready",
+      "simulator_binding_allowed": false
+    },
+    {
+      "location": "step_4",
+      "step": 4,
+      "actor": "tingyun",
+      "action": "skill",
+      "required_atomic_fact_ids": [
+        "tingyun.skill.benediction_duration",
+        "tingyun.skill.observed_target_and_level",
+        "tingyun.skill.sp_delta",
+        "tingyun.skill.target_scope"
+      ],
+      "source_resolved_atomic_fact_ids": [
+        "tingyun.skill.benediction_duration",
+        "tingyun.skill.sp_delta",
+        "tingyun.skill.target_scope"
+      ],
+      "partial_atomic_fact_ids": [],
+      "missing_or_conflicting_atomic_fact_ids": [
+        "tingyun.skill.observed_target_and_level"
+      ],
+      "trace_observation_blockers": [
+        "Initial SP, energy, and buff state.",
+        "The accepted trace does not identify Tingyun skill target or resulting buff state.",
+        "unknown target"
+      ],
+      "source_version_blockers": [
+        "Target and trace level remain unknown."
+      ],
+      "engine_capability_blockers": [
+        "Character-specific binding and engine capability review have not been performed."
+      ],
+      "readiness_status": "not_ready",
+      "simulator_binding_allowed": false
+    },
+    {
+      "location": "step_5",
+      "step": 5,
+      "actor": "pela",
+      "action": "ultimate",
+      "required_atomic_fact_ids": [
+        "pela.ultimate.energy_cost",
+        "pela.ultimate.exposed_duration",
+        "pela.ultimate.target_scope",
+        "pela.ultimate.trace_assumptions"
+      ],
+      "source_resolved_atomic_fact_ids": [
+        "pela.ultimate.energy_cost",
+        "pela.ultimate.exposed_duration",
+        "pela.ultimate.target_scope"
+      ],
+      "partial_atomic_fact_ids": [],
+      "missing_or_conflicting_atomic_fact_ids": [
+        "pela.ultimate.trace_assumptions"
+      ],
+      "trace_observation_blockers": [
+        "Initial energy, enemy state, and debuff state.",
+        "Target scope and resulting debuff values are not validated.",
+        "target scope unknown"
+      ],
+      "source_version_blockers": [
+        "Do not use level-10 DEF value as trace value."
+      ],
+      "engine_capability_blockers": [
+        "Character-specific binding and engine capability review have not been performed."
+      ],
+      "readiness_status": "not_ready",
+      "simulator_binding_allowed": false
+    },
+    {
+      "location": "step_6",
+      "step": 6,
+      "actor": "naxia",
+      "action": "ultimate",
+      "required_atomic_fact_ids": [
+        "anaxa.ultimate.energy_cost",
+        "anaxa.ultimate.sublimation_duration",
+        "anaxa.ultimate.target_scope",
+        "anaxa.ultimate.toughness_native",
+        "anaxa.ultimate.trace_state"
+      ],
+      "source_resolved_atomic_fact_ids": [
+        "anaxa.ultimate.energy_cost",
+        "anaxa.ultimate.sublimation_duration",
+        "anaxa.ultimate.target_scope",
+        "anaxa.ultimate.toughness_native"
+      ],
+      "partial_atomic_fact_ids": [],
+      "missing_or_conflicting_atomic_fact_ids": [
+        "anaxa.ultimate.trace_state"
+      ],
+      "trace_observation_blockers": [
+        "Initial energy, enemy state, and combat state.",
+        "The accepted trace does not validate target or resulting combat state.",
+        "unknown target"
+      ],
+      "source_version_blockers": [
+        "Control RES and enemy state unknown."
+      ],
+      "engine_capability_blockers": [
+        "Character-specific binding and engine capability review have not been performed."
+      ],
+      "readiness_status": "not_ready",
+      "simulator_binding_allowed": false
+    },
+    {
+      "location": "step_7",
+      "step": 7,
+      "actor": "naxia",
+      "action": "basic_plus_extra_skill",
+      "required_atomic_fact_ids": [
+        "anaxa.basic.extra_skill_non_recursive",
+        "anaxa.basic.extra_skill_trigger",
+        "anaxa.basic.sp_delta",
+        "anaxa.basic.trace_conditions"
+      ],
+      "source_resolved_atomic_fact_ids": [
+        "anaxa.basic.extra_skill_non_recursive",
+        "anaxa.basic.extra_skill_trigger",
+        "anaxa.basic.sp_delta"
+      ],
+      "partial_atomic_fact_ids": [],
+      "missing_or_conflicting_atomic_fact_ids": [
+        "anaxa.basic.trace_conditions"
+      ],
+      "trace_observation_blockers": [
+        "Initial resources, trigger state, and enemy state.",
+        "The accepted trace does not identify internal split, targets, or trigger conditions.",
+        "unknown target"
+      ],
+      "source_version_blockers": [
+        "Composite remains non-executable."
+      ],
+      "engine_capability_blockers": [
+        "Character-specific binding and engine capability review have not been performed."
+      ],
+      "readiness_status": "not_ready",
+      "simulator_binding_allowed": false
+    },
+    {
+      "location": "step_8",
+      "step": 8,
+      "actor": "mem",
+      "action": "advance_naxia",
+      "required_atomic_fact_ids": [
+        "mem.support.charge_cost",
+        "mem.support.charge_readiness_threshold",
+        "mem.support.duration",
+        "mem.support.own_immediate_action",
+        "mem.support.self_target_suppression",
+        "mem.support.target_action_advance",
+        "mem.support.trace_charge_state"
+      ],
+      "source_resolved_atomic_fact_ids": [
+        "mem.support.charge_readiness_threshold",
+        "mem.support.duration",
+        "mem.support.own_immediate_action",
+        "mem.support.self_target_suppression",
+        "mem.support.target_action_advance"
+      ],
+      "partial_atomic_fact_ids": [],
+      "missing_or_conflicting_atomic_fact_ids": [
+        "mem.support.charge_cost",
+        "mem.support.trace_charge_state"
+      ],
+      "trace_observation_blockers": [
+        "Initial action order, speed/AV, companion charge, and trigger state.",
+        "The accepted trace establishes sequence only and supplies no advance amount or immediate-action claim."
+      ],
+      "source_version_blockers": [
+        "Charge history and AV state remain unknown.",
+        "No accepted field-specific provenance directly establishes consumption; threshold is not inherited as cost."
+      ],
+      "engine_capability_blockers": [
+        "Character-specific binding and engine capability review have not been performed."
+      ],
+      "readiness_status": "not_ready",
+      "simulator_binding_allowed": false
+    },
+    {
+      "location": "step_9",
+      "step": 9,
+      "actor": "naxia",
+      "action": "skill_plus_extra_skill",
+      "required_atomic_fact_ids": [
+        "anaxa.skill.extra_skill_non_recursive",
+        "anaxa.skill.extra_skill_trigger",
+        "anaxa.skill.sp_delta",
+        "anaxa.skill.target_scope",
+        "anaxa.skill.toughness_native",
+        "anaxa.skill.trace_conditions"
+      ],
+      "source_resolved_atomic_fact_ids": [
+        "anaxa.skill.extra_skill_non_recursive",
+        "anaxa.skill.extra_skill_trigger",
+        "anaxa.skill.sp_delta",
+        "anaxa.skill.target_scope",
+        "anaxa.skill.toughness_native"
+      ],
+      "partial_atomic_fact_ids": [],
+      "missing_or_conflicting_atomic_fact_ids": [
+        "anaxa.skill.trace_conditions"
+      ],
+      "trace_observation_blockers": [
+        "Initial resources, trigger state, and enemy state.",
+        "The accepted trace does not identify internal split, targets, or trigger conditions.",
+        "unknown target"
+      ],
+      "source_version_blockers": [
+        "Composite remains non-executable."
+      ],
+      "engine_capability_blockers": [
+        "Character-specific binding and engine capability review have not been performed."
+      ],
+      "readiness_status": "not_ready",
+      "simulator_binding_allowed": false
+    }
+  ],
+  "candidate_later_review_actions": [
+    "Acquire accepted trace targets, builds, initial resources, enemy state, and Mem Charge history.",
+    "Keep Mem own immediate action separate from selected-ally action advance during any later design review.",
+    "Review character-specific bindings only after every required atom and trace blocker is resolved.",
+    "Review source-native toughness conventions and define a documented conversion only if authoritative engine mapping exists."
+  ],
+  "counts": {
+    "atomic_facts": 48,
+    "readiness_items": 10,
+    "source_resolved": 37,
+    "partial": 0,
+    "missing_or_conflicting": 11
+  }
+}

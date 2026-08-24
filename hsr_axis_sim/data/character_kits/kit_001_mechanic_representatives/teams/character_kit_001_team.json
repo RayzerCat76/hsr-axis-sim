@@ -1,0 +1,56 @@
+{
+  "id": "character_kit_001_team",
+  "name": "Character Kit 001 MVP Team",
+  "initial_skill_points": 3,
+  "max_skill_points": 5,
+  "unit_refs": [
+    {
+      "character_id": "turn_pull_support_mvp",
+      "unit_id": "turn_pull",
+      "team": "ally",
+      "initial_energy": 0,
+      "initial_current_av": 0,
+      "initial_hp": 3200
+    },
+    {
+      "character_id": "kill_chain_carry_mvp",
+      "unit_id": "carry",
+      "team": "ally",
+      "initial_energy": 0,
+      "initial_current_av": 50,
+      "initial_hp": 3000
+    },
+    {
+      "character_id": "energy_battery_support_mvp",
+      "unit_id": "battery",
+      "team": "ally",
+      "initial_energy": 100,
+      "initial_current_av": 120,
+      "initial_hp": 2800
+    },
+    {
+      "character_id": "break_support_mvp",
+      "unit_id": "break_support",
+      "team": "ally",
+      "initial_energy": 0,
+      "initial_current_av": 130,
+      "initial_hp": 3400
+    },
+    {
+      "character_id": "training_enemy_mvp",
+      "unit_id": "enemy_low",
+      "team": "enemy",
+      "initial_current_av": 200,
+      "initial_hp": 700,
+      "initial_toughness": 60
+    },
+    {
+      "character_id": "training_enemy_mvp",
+      "unit_id": "enemy_tough",
+      "team": "enemy",
+      "initial_current_av": 220,
+      "initial_hp": 1200,
+      "initial_toughness": 60
+    }
+  ]
+}

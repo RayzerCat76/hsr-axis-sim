@@ -1,0 +1,386 @@
+Task ID: HSR-AXIS-002H
+Task name: Verified Character-Kit Source Registry MVP
+
+Codex Reasoning: HIGH
+Recommended model: GPT-5.6 Sol
+Fallback model: GPT-5.6 Terra
+
+Why this combination:
+This task introduces external, version-sensitive, field-level provenance for real character mechanics. Accuracy and source conflict handling matter more than speed. Use Sol for the primary research and validation pass. Terra is acceptable only if Sol is unavailable and no source conflicts arise.
+
+Context
+=======
+
+HSR-AXIS-002G has passed independent review:
+
+- compileall: PASS
+- full pytest: 337 passed
+- locked regression: PASS 20/20
+- trace-evidence-only regression: PASS 2/2
+- binding-gap CLI exit behavior independently verified
+
+The accepted binding-gap inventory is:
+
+`hsr_axis_sim/data/manual_video_traces/binding_inventories/real_video_trace_001_botu_dilemma_binding_gap_inventory_v0_1.json`
+
+The first real trace uses these internal actor IDs:
+
+- `tingyun`
+- `pela`
+- `remembrance_trailblazer`
+- `mem`
+- `naxia`
+
+Important compatibility rule:
+Do not rename those existing actor IDs in this task. The source registry may record canonical names and aliases separately.
+
+Goal
+====
+
+Create a deterministic, non-executable, field-level source registry for the exact real-character facts needed by the first trace.
+
+The registry must answer:
+
+1. Which source supports each claimed fact?
+2. What game version, language, and retrieval date apply?
+3. Is the source official, structured-database-derived, or manually verified?
+4. Is a fact verified, conflicting, incomplete, or unresolved?
+5. Which first-trace action/gap does the fact relate to?
+6. Which facts are still missing before any simulator binding can begin?
+
+This task is provenance and research only. Do not implement character kits or make the trace executable.
+
+Source policy
+=============
+
+Prioritize sources in this order:
+
+1. Official in-game text or official HoYoverse/HoYoLAB character information where available.
+2. Reliable structured game-data sources that expose versioned numerical fields.
+3. The accepted manual-video evidence already stored in this repository.
+4. Community mechanics references only for facts not available above, clearly labeled as community-derived.
+
+Rules:
+
+- Every external source must have a stable URL or source identifier.
+- Record source title, publisher/domain, source type, language, game version if known, and retrieval date.
+- Prefer current/live version facts relevant to the recorded 3.4 trace.
+- If a source is beta, leaked, stale, mirrored, or version-ambiguous, mark it and do not treat it as verified live data.
+- Do not store long verbatim skill descriptions. Use short paraphrases and numeric/structural facts only.
+- Do not silently resolve conflicting sources. Record the conflict and leave the affected fact unresolved.
+- Do not infer a fact from animation alone when it is not present in accepted evidence or a verified source.
+
+Required character/action scope
+===============================
+
+Cover only the facts required by the accepted first trace and 002G inventory:
+
+Prebattle:
+- Pela technique
+
+Step 1:
+- Tingyun ultimate
+
+Step 2:
+- Pela skill
+
+Step 3:
+- Remembrance Trailblazer skill
+- relevant companion/Mem relationship only as needed for this action
+
+Step 4:
+- Tingyun skill
+
+Step 5:
+- Pela ultimate
+
+Step 6:
+- the character represented by internal actor ID `naxia`: ultimate
+
+Step 7:
+- `naxia` basic attack
+- the observed extra-skill behavior after that basic attack
+- trigger and action-boundary facts only if verified
+
+Step 8:
+- Mem action advance targeting `naxia`
+- exact advance amount, timing, charge/trigger condition, and whether it is advance or immediate action only if verified
+
+Step 9:
+- `naxia` skill
+- the observed extra-skill behavior after that skill
+- trigger and action-boundary facts only if verified
+
+Canonical naming
+================
+
+Add explicit identity records containing:
+
+- internal actor ID;
+- canonical Chinese name;
+- canonical English name from a verified source;
+- aliases/transliterations used in project artifacts;
+- character/game-data ID if verified;
+- identity verification status.
+
+Do not change existing trace IDs. In particular, preserve `naxia` as the compatibility ID even if the canonical English name differs.
+
+Required implementation
+=======================
+
+1. Add a module such as:
+
+   `hsr_axis_sim/tools/trace_character_source_registry.py`
+
+2. Add source registry input artifacts under a new directory such as:
+
+   `hsr_axis_sim/data/manual_video_traces/source_registry/`
+
+Suggested files:
+
+- `sources_v0_1.json`
+- `real_video_trace_001_required_facts_v0_1.json`
+
+3. Define clear dataclasses or validated models for at least:
+
+- SourceRecord
+- CharacterIdentityRecord
+- FactRecord
+- FactProvenance
+- TraceRequirementLink
+- SourceConflict
+- SourceRegistryReport
+
+4. A fact record must include at least:
+
+- fact ID;
+- internal actor ID;
+- action/feature scope;
+- field name;
+- normalized value or `null` when unresolved;
+- value type/unit if relevant;
+- verification status;
+- source provenance list;
+- game version applicability;
+- language;
+- short evidence summary;
+- unresolved/conflict notes;
+- links to the relevant 002G gap or trace step;
+- `simulator_binding_allowed: false` for every fact in this task.
+
+5. Use an explicit verification vocabulary, for example:
+
+- `verified_official`
+- `verified_structured_data`
+- `corroborated`
+- `single_source_unverified`
+- `version_ambiguous`
+- `conflicting`
+- `missing`
+- `not_applicable`
+
+Refine if needed, but validate values strictly.
+
+6. Use an explicit source-type vocabulary, for example:
+
+- `official_game_text`
+- `official_web`
+- `structured_game_database`
+- `manual_video_evidence`
+- `community_mechanics_reference`
+
+7. Required fact categories, when available from verified sources:
+
+- action category;
+- target type/scope;
+- SP cost/gain;
+- energy cost/gain;
+- damage/toughness coefficients or structured references;
+- buff/debuff effects and duration;
+- action advance/delay amount;
+- extra action/extra turn/non-ending-turn classification;
+- trigger condition;
+- companion/summon relationship;
+- ultimate interrupt eligibility;
+- relevant trace/eidolon/level assumptions.
+
+Important:
+Do not force every category to have a value. Missing or ambiguous facts must remain explicit.
+
+8. Link source facts back to the 002G inventory.
+
+The report must show, for each prebattle/step item:
+
+- which required facts now have verified sources;
+- which facts are only partially sourced;
+- which remain missing or conflicting;
+- whether the 002G blocker is source-resolved, partially resolved, or unresolved;
+- `simulator_binding_allowed: false` regardless of coverage in this task.
+
+9. Validation requirements:
+
+- unique source IDs and fact IDs;
+- valid URLs or explicit local/manual evidence identifiers;
+- controlled vocabularies enforced;
+- source references must resolve;
+- trace step/actor/action links must match accepted evidence and 002G inventory;
+- canonical identity aliases must be unique within an actor record;
+- verified statuses require at least one qualifying source;
+- conflicting status requires at least two conflicting provenance entries;
+- missing status must have `value: null`;
+- no fact may set `simulator_binding_allowed: true`;
+- no executable effect primitives or simulator character specs may appear in registry inputs.
+
+10. Add deterministic Markdown and JSON renderers.
+
+Markdown must include:
+
+- strong non-executable/source-registry warning;
+- source catalog;
+- character identity/alias table;
+- coverage summary by trace step;
+- field-level fact provenance;
+- conflicts and version ambiguities;
+- unresolved source gaps;
+- recommended next evidence/research actions.
+
+11. Add a CLI:
+
+```bash
+python -m hsr_axis_sim.tools.trace_character_source_registry \
+  --evidence-report <accepted-evidence-report.json> \
+  --gap-inventory <accepted-binding-gap-inventory.json> \
+  --sources <sources.json> \
+  --facts <required-facts.json> \
+  --format markdown|json \
+  [--output <path>]
+```
+
+CLI behavior:
+
+- exit 0 on success;
+- exit 1 on validated source/fact/link mismatch;
+- exit 2 on unreadable input, malformed JSON, network-disabled unresolved acquisition workflow, or unexpected runtime failure;
+- no traceback for expected validation failures;
+- stdout without `--output`;
+- UTF-8 file output with `--output`.
+
+12. Generate accepted sample outputs under a directory such as:
+
+`hsr_axis_sim/data/manual_video_traces/source_registry/reports/`
+
+Suggested names:
+
+- `real_video_trace_001_character_source_registry_v0_1.md`
+- `real_video_trace_001_character_source_registry_v0_1.json`
+
+13. Add a small research log recording:
+
+- queries or navigation paths used;
+- pages consulted;
+- pages rejected and why;
+- version/translation ambiguities;
+- retrieval date;
+- unresolved facts.
+
+The research log is provenance metadata, not a narrative essay.
+
+Required test coverage
+======================
+
+Add focused tests covering at least:
+
+- exact trace prebattle + nine-step coverage;
+- exact actor/action link matching;
+- stable identity and alias mapping without renaming internal IDs;
+- duplicate source/fact IDs rejected;
+- unsupported source/verification statuses rejected;
+- dangling source references rejected;
+- malformed URL/local evidence identifiers rejected;
+- verified fact without qualifying source rejected;
+- conflicting fact with fewer than two conflicting sources rejected;
+- missing fact with non-null value rejected;
+- any `simulator_binding_allowed: true` rejected;
+- no executable character/effect schema accepted in registry inputs;
+- unresolved facts remain unresolved;
+- output order independent of input-list order;
+- deterministic Markdown and JSON;
+- committed outputs match generated output byte-for-byte;
+- CLI stdout and file output;
+- CLI exit 1 and exit 2 behavior.
+
+Scope and trust boundary
+========================
+
+Do not:
+
+- implement Tingyun, Pela, Remembrance Trailblazer, Mem, or `naxia` kits;
+- change existing trace actor IDs;
+- add simulator CharacterSpec, SkillSpec, Effect, Trigger, or executable action definitions;
+- make the real trace executable;
+- infer target choices from video when not accepted;
+- infer initial SP, energy, speed/AV, HP, toughness, buffs/debuffs, enemy state, damage, or RNG;
+- split composite actions into executable sub-actions unless merely recording a verified sourced fact as non-executable provenance;
+- modify combat mechanics, replay execution, search, evaluator, or existing character data;
+- modify the locked regression manifest;
+- add a new regression group in this task;
+- scrape or bulk-import every character.
+
+Required gates
+==============
+
+Run:
+
+```bash
+python -m compileall -q hsr_axis_sim
+python -m pytest -q
+python -m hsr_axis_sim.regression.runner \
+  --manifest hsr_axis_sim/data/regression_manifest.json \
+  --format text
+python -m hsr_axis_sim.regression.runner \
+  --manifest hsr_axis_sim/data/regression_manifest.json \
+  --only trace_evidence \
+  --format text
+```
+
+Also run the new registry CLI in Markdown and JSON modes, plus one validated-failure and one unreadable-input case.
+
+Expected locked regression state must remain:
+
+```text
+PASS 20/20
+replays=12
+manual=1
+scenarios=2
+action_sequence_traces=1
+trace_evidence=2
+```
+
+Deliverables
+============
+
+- source-registry module;
+- source catalog JSON;
+- required-facts/provenance JSON;
+- focused tests;
+- deterministic Markdown report;
+- deterministic JSON report;
+- concise research log;
+- README for new directories if needed;
+- updated `hsr_axis_sim/LUMEN_RESULT.md`.
+
+`LUMEN_RESULT.md` must state:
+
+1. exact files changed;
+2. exact external sources consulted;
+3. canonical identity/alias decisions;
+4. verification vocabulary and source qualification rules;
+5. sourced, partial, conflicting, and missing fact counts;
+6. exact tests and CLI results;
+7. exact existing regression results;
+8. confirmation that the manifest was unchanged;
+9. confirmation that no simulator binding or real kit was implemented;
+10. known limitations;
+11. next recommended task only after every gate passes.
+
+Do not claim completion if full pytest is unavailable or failing. Preserve the implementation and report BLOCKED when any required gate cannot run.

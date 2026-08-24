@@ -1,0 +1,203 @@
+Task ID: HSR-AXIS-001P
+Task name: Mechanic Representative Character Kit MVP
+
+Codex Reasoning: High
+ChatGPT Model recommendation: GPT-5.5 Thinking
+Reason: This task connects data-driven character specs, target resolution, action generation, triggers, ultimate windows, buff duration, break damage, and replay validation. If these representative characters are encoded incorrectly, later Bilibili video replay validation and AI axis search will become unreliable.
+
+Context:
+You are continuing a Python project for a Honkai: Star Rail inspired action-axis simulator.
+The project already has:
+- action value timeline
+- action advance / delay / speed change / immediate action / extra turns
+- replay validator
+- buff/debuff duration semantics
+- damage formula V1 scaffold
+- toughness / weakness / break MVP
+- break damage / elemental break effect MVP
+- event / trigger system
+- data-driven character and skill schema
+- target resolver and target legality
+- action generator
+- ultimate interrupt windows
+- enemy AI pattern MVP
+
+Current status before this task:
+HSR-AXIS-001O passed Lumen review with 164 pytest tests and all golden replay CLIs passing.
+
+Goal:
+Create the first small, manually authored, data-driven representative character kit that exercises real axis-relevant mechanics.
+
+Important boundaries:
+- Do NOT scrape Huroka, Yatta, HoneyHunter, or any external website.
+- Do NOT import real full character databases.
+- Do NOT implement all characters.
+- Do NOT implement AI search / beam search yet.
+- Do NOT build UI.
+- Do NOT try to exactly reproduce official live-server numbers yet.
+- Use concise, manually authored MVP character specs with placeholder numbers.
+- Preserve all existing tests and golden replays.
+
+The purpose is not exact game balance yet. The purpose is to prove that the engine can express representative character mechanics data-driven.
+
+Required new/updated data files:
+
+Add a new directory:
+
+hsr_axis_sim/data/character_kits/kit_001_mechanic_representatives/
+
+Inside it, add manually authored JSON specs and team/replay files. Use either existing sample schema or minimally extend it if necessary.
+
+Representative character specs to add:
+
+1. `kill_chain_carry_mvp.json`
+   A Seele-like single-target carry.
+   Required mechanics:
+   - basic attack: single enemy, gains SP, gains energy, does damage, does toughness damage
+   - skill: single enemy, costs SP, gains energy, does stronger damage, does toughness damage
+   - ultimate: single enemy, consumes energy, does damage, does toughness damage, can be used in interrupt window
+   - trigger: on unit_defeated by this unit, grant this unit an extra turn
+   - Must use the generic trigger system, not hard-coded character logic.
+
+2. `turn_pull_support_mvp.json`
+   A Bronya-like turn-pull support.
+   Required mechanics:
+   - basic attack: single enemy, gains SP and energy
+   - skill: single other ally, costs SP, immediately advances / immediately actions that ally, applies a current-turn or target-normal-turn damage buff
+   - ultimate: all allies, consumes energy, applies an offensive buff
+   - Must use generic effects such as AddBuff, ImmediateAction, AdvanceAction, ConsumeEnergy, GainEnergy, etc.
+
+3. `energy_battery_support_mvp.json`
+   A Tingyun-like energy and attack support.
+   Required mechanics:
+   - skill: single other ally, applies an attack buff
+   - ultimate: single ally, consumes energy, grants energy and a damage buff
+   - basic attack: single enemy, gains SP and energy
+   - Must validate target legality for ally-targeted skills.
+
+4. `break_support_mvp.json`
+   A Ruan Mei-like break support MVP.
+   Required mechanics:
+   - skill: all allies or selected ally, applies break-effect-related buff(s)
+   - ultimate: all allies or enemies, applies break damage bonus / resistance penetration / vulnerability style modifier using existing stat_mods where possible
+   - basic attack: single enemy, gains SP and energy
+   - If the current engine lacks a clean way to represent toughness damage efficiency / break efficiency, add a minimal stat pipeline for it:
+     - support a numeric stat mod such as `toughness_damage_bonus` or `break_efficiency`
+     - `DealToughnessDamage` should multiply the base toughness damage by `(1 + relevant_bonus)` from the attacker’s effective stats
+     - Keep this isolated and tested
+   - Do not implement the exact official character.
+
+Required tests:
+
+Add tests that prove each representative character can be loaded from JSON and used without hard-coded instance IDs.
+
+Suggested test files:
+
+- `hsr_axis_sim/tests/test_character_kit_001.py`
+
+Required test cases:
+
+1. `test_kit_001_characters_load_from_json`
+   - Load every JSON character in the new kit directory.
+   - Assert each has valid skills and target types.
+
+2. `test_kill_chain_carry_grants_extra_turn_on_kill`
+   - Build a small state with the kill-chain carry and a low-HP enemy.
+   - Use a skill/ultimate to defeat the enemy.
+   - Assert an extra turn is granted through trigger behavior.
+
+3. `test_turn_pull_support_immediate_actions_selected_ally`
+   - Use the turn-pull support skill on the carry.
+   - Assert the carry gets current_av = 0 or equivalent immediate action behavior, according to the existing engine semantics.
+   - Assert the buff is applied to the target ally.
+
+4. `test_energy_battery_ultimate_grants_energy_to_ally`
+   - Use the battery support ultimate on an ally.
+   - Assert support energy is consumed.
+   - Assert target ally energy increases, capped by max_energy.
+   - Assert target legality rejects enemy targets.
+
+5. `test_break_support_increases_toughness_damage_or_break_damage`
+   - Apply the break support buff.
+   - Hit an enemy weakness using an ally’s toughness damage effect.
+   - Assert toughness damage or break damage increases according to the MVP stat chosen.
+
+6. Regression requirement:
+   - Existing tests must still pass.
+   - Existing golden replays must still pass.
+
+Required golden replay:
+
+Add one new golden replay:
+
+`hsr_axis_sim/data/golden_replays/character_kit_001_mvp.json`
+
+It should be a short deterministic replay, around 3–5 steps, using some combination of:
+- turn-pull support skill on kill-chain carry
+- carry action after immediate action / advance
+- energy battery ultimate or support buff
+- optional break support buff if not too large
+
+The replay must check at least:
+- expected actor
+- selected skill/action
+- SP change
+- energy change for at least one unit
+- at least one buff/debuff presence
+- at least one enemy HP or toughness value
+- if a kill happens, extra turn stack or next actor behavior
+
+Do not make the replay too large. This is an MVP regression replay, not a real Bilibili video replay yet.
+
+Implementation notes:
+
+- Prefer data-driven JSON and existing generic effects/triggers over Python character-specific logic.
+- If schema extensions are needed, keep them minimal and add tests.
+- If adding `toughness_damage_bonus` or `break_efficiency`, update:
+  - stats pipeline
+  - DealToughnessDamage
+  - tests
+  - LUMEN_RESULT.md limitations
+- Keep placeholder numbers simple and easy to verify manually.
+- Avoid exact official skill names if unnecessary. Use stable internal names like `skill`, `ultimate`, `basic` or descriptive MVP names.
+
+Run commands:
+
+Run:
+
+```bash
+python -m compileall -q hsr_axis_sim
+python -m pytest hsr_axis_sim/tests -q
+```
+
+Then run every golden replay CLI individually, for example:
+
+```bash
+for f in hsr_axis_sim/data/golden_replays/*.json; do
+  python -m hsr_axis_sim.sim.replay "$f" || exit 1
+done
+```
+
+Required LUMEN_RESULT.md update:
+
+Update `hsr_axis_sim/LUMEN_RESULT.md` with:
+
+1. Files changed
+2. Exact tests run
+3. Exact test results
+4. Golden replay CLI results
+5. New representative characters added
+6. Any schema or stat pipeline extensions made
+7. Known limitations
+8. Whether the next task is safe to begin
+
+Known limitations to explicitly preserve:
+
+- These are representative MVP characters, not exact official live-server character implementations.
+- Numbers are placeholders unless manually verified later.
+- No Huroka/Yatta import yet.
+- No Bilibili video golden replay yet.
+- No AI search yet.
+
+Deliverable:
+A working package with all tests and golden replays passing.

@@ -1,0 +1,39 @@
+{
+  "name": "real_video_trace_001_botu_dilemma_floor12_side1_action_sequence_only",
+  "source": {
+    "type": "manual_video_trace",
+    "platform": "bilibili",
+    "url": "https://www.bilibili.com/video/BV1CXtVzaEQB?vd_source=ac236634092c9f9a4f4b0169249ce344",
+    "title": "【3.4博徒困境】全网首发！0+1风套那刻夏逆属性2金0t砂金！",
+    "notes": "Action-sequence-only intake. Exact SP, energy, HP, toughness, target, and RNG values are not safely observable from the clip."
+  },
+  "scenario": {
+    "game_context": "Honkai: Star Rail 3.4",
+    "mode": "博徒困境",
+    "floor": "第12层",
+    "side": "第一面"
+  },
+  "team": [
+    {"unit_id": "naxia", "character": "那刻夏"},
+    {"unit_id": "tingyun", "character": "停云"},
+    {"unit_id": "pela", "character": "佩拉"},
+    {"unit_id": "remembrance_trailblazer", "character": "记忆主"}
+  ],
+  "prebattle": [
+    {"actor": "pela", "action": "technique", "notes": "佩拉秘技开怪"}
+  ],
+  "check_mode": "action_sequence_only",
+  "unknown_allowed": true,
+  "numeric_expectations": "skip",
+  "steps": [
+    {"step": 1, "video_timestamp": "unknown", "actor": "tingyun", "action": "ultimate", "target": "unknown", "target_confidence": "unknown", "observable": {"actor_action_sequence": true, "skill_points": "unknown", "energy": "unknown", "hp": "skip", "toughness": "unknown", "damage": "skip", "forced_rng": "unknown"}, "notes": "停云终结技。"},
+    {"step": 2, "video_timestamp": "unknown", "actor": "pela", "action": "skill", "target": "unknown", "target_confidence": "unknown", "observable": {"actor_action_sequence": true, "skill_points": "unknown", "energy": "unknown", "hp": "skip", "toughness": "unknown", "damage": "skip", "forced_rng": "unknown"}, "notes": "佩拉战技。"},
+    {"step": 3, "video_timestamp": "unknown", "actor": "remembrance_trailblazer", "action": "skill", "target": "unknown", "target_confidence": "unknown", "observable": {"actor_action_sequence": true, "skill_points": "unknown", "energy": "unknown", "hp": "skip", "toughness": "unknown", "damage": "skip", "forced_rng": "unknown"}, "notes": "记忆主战技。"},
+    {"step": 4, "video_timestamp": "unknown", "actor": "tingyun", "action": "skill", "target": "unknown", "target_confidence": "unknown", "observable": {"actor_action_sequence": true, "skill_points": "unknown", "energy": "unknown", "hp": "skip", "toughness": "unknown", "damage": "skip", "forced_rng": "unknown"}, "notes": "停云战技。"},
+    {"step": 5, "video_timestamp": "unknown", "actor": "pela", "action": "ultimate", "target": "unknown", "target_confidence": "unknown", "observable": {"actor_action_sequence": true, "skill_points": "unknown", "energy": "unknown", "hp": "skip", "toughness": "unknown", "damage": "skip", "forced_rng": "unknown"}, "notes": "佩拉终结技插队。"},
+    {"step": 6, "video_timestamp": "unknown", "actor": "naxia", "action": "ultimate", "target": "unknown", "target_confidence": "unknown", "observable": {"actor_action_sequence": true, "skill_points": "unknown", "energy": "unknown", "hp": "skip", "toughness": "unknown", "damage": "skip", "forced_rng": "unknown"}, "notes": "那刻夏终结技。"},
+    {"step": 7, "video_timestamp": "unknown", "actor": "naxia", "action": "basic_plus_extra_skill", "target": "unknown", "target_confidence": "unknown", "observable": {"actor_action_sequence": true, "skill_points": "unknown", "energy": "unknown", "hp": "skip", "toughness": "unknown", "damage": "skip", "forced_rng": "unknown"}, "notes": "那刻夏普攻 + 额外战技。Composite trace-intake label, not executable semantics yet."},
+    {"step": 8, "video_timestamp": "unknown", "actor": "mem", "action": "advance_naxia", "target": "naxia", "target_confidence": "high", "observable": {"actor_action_sequence": true, "skill_points": "unknown", "energy": "unknown", "hp": "skip", "toughness": "unknown", "damage": "skip", "forced_rng": "unknown"}, "notes": "迷迷拉条那刻夏。Exact advance semantics unknown."},
+    {"step": 9, "video_timestamp": "unknown", "actor": "naxia", "action": "skill_plus_extra_skill", "target": "unknown", "target_confidence": "unknown", "observable": {"actor_action_sequence": true, "skill_points": "unknown", "energy": "unknown", "hp": "skip", "toughness": "unknown", "damage": "skip", "forced_rng": "unknown"}, "notes": "那刻夏战技 + 额外战技。Composite trace-intake label, not executable semantics yet."}
+  ]
+}

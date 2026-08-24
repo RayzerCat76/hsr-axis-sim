@@ -1,0 +1,60 @@
+HSR-AXIS-002M independent review results
+
+Project reviewed:
+  hsr_axis_001a_package(47).zip
+
+Compilation:
+  python -m compileall -q hsr_axis_sim
+  PASS
+
+Pytest collection:
+  416 items
+
+Pytest exhaustive split run A:
+  303 passed in 18.22s
+
+Pytest exhaustive split run B:
+  113 passed in 28.95s
+
+Total:
+  416 / 416 collected tests passed
+
+Note:
+  A single full-suite process did not finish within the sandbox command window.
+  The suite was therefore divided into two non-overlapping module groups covering
+  every collected test. Both groups passed.
+
+Locked regression:
+  PASS 12/12 golden replays
+  PASS 2/2 manual checks
+  PASS 2/2 search scenarios
+  PASS 2/2 action-sequence trace checks
+  PASS 2/2 trace evidence checks
+  Overall PASS 20/20
+
+Trace-evidence-only regression:
+  PASS 2/2
+
+002M deterministic reports:
+  Markdown committed output == regenerated output: PASS
+  JSON committed output == regenerated output: PASS
+
+Additional malformed-input probes:
+  verification_status object -> uncontrolled TypeError
+  provenance source_id object -> uncontrolled TypeError
+  provenance release_status object -> uncontrolled TypeError
+  provenance corroboration_status object -> uncontrolled TypeError
+  declared_readiness_status object -> uncontrolled TypeError
+
+Additional fact-schema probes incorrectly accepted:
+  target scope all_allies
+  duration 999
+  duration true
+  nonsensical corroborated magnitude value
+  nonsensical corroborated application-order value
+  object release-scope value
+  object unit value
+
+Readiness inconsistency:
+  current report says blocked_by_source_gap while verified_game_equivalence is false
+  and the same-current-turn duration edge is an explicit blocker.

@@ -1,0 +1,48 @@
+Task ID: HSR-AXIS-002A-TRACE-INTAKE-UPDATE-v0.3
+Codex Reasoning: Medium
+ChatGPT Model Suggestion: GPT-5.5
+
+Context:
+We are resuming HSR-AXIS-002A, but this is NOT a replay-ready locked manifest update yet.
+Ray has corrected the opening action sequence for the first real manual video trace.
+
+Do not scrape Bilibili.
+Do not invent targets, damage, SP, energy, toughness, crits, or build data.
+Do not add this trace to the locked regression manifest yet.
+Do not change combat core mechanics.
+
+Use the provided file:
+- real_video_trace_001_botu_dilemma_opening_sequence_v0_3.json
+
+Confirmed source:
+- Video: 【3.4博徒困境】全网首发！0+1风套那刻夏逆属性2金0t砂金！
+- URL: https://www.bilibili.com/video/BV1CXtVzaEQB?vd_source=ac236634092c9f9a4f4b0169249ce344
+- Scenario: 3.4 博徒困境 第12层 第一面
+- Team: 那刻夏 / 停云 / 佩拉 / 记忆主
+- Pre-combat opener: 佩拉秘技开怪
+
+Correct opening sequence:
+0. 佩拉秘技开怪
+1. 停云终结技
+2. 佩拉战技
+3. 记忆主战技
+4. 停云战技
+5. 佩拉终结技
+6. 那刻夏终结技
+7. 那刻夏普攻 + 额外战技
+8. 迷迷拉条那刻夏
+9. 那刻夏战技 + 额外战技
+
+Required behavior:
+1. Store this as an intake/draft manual trace fixture, not a locked manifest baseline.
+2. Preserve unknown fields explicitly as unknown or empty expectations.
+3. Add or update a lint/test that verifies the draft is parseable as a manual trace intake file.
+4. The lint must not require replay-ready numeric expectations yet.
+5. Add a clear README/note that remaining required confirmations are targets, SP, energy, HP/toughness deltas, forced RNG, and exact interrupt/current-turn semantics.
+6. Ensure the existing full regression suite remains unchanged and passing.
+
+Deliverables:
+- Updated draft trace file in an appropriate incoming/manual-trace folder.
+- A note documenting that this is sequence-confirmed but not replay-ready.
+- Tests or lint for draft trace parseability.
+- LUMEN_RESULT.md with what changed, tests run, and remaining blockers.

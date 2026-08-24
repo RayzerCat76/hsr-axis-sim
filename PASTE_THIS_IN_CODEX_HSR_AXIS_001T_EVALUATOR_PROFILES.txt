@@ -1,0 +1,218 @@
+Task ID: HSR-AXIS-001T
+Task name: Evaluator / Scoring Profiles MVP
+
+Codex Reasoning: Medium
+ChatGPT Model recommendation: GPT-5.5 is enough; GPT-5.5 Thinking is not required unless you find you need to change search branching or simulator core mechanics.
+
+Context:
+You are continuing a permanent Python project for a Honkai: Star Rail inspired action-axis simulator and AI axis-search tool.
+
+Current status:
+- 001A-001R simulator, replay, data, enemy AI, damage, break, character-kit, import adapter, and manual video trace protocol are complete.
+- 001S Search Engine / Beam Search MVP is complete and accepted by Lumen.
+- Current test suite passed in Lumen's environment:
+  - 198 passed
+  - all golden replay CLIs passed
+  - manual video trace lint and replay passed
+
+Your task:
+Implement HSR-AXIS-001T: Evaluator / Scoring Profiles MVP.
+
+Goal:
+Make the search evaluator profile-driven, explainable, and mode-aware while preserving the existing public API and not changing combat simulation mechanics.
+
+Do NOT:
+- Do not scrape Huroka, Yatta, Bilibili, or any external source.
+- Do not add real character kits.
+- Do not change action value mechanics.
+- Do not change target legality semantics.
+- Do not change enemy AI behavior.
+- Do not change replay validator behavior except if tests need to import evaluator output helpers.
+- Do not implement UI.
+- Do not implement reinforcement learning.
+- Do not rewrite the search engine from scratch.
+
+Pre-flight small fix:
+- `SearchConfig` already supports `max_global_av`, but `beam_search(...)` does not expose a `max_global_av` parameter.
+- Add an optional `max_global_av: float | None = None` parameter to `beam_search(...)` and pass it into `SearchConfig`.
+- Add a test proving `beam_search(..., max_global_av=...)` respects the terminal limit.
+
+Main implementation requirements:
+
+1. Add score breakdown support
+
+Create a dataclass such as:
+
+```python
+@dataclass
+class ScoreBreakdown:
+    profile_id: str
+    total: float
+    components: dict[str, float]
+```
+
+Rules:
+- `sum(components.values())` should equal `total` within normal float tolerance.
+- Keep this structure simple and JSON-friendly.
+- Add tests for component totals.
+
+2. Keep current Evaluator API backward-compatible
+
+Existing code uses:
+
+```python
+evaluator.evaluate(state, depth=depth)
+```
+
+This must continue to return a float.
+
+Add:
+
+```python
+evaluator.evaluate_breakdown(state, depth=depth)
+```
+
+This should return a `ScoreBreakdown`.
+
+`evaluate(...)` may call `evaluate_breakdown(...).total` internally.
+
+3. Add scoring profiles
+
+Add a simple profile abstraction. It can be a dataclass, enum + config, or factory functions, but it must be easy to test.
+
+Required built-in profiles:
+
+A. `generic_kill`
+- Backward-compatible with the existing evaluator intent.
+- Rewards defeated enemies, enemy HP missing, skill points, alive allies.
+- Penalizes global AV and depth.
+
+B. `zero_cycle`
+- Strongly rewards defeating all enemies quickly.
+- Penalizes global AV more than `generic_kill`.
+- Penalizes action count/depth more than `generic_kill`.
+- Should still reward damage progress if enemies are not all dead.
+
+C. `damage_race`
+- Prioritizes enemy HP missing and defeated enemies.
+- Penalizes global AV moderately.
+- Does not over-prioritize SP conservation.
+
+D. `survival_safe`
+- Rewards alive allies and remaining ally HP.
+- Penalizes defeated allies heavily.
+- Still rewards enemy progress, but less aggressively than damage_race.
+
+E. `sp_conservative`
+- Rewards progress while preserving or gaining skill points.
+- Useful for testing resource-aware axis preferences.
+
+Implementation can use profile weights such as:
+
+```python
+@dataclass
+class ScoreProfile:
+    id: str
+    defeated_enemy_bonus: float
+    all_enemies_defeated_bonus: float
+    enemy_hp_missing_weight: float
+    global_av_penalty: float
+    depth_penalty: float
+    skill_point_bonus: float
+    alive_ally_bonus: float
+    ally_hp_remaining_weight: float
+    defeated_ally_penalty: float
+```
+
+You may adjust exact field names, but keep them readable and tested.
+
+4. Custom profile support
+
+The caller should be able to pass a custom profile/config into `Evaluator`.
+
+Examples that should be supported:
+
+```python
+Evaluator(profile="zero_cycle")
+Evaluator(profile=ScoreProfile(...))
+Evaluator(config=ScoreConfig(...))  # if preserving existing ScoreConfig compatibility
+```
+
+Preserve backward compatibility as much as practical.
+
+5. Search integration
+
+`SearchEngine` and `beam_search(...)` should continue accepting an `Evaluator` instance.
+
+Add tests showing:
+- `beam_search(..., evaluator=Evaluator(profile="zero_cycle"))` works.
+- Existing `beam_search(...)` default behavior still works.
+- The best kill action test from 001S still passes.
+
+6. Axis / score explanation helper
+
+Add a helper such as:
+
+```python
+def format_score_breakdown(breakdown: ScoreBreakdown) -> str:
+    ...
+```
+
+or add an optional helper in `search/node.py` or `search/evaluator.py`.
+
+Keep it simple:
+
+```text
+generic_kill total=...
+  defeated_enemies=...
+  enemy_hp_missing=...
+  global_av_penalty=...
+```
+
+Do not modify `format_axis(...)` unless necessary.
+
+7. Tests
+
+Add or update tests for:
+
+- default evaluator remains backward-compatible.
+- each required profile can be instantiated.
+- `evaluate_breakdown` total equals sum of components.
+- zero_cycle penalizes higher global_av more strongly than generic_kill.
+- damage_race rewards HP missing more strongly than survival_safe.
+- survival_safe penalizes defeated allies.
+- sp_conservative rewards higher skill_points more strongly than damage_race.
+- custom profile works.
+- `beam_search(..., max_global_av=...)` terminal limit works.
+- existing search engine tests still pass.
+
+8. Documentation / result file
+
+Update `hsr_axis_sim/LUMEN_RESULT.md` with:
+
+- files changed
+- tests run
+- exact pass/fail results
+- what was implemented
+- known limitations
+- whether 001U is safe to begin
+
+Expected files likely to change:
+
+```text
+hsr_axis_sim/search/evaluator.py
+hsr_axis_sim/search/beam_search.py
+hsr_axis_sim/search/__init__.py
+hsr_axis_sim/tests/test_evaluator_profiles.py
+hsr_axis_sim/tests/test_beam_search.py
+hsr_axis_sim/LUMEN_RESULT.md
+```
+
+Acceptance criteria:
+
+- `python -m compileall -q hsr_axis_sim` passes.
+- `python -m pytest -q` passes.
+- All existing golden replay CLI files still pass.
+- Manual video trace lint and replay still pass.
+- No simulator-core mechanics are changed.
+- Search output remains deterministic.

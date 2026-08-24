@@ -1,0 +1,55 @@
+HSR-RUNTIME-ARCH-001 — Independent Starting Baseline
+====================================================
+
+Validation date: 2026-07-12
+Repository source: hsr_axis_001a_package.zip
+
+Repository observations
+-----------------------
+- Root README.md exists.
+- Root pyproject.toml exists.
+- No root AGENTS.md was present.
+- hsr_axis_sim/LUMEN_RESULT.md currently reports HSR-AXIS-002Q-FIX as
+  BLOCKED_PENDING_FULL_PYTEST because pytest was unavailable in that Codex
+  environment.
+- Existing README explicitly documents LIFO extra-turn stack behavior.
+- Existing production runtime is under hsr_axis_sim/sim.
+- HSR-AXIS-002Q-FIX remains outside the scope of HSR-RUNTIME-ARCH-001.
+
+Independent commands and real results
+-------------------------------------
+1. python -m compileall -q hsr_axis_sim
+   PASS
+
+2. Complete pytest collection executed in six non-overlapping file groups:
+   - files 1-10:  71 passed in 0.26s
+   - files 11-20: 94 passed in 8.22s
+   - files 21-30: 131 passed in 10.14s
+   - files 31-35: 89 passed in 19.50s
+   - files 36-40: 209 passed in 19.20s
+   - files 41-47: 68 passed in 19.20s
+
+   Total: 662 / 662 passed
+
+3. Locked regression:
+   python -m hsr_axis_sim.regression.runner      --manifest hsr_axis_sim/data/regression_manifest.json      --format text
+
+   PASS 12/12 golden replays
+   PASS 2/2 manual checks
+   PASS 2/2 search scenarios
+   PASS 2/2 action-sequence trace checks
+   PASS 2/2 trace evidence checks
+   Total: PASS 20/20
+
+Research baseline
+-----------------
+- HSR Runtime research baseline v1.0
+- Formula/mechanic registry: 200 entries
+- 107 CONFIRMED
+- 81 PARTIAL
+- 12 UNKNOWN
+
+Important preservation boundary
+-------------------------------
+HSR-RUNTIME-ARCH-001 must not modify or integrate with the existing simulator
+execution path. It creates sidecar contracts only.

@@ -1,0 +1,18 @@
+HSR-AXIS-002L-FIX independent test results
+
+compileall: PASS
+pytest collected: 409 tests
+pytest batch 1: 182 passed
+pytest batch 2: 121 passed
+pytest batch 3: 106 passed
+pytest total: 409 passed
+focused reviewed-binding suite: 50 passed
+locked regression: PASS 20/20
+trace-evidence-only regression: PASS 2/2
+
+Manifest counts:
+replays=12
+manual=1
+scenarios=2
+action_sequence_traces=1
+trace_evidence=2

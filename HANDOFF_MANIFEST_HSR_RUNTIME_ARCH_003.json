@@ -1,0 +1,62 @@
+{
+  "task_id": "HSR-RUNTIME-ARCH-003",
+  "title": "Read-Only Runtime Trace Export",
+  "created": "2026-07-12",
+  "recommended_model": "GPT-5.6 Sol",
+  "codex_reasoning": "High",
+  "starting_baseline": {
+    "latest_completed_task": "HSR-RUNTIME-ARCH-002",
+    "decision": "PASS",
+    "focused_contract_adapter_checks": {
+      "passed": 84,
+      "failed": 0
+    },
+    "complete_pytest": {
+      "passed": 746,
+      "failed": 0
+    },
+    "locked_regression": {
+      "passed": 20,
+      "failed": 0
+    },
+    "trace_evidence": {
+      "passed": 2,
+      "failed": 0
+    }
+  },
+  "reference_sample": {
+    "compact_sha256": "d9a123ccc03b1eec9a816ec0d55bf024998d3b656b27fa4f807439d7e34ad6bd",
+    "pretty_sha256": "71fa9c77239c30c2aa694a2a8e16f84538b37e3191db4318cf20c09154834d8f"
+  },
+  "files": {
+    "PASTE_THIS_IN_CODEX_HSR_RUNTIME_ARCH_003.txt": "24198ccf9c2c928e6e739c45bf4967d791f790b6b2f41a5b9e1ab5de8120ee94",
+    "LUMEN_TASK_HSR_RUNTIME_ARCH_003.md": "d8bdae73cf2058bde66f930c36e3866735e66c2e0b979a30421e3792f7565eb4",
+    "BASELINE_HSR_RUNTIME_ARCH_003.txt": "185bd411e45f29b7a9fd7de44642946ccb36912a2afc0e1ce10792059330798d",
+    "REFERENCE_RUNTIME_TRACE_EXPORT_HSR_RUNTIME_ARCH_003.md": "fad9697cda084cbcb84d98e81588181548e08806a8c1a83ebe3a28a6441894b8",
+    "REFERENCE_RUNTIME_TRACE_EXPORT_HSR_RUNTIME_ARCH_003.json": "5adea3181e488cc9e74e3ee73a483a8107f59b13d8abb8e7f2071be6cacf48ea",
+    "LUMEN_REVIEW_HSR_RUNTIME_ARCH_002_FIX2_AFTER_CODEX.md": "cd98cbf446df587957fb63dddf2a6f5a9723f355b8066f7264b6570438bf2316"
+  },
+  "placement": {
+    "prompt": "Paste into Codex after merging the handoff bundle into the accepted repository root.",
+    "task": "Repository root; new task reference.",
+    "reference_files": "docs/runtime/research/; copy byte-for-byte.",
+    "review": "Repository root or audit folder; accepted ARCH-002 review."
+  },
+  "merge_instruction": "Use `unzip -o HSR_RUNTIME_ARCH_003_HANDOFF.zip -d <project-root>`; do not use Finder Replace on the docs folder.",
+  "preservation": [
+    "hsr_axis_sim/sim/**",
+    "hsr_axis_sim/runtime_contracts/**",
+    "hsr_axis_sim/runtime_adapters/**",
+    "hsr_axis_sim/search/**",
+    "hsr_axis_sim/regression/**",
+    "hsr_axis_sim/adapters/**",
+    "hsr_axis_sim/real_bindings/**",
+    "hsr_axis_sim/data/**",
+    "fixtures/**",
+    "README.md",
+    "pyproject.toml",
+    "PACKAGE_MANIFEST.json",
+    "all existing tests and docs",
+    "HSR-AXIS-002Q-FIX artifacts"
+  ]
+}

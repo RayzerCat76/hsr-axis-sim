@@ -1,0 +1,39 @@
+HSR-RUNTIME-ARCH-004 — Independent Starting Baseline
+====================================================
+
+Validation date: 2026-07-12
+Starting package: hsr_axis_001a_package(5).zip
+
+Latest completed task
+---------------------
+HSR-RUNTIME-ARCH-003 — Read-Only Runtime Trace Export
+
+Luman decision:
+PASS — proceed
+
+Independent confirmed results
+-----------------------------
+- compileall: PASS
+- ARCH-001/002/003 focused contract/adapter/export/research checks:
+  104/104 passed
+- complete pytest collection: 766/766 passed
+- locked regression: 20/20 passed
+- trace-evidence-only regression: 2/2 passed
+
+Current architecture
+--------------------
+- `hsr_axis_sim.sim` remains the active production MVP.
+- `runtime_contracts` defines immutable events and trace records.
+- `runtime_adapters` manually adapts legacy Events to RuntimeEvents.
+- `runtime_exports` manually builds deterministic trace documents/artifacts.
+- No production module imports the new sidecar packages.
+- Existing LIFO behavior is unchanged.
+- `unit_defeated` remains UNKNOWN + UNRESOLVED.
+
+ARCH-004 target
+---------------
+Create a new sidecar loader and integrity validator for exact ARCH-003 schema v1
+compact/pretty artifacts.
+
+No repair, migration, comparison, simulator integration, or semantic inference
+is allowed.

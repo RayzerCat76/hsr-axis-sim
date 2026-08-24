@@ -1,0 +1,29 @@
+HSR-AXIS-002J independent test results
+
+python -m compileall -q hsr_axis_sim
+PASS
+
+python -m pytest -q
+359 passed in 30.89s
+
+Locked manifest regression:
+Manifest: HSR_AXIS_REGRESSION_BASELINE_001Z
+Manifest counts: replays=12 manual=1 scenarios=2 action_sequence_traces=1 trace_evidence=2
+PASS 12/12 golden replays
+PASS 2/2 manual checks
+PASS 2/2 search scenarios
+PASS 2/2 action-sequence trace checks
+PASS 2/2 trace evidence checks
+
+Trace-evidence-only regression:
+PASS 2/2 trace evidence checks
+
+Pela partial-binding audit:
+Markdown output byte-identical: PASS
+JSON output byte-identical: PASS
+Validated mismatch exit code: 1
+Unreadable input exit code: 2
+Unreadable input traceback: false
+
+Accepted 002I atomic-fact artifact SHA-256:
+b17a5f295cb8902883d6e8ddaa70c626bdbddf60572db8ce28da6eb3c555491f

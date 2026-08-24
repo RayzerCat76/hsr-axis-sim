@@ -1,0 +1,186 @@
+Task ID: HSR-AXIS-001J
+Reasoning: HIGH
+
+You are continuing the same permanent Python project for a Honkai: Star Rail inspired action-axis simulator.
+
+Previous accepted tasks:
+- 001A: action value core
+- 001B: replay validator MVP
+- 001C: multi-step replay
+- 001D: buff/debuff duration
+- 001E: damage/stats/forced RNG MVP
+- 001F: toughness/weakness/break MVP
+- 001G: event hooks / trigger system MVP
+- 001H: data-driven character/skill schema MVP
+- 001I: target_ref / semantic target references MVP
+
+Current task:
+Implement Target Legality / Legal Action Target Generation MVP.
+
+Goal:
+Make `SkillSpec.target_type` executable enough for later AI search. The simulator should be able to:
+1. Generate legal target selections for a skill.
+2. Validate selected targets before building an action from a data-loaded skill.
+3. Fail clearly when a replay or future search tries to use an illegal target.
+
+Do NOT implement AI search yet.
+Do NOT scrape Huroka or any external website yet.
+Do NOT implement real HSR character imports yet.
+Do NOT implement full target shapes like blast, bounce, taunt, random target, or enemy AI.
+This task is only target legality and legal target group generation.
+
+Required target types for this MVP:
+
+- `self`
+  - Legal selection is the actor only.
+  - Accept either no explicit selected target ids, or `[actor_id]`.
+  - Normalize to `[actor_id]` when creating the action.
+
+- `none`
+  - No selected targets are allowed.
+  - Normalize to `[]`.
+
+- `single_enemy`
+  - Exactly one selected target id is required.
+  - Target must exist.
+  - Target must be alive.
+  - Target must be on the opposing team from actor.
+
+- `single_ally`
+  - Exactly one selected target id is required.
+  - Target must exist.
+  - Target must be alive.
+  - Target must be on the same team as actor.
+  - Include self as a legal ally for now.
+
+- `single_other_ally`
+  - Exactly one selected target id is required.
+  - Target must exist.
+  - Target must be alive.
+  - Target must be on the same team as actor.
+  - Target must not be actor.
+  - This is future-proofing for skills that cannot target self.
+
+- `single_any`
+  - Exactly one selected target id is required.
+  - Target must exist.
+  - Target must be alive.
+
+- `all_enemies`
+  - No explicit selected target ids should be required.
+  - Explicit selected targets should be rejected for now, to keep AoE target shape unambiguous.
+  - Legal action target group should be `[]`; effects should use `target_ref: "alive_enemies"` or `target_ref: "all_enemies"`.
+
+- `all_allies`
+  - No explicit selected target ids should be required.
+  - Explicit selected targets should be rejected for now.
+  - Legal action target group should be `[]`; effects should use `target_ref: "alive_allies"` or `target_ref: "all_allies"`.
+
+- `all_units`
+  - No explicit selected target ids should be required.
+  - Explicit selected targets should be rejected for now.
+  - Legal action target group should be `[]`.
+  - Do not add a new `target_ref` for all units unless needed; keep this mostly as a legality placeholder.
+
+Architecture requirements:
+
+1. Add a clear target legality module, preferably `hsr_axis_sim/sim/targeting.py` or extend `targets.py` cleanly.
+
+2. Implement at least these functions:
+
+   - `legal_target_groups(state, actor_id, target_type) -> list[list[str]]`
+     - Returns legal selected-target groups for this target type.
+     - For single-target types, return one group per legal target, e.g. `[["enemy_1"], ["enemy_2"]]`.
+     - For self, return `[[actor_id]]`.
+     - For none/all-target types, return `[[]]`.
+
+   - `normalize_and_validate_target_ids(state, actor_id, target_type, target_ids) -> list[str]`
+     - Returns normalized selected target ids.
+     - Raises a clear `ValueError` or custom `TargetValidationError` for illegal targets.
+
+   - Optional but preferred: `TargetValidationError(ValueError)` for clearer test expectations.
+
+3. Update `action_from_skill` in `data_loader.py`:
+
+   Current behavior should remain backward compatible when no `state` is provided.
+
+   Add optional validation parameters like:
+
+   ```python
+   def action_from_skill(skill, actor_id, target_ids=None, state=None, validate_targets=False):
+       ...
+   ```
+
+   Behavior:
+   - If `state` is provided and `validate_targets=True`, validate and normalize selected targets using `skill.target_type`.
+   - If validation is not requested, preserve existing behavior.
+   - This avoids breaking older tests while allowing data-loaded replay / future AI search to use validation.
+
+4. Update replay validator for data-loaded `skill_id` steps:
+
+   When replay builds an action from a `skill_id`, it should pass the current state and validate target legality.
+
+   This means a data-loaded replay with a `single_enemy` skill targeting an ally should fail clearly.
+
+5. Tests required:
+
+   Add or update tests for all required target types:
+
+   - `legal_target_groups` returns expected groups for:
+     - self
+     - none
+     - single_enemy
+     - single_ally
+     - single_other_ally
+     - single_any
+     - all_enemies
+     - all_allies
+
+   - Validation accepts legal target selections.
+
+   - Validation rejects:
+     - unknown target id
+     - dead target for single-target skills
+     - ally target for `single_enemy`
+     - enemy target for `single_ally`
+     - actor target for `single_other_ally`
+     - too many selected targets for single-target skill
+     - missing selected target for single-target skill
+     - explicit selected targets for `all_enemies` / `all_allies` / `none`
+
+   - `action_from_skill(..., state=state, validate_targets=True)` normalizes `self` to `[actor_id]`.
+
+   - Data-loaded replay validation fails clearly if a `skill_id` step selects an illegal target.
+
+6. Existing test suite and all previous golden replays must still pass.
+
+7. Add a small new golden replay or test fixture only if it is useful. Do not overbuild.
+
+Deliverables:
+
+- Updated implementation files.
+- Updated tests.
+- Existing golden replay CLI still passing.
+- `hsr_axis_sim/LUMEN_RESULT.md` updated with:
+  - files changed
+  - exact tests run
+  - exact test results
+  - target types implemented
+  - what remains intentionally unsupported
+  - whether 001K is safe to begin
+
+Hard boundaries:
+
+Do not implement:
+- Beam search
+- AI scoring
+- Huroka/Yatta importers
+- full real HSR character kits
+- taunt/aggro target probability
+- random target selection
+- bounce
+- blast adjacency
+- enemy AI behavior
+- full HSR damage formula
+
+This task should make action target selection deterministic, testable, and safe for future AI search.

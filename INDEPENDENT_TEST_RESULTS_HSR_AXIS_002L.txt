@@ -1,0 +1,26 @@
+HSR-AXIS-002L independent review results
+Date: 2026-07-11
+
+PASS: python -m compileall -q hsr_axis_sim
+PASS: python -m pytest -q
+Result: 381 passed in 39.46s
+
+PASS: locked regression 20/20
+- golden replays: 12/12
+- manual checks: 2/2
+- search scenarios: 2/2
+- action-sequence trace checks: 2/2
+- trace evidence checks: 2/2
+
+PASS: trace-evidence-only regression 2/2
+PASS: registry v0.2 Markdown report byte-identical
+PASS: registry v0.2 JSON report byte-identical
+PASS: Tingyun binding Markdown report byte-identical
+PASS: Tingyun binding JSON report byte-identical
+
+BLOCKER REPRODUCED:
+A package-contained Tingyun binding whose source_atomic_fact_ids list contains an object causes:
+TypeError: unhashable type: 'dict'
+and the registry CLI prints a traceback.
+
+Final gate: NEEDS FIX

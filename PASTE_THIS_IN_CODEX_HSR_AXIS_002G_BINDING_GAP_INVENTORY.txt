@@ -1,0 +1,270 @@
+Task ID: HSR-AXIS-002G
+Task name: First-Trace Simulator Binding Gap Inventory MVP
+
+Codex Reasoning: MEDIUM
+Recommended model: GPT-5.6 Terra
+Escalation: Use GPT-5.6 Sol only if the existing engine capabilities cannot be classified without a genuine cross-module architectural decision.
+
+Context
+=======
+
+HSR-AXIS-002F has passed independent review:
+
+- compileall: PASS
+- full pytest: 330 passed
+- locked regression: PASS 20/20
+- trace-evidence-only regression: PASS 2/2
+- accepted Markdown and JSON evidence reports reproduce byte-for-byte
+
+The first real trace now has one accepted evidence report:
+
+`hsr_axis_sim/data/manual_video_traces/reports/real_video_trace_001_botu_dilemma_evidence_report_v0_1.json`
+
+The report intentionally does not make the trace executable. The next task is to inventory, without guessing, what is still required before this trace could become an executable simulator replay.
+
+Goal
+====
+
+Create a deterministic, non-executable simulator-binding gap inventory for the accepted first real trace.
+
+The inventory must distinguish:
+
+1. generic engine primitives that already exist;
+2. character-specific behavior that is not yet verified or bound;
+3. targets or target scopes that remain unknown;
+4. missing initial resource and state data;
+5. unresolved composite-action behavior;
+6. unresolved Mem action-advance semantics;
+7. evidence that cannot be recovered from this video alone;
+8. the smallest future work items required to move toward an executable replay.
+
+This task is analysis/reporting only. Do not implement real character kits or combat values.
+
+Required implementation
+=======================
+
+1. Add a module:
+
+   `hsr_axis_sim/tools/trace_binding_gap_inventory.py`
+
+2. Add a small, explicit assessment input artifact under a new directory such as:
+
+   `hsr_axis_sim/data/manual_video_traces/binding_assessments/`
+
+   Suggested filename:
+
+   `real_video_trace_001_botu_dilemma_binding_assessment_v0_1.json`
+
+3. The assessment artifact must be declarative and evidence-limited. It may classify each prebattle/step item, but it must not add numeric combat values or executable character logic.
+
+4. Add a clear report model. Dataclasses are preferred. The inventory should include at least:
+
+   - inventory ID and version;
+   - source evidence report ID/path;
+   - explicit non-executable policy flags;
+   - global blockers;
+   - one prebattle binding assessment;
+   - nine ordered step binding assessments;
+   - a deduplicated future-work summary.
+
+5. Each step assessment must preserve the accepted source order and include at least:
+
+   - step;
+   - actor;
+   - action;
+   - semantic label/category;
+   - current binding status;
+   - generic engine primitives already available, if any;
+   - missing verified character-kit semantics;
+   - target status;
+   - missing initialization or resource data;
+   - unresolved trigger/composite behavior;
+   - evidence limitations;
+   - minimum future work items;
+   - an explicit `executable_now: false` unless the complete step is genuinely executable from accepted evidence. For this first trace, do not mark a step executable merely because a generic primitive exists.
+
+6. Use a small controlled status vocabulary. Suggested values:
+
+   - `generic_primitive_available`
+   - `missing_character_binding`
+   - `missing_target_evidence`
+   - `missing_initial_state`
+   - `unresolved_composite_action`
+   - `unresolved_action_advance`
+   - `video_insufficient`
+   - `blocked`
+
+   You may refine this vocabulary, but keep it explicit and validated.
+
+7. The inventory must explicitly recognize generic capabilities that already exist in the engine where accurate, such as:
+
+   - normal action execution;
+   - skill/ultimate action categories;
+   - ultimate interrupt windows;
+   - generic buffs/debuffs;
+   - energy and skill-point resources;
+   - generic action advance/immediate action primitives;
+   - extra turns and trigger hooks;
+   - target legality and action generation;
+   - damage/toughness scaffolds.
+
+   Important: acknowledging that a generic primitive exists does not mean the real character action is verified or bound.
+
+8. The inventory must explicitly preserve these unresolved facts:
+
+   - Tingyun ultimate target is unknown in the accepted trace.
+   - Pela skill target is unknown.
+   - Remembrance Trailblazer skill target/companion state is unknown.
+   - Tingyun skill target is unknown.
+   - Pela ultimate target scope and resulting debuff values are not validated.
+   - Naxia ultimate target and resulting combat state are not validated.
+   - `basic_plus_extra_skill` is a composite placeholder, not an executable split.
+   - Mem advances Naxia, but the exact amount, timing rule, charge/trigger condition, and binding are unresolved.
+   - `skill_plus_extra_skill` is a composite placeholder, not an executable split.
+   - initial SP, energy, speed/AV, HP, toughness, buffs/debuffs, enemy state, and RNG are not known from the accepted trace.
+
+9. Validate the assessment against the accepted evidence report:
+
+   - source report ID must match;
+   - exactly one assessment for prebattle;
+   - exactly nine step assessments;
+   - actor/action/step must match the evidence report;
+   - no extra or missing steps;
+   - list order in the assessment artifact must not determine output order;
+   - unsupported status values must fail;
+   - `executable_now: true` must fail unless all required blocker lists are empty and the assessment explicitly explains the binding. For this fixture, all items should remain non-executable.
+
+10. Add deterministic Markdown and JSON renderers.
+
+11. Markdown output must include at least:
+
+   - title and source evidence report;
+   - strong warning that this is a planning inventory, not a replay;
+   - global blockers;
+   - compact ordered table;
+   - detailed per-step supported primitives, blockers, evidence limitations, and future work;
+   - deduplicated minimum-work summary grouped by category.
+
+12. Add a CLI:
+
+```bash
+python -m hsr_axis_sim.tools.trace_binding_gap_inventory \
+  --evidence-report <accepted-report.json> \
+  --assessment <binding-assessment.json> \
+  --format markdown|json \
+  [--output <path>]
+```
+
+CLI behavior:
+
+- stdout when `--output` is absent;
+- UTF-8 output when present;
+- exit 0 on success;
+- exit 1 on validated assessment/evidence mismatch;
+- exit 2 on unreadable/invalid input or runtime/CLI failure;
+- readable normal validation errors without traceback.
+
+13. Generate accepted sample outputs under a new directory such as:
+
+   `hsr_axis_sim/data/manual_video_traces/binding_inventories/`
+
+Suggested filenames:
+
+- `real_video_trace_001_botu_dilemma_binding_gap_inventory_v0_1.md`
+- `real_video_trace_001_botu_dilemma_binding_gap_inventory_v0_1.json`
+
+The sample outputs must be exactly reproducible from the accepted evidence report and assessment artifact.
+
+Required test coverage
+======================
+
+Add focused tests covering at least:
+
+- one prebattle item and exactly nine ordered steps;
+- exact actor/action sequence preservation;
+- output order independent of assessment list order;
+- all first-trace steps remain `executable_now: false`;
+- generic engine support is distinguished from verified real-character binding;
+- unresolved targets remain unresolved;
+- composite actions remain unresolved composites;
+- Mem action advance remains unresolved and does not gain a percentage or immediate-action claim;
+- missing global initialization state is prominently listed;
+- unsupported status values are rejected;
+- missing, duplicate, or mismatched step assessments are rejected;
+- wrong source report ID is rejected;
+- invalid `executable_now: true` is rejected;
+- deterministic Markdown and JSON;
+- byte-identical repeated runs;
+- CLI stdout and `--output` behavior;
+- committed sample files match generated output exactly.
+
+Scope and trust boundary
+========================
+
+Do not:
+
+- implement Tingyun, Pela, Remembrance Trailblazer, Mem, or Naxia kits;
+- import or scrape external character data;
+- infer targets not already present in the accepted evidence report;
+- infer SP, energy, HP, toughness, speed, AV, damage, buffs, debuffs, enemy state, or RNG;
+- assign an action-advance percentage or convert Mem's action to immediate action;
+- split Naxia composite placeholders into sub-actions;
+- change combat mechanics, replay execution, search, evaluator, or character data;
+- modify the locked regression manifest;
+- create a new regression group in this task;
+- begin the next character-data or real-kit task.
+
+Required gates
+==============
+
+Run:
+
+```bash
+python -m compileall -q hsr_axis_sim
+python -m pytest -q
+python -m hsr_axis_sim.regression.runner \
+  --manifest hsr_axis_sim/data/regression_manifest.json \
+  --format text
+python -m hsr_axis_sim.regression.runner \
+  --manifest hsr_axis_sim/data/regression_manifest.json \
+  --only trace_evidence \
+  --format text
+```
+
+Also run the new binding-gap CLI in Markdown and JSON modes against the accepted first-trace artifacts.
+
+Expected locked regression state must remain:
+
+```text
+PASS 20/20
+replays=12
+manual=1
+scenarios=2
+action_sequence_traces=1
+trace_evidence=2
+```
+
+Deliverables
+============
+
+- `hsr_axis_sim/tools/trace_binding_gap_inventory.py`
+- one declarative binding-assessment input artifact
+- focused tests
+- deterministic accepted Markdown inventory
+- deterministic accepted JSON inventory
+- any small README required for the new directories
+- updated `hsr_axis_sim/LUMEN_RESULT.md`
+
+`LUMEN_RESULT.md` must state:
+
+1. exact files changed;
+2. inventory schema and merge behavior;
+3. validation behavior;
+4. exact test results;
+5. exact existing regression results;
+6. confirmation that the manifest was not changed;
+7. explicit confirmation that no character kit or combat values were inferred;
+8. known limitations;
+9. next recommended task only after every gate passes.
+
+Do not claim completion if full pytest is unavailable or failing. Preserve the implementation and report BLOCKED when a required gate cannot run.

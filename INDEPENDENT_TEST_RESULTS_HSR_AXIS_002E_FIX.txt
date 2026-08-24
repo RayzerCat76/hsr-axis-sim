@@ -1,0 +1,14 @@
+HSR-AXIS-002E-FIX independent validation
+
+python -m compileall -q hsr_axis_sim
+PASS
+
+python -m pytest -q
+323 passed in 9.72s
+
+Locked manifest regression
+PASS 20/20
+Manifest counts: replays=12 manual=1 scenarios=2 action_sequence_traces=1 trace_evidence=2
+
+Trace evidence only
+PASS 2/2

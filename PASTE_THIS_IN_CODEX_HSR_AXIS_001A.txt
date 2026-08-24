@@ -1,0 +1,157 @@
+Task ID: HSR-AXIS-001A
+Reasoning level: HIGH
+
+You are taking over an early Python project for a Honkai: Star Rail inspired action-axis simulator.
+
+Work in one permanent project folder. Do not make a throwaway script.
+
+Goal:
+Build the deterministic action-value simulator core. This core will later support AI axis-search / score optimization, but this task is only the foundation.
+
+Do NOT implement all characters yet.
+Do NOT scrape Huroka, Yatta, HoneyHunter, or any external website yet.
+Do NOT implement AI search yet.
+Do NOT implement full damage formula yet.
+Do NOT implement real Bronya, Seele, Sparkle, Robin, Ruan Mei, or other character-specific logic yet.
+
+Current priority:
+1. Replace ad-hoc action-axis logic with a clean engine.
+2. Implement action value timeline mechanics accurately.
+3. Add automated pytest tests.
+4. Produce a LUMEN_RESULT.md report.
+
+Core mechanics to implement:
+- Unit speed
+- Base action value: base_av = 10000 / current_speed
+- Current action value
+- Selecting the next actor by lowest current_av
+- Advancing global AV time
+- Subtracting elapsed AV from all normal timeline units
+- Resetting a normal actor after their turn by adding base_av
+- Action advance / pull forward
+- Action delay / push back
+- Speed buffs and debuffs
+- Immediate action
+- Extra turn stack
+- Action that does not end the current turn
+- Basic skill point changes
+- Basic energy gain
+
+Architecture:
+Create this structure:
+
+hsr_axis_sim/
+  sim/
+    __init__.py
+    unit.py
+    state.py
+    timeline.py
+    effects.py
+    action.py
+    turn_context.py
+  tests/
+    test_action_value.py
+    test_speed_change.py
+    test_action_advance.py
+    test_immediate_action.py
+    test_extra_turn.py
+  LUMEN_RESULT.md
+
+Implementation rules:
+- Use dataclasses or Pydantic.
+- Avoid global functions that depend on hidden state.
+- Do not hard-code real character logic.
+- All mechanics must be represented as generic effects.
+- Every mechanic must have a pytest test.
+- Keep floating-point tolerance explicit, using pytest.approx.
+
+Required classes:
+- Unit
+- BattleState
+- Action
+- Effect
+- TurnContext
+
+Required effect types:
+- GainEnergy
+- ConsumeEnergy
+- GainSkillPoint
+- ConsumeSkillPoint
+- AdvanceAction
+- DelayAction
+- ChangeSpeed
+- ImmediateAction
+- GrantExtraTurn
+- DoesNotEndTurn
+
+Optional placeholder effect:
+- DealDamage
+
+Timeline rules:
+1. The next normal actor is the alive unit with the lowest current_av.
+2. When selecting a normal actor, advance global_av by min(current_av), then subtract that value from all alive normal timeline units.
+3. After a normal turn ends, add base_av to the actor's current_av.
+4. Extra turns must be resolved before the normal timeline.
+5. Extra turns must not alter the unit's original normal timeline position.
+6. Immediate action sets current_av to 0.
+7. Action advance uses:
+   new_current_av = max(0, current_av - base_av * percent)
+8. Action delay uses:
+   new_current_av = current_av + base_av * percent
+9. Speed change uses:
+   new_current_av = old_current_av * old_speed / new_speed
+   then update speed and base_av = 10000 / new_speed
+10. DoesNotEndTurn sets turn_context.should_end_turn = False.
+    It must not create an extra turn and must not reset the actor's AV yet.
+
+Required tests:
+- test_action_value.py
+  - speed 100 gives base AV 100
+  - speed 134 gives base AV about 74.6269
+  - lowest current AV actor acts first
+  - global AV advances correctly
+  - all units' current AV values are reduced by elapsed AV
+  - actor current AV is reset after turn end
+
+- test_speed_change.py
+  - speed increase reduces remaining current AV using old_current_av * old_speed / new_speed
+  - speed decrease increases remaining current AV using the same formula
+  - base AV updates after speed changes
+
+- test_action_advance.py
+  - 50% advance subtracts base_av * 0.5
+  - 100% advance does not go below 0
+  - action delay adds base_av * percent
+
+- test_immediate_action.py
+  - immediate action sets current AV to 0
+  - immediate action is not the same as 100% advance if current AV is greater than base AV
+
+- test_extra_turn.py
+  - extra turns are taken before normal timeline actors
+  - extra turns do not advance global AV
+  - extra turns do not alter the unit's original normal timeline current AV
+  - normal turn reset still works after extra turn stack is empty
+
+Deliverable:
+A working Python package with passing pytest tests.
+
+Create LUMEN_RESULT.md with exactly these sections:
+
+# LUMEN_RESULT_HSR_AXIS_001A
+
+## Implemented files
+
+## Tests run
+
+## Passing tests
+
+## Known inaccuracies / assumptions
+
+## Intentionally not implemented
+
+## Blockers
+
+## Recommended next task
+
+Do not proceed to replay validation, damage formula, character data import, or AI search in this task.

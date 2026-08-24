@@ -1,0 +1,287 @@
+Task ID: HSR-AXIS-001M
+Task name: Enemy AI / Enemy Action Pattern MVP
+
+Codex Reasoning: High
+ChatGPT Model recommendation: GPT-5.5 Thinking
+Reason: Enemy action selection will run inside every future simulated branch. If pattern cursors, target selection, or replay integration are wrong, later AI axis-search will produce invalid axes.
+
+You are continuing the existing HSR Axis Simulator project.
+
+Current project status:
+- 001A–001L are accepted.
+- 001K added legal normal action generation.
+- 001L added ultimate / interrupt window MVP.
+- Do not rewrite the simulator core.
+- Do not implement Beam Search yet.
+- Do not implement Huroka/Yatta importers yet.
+- Do not implement full HSR damage formula yet.
+
+Goal:
+Add a deterministic MVP for enemy action selection.
+
+The simulator must be able to answer:
+1. When an enemy gets a normal turn, which skill should it use?
+2. Which target should the enemy choose?
+3. Can enemy action patterns advance deterministically across turns?
+4. Can replay validation omit a manual skill_id for an enemy turn and instead use the enemy AI policy?
+
+Scope:
+This task is only an MVP for deterministic enemy action patterns. It is not AI search, not full HSR enemy scripting, and not random enemy behavior unless forced by replay data.
+
+Required behavior:
+
+1. Add an enemy AI module
+
+Create a new module such as:
+
+```text
+hsr_axis_sim/sim/enemy_ai.py
+```
+
+Implement data structures similar to:
+
+```python
+@dataclass
+class EnemyPatternStep:
+    skill_id: str
+    target_strategy: str = "first_legal"
+    target_ids: list[str] | None = None
+
+@dataclass
+class EnemyAIPlan:
+    pattern: list[EnemyPatternStep]
+    repeat: bool = True
+```
+
+You may adjust names, but keep the design simple, typed, and deterministic.
+
+2. Add enemy AI schema support
+
+Extend the existing data schema so a character JSON may optionally include:
+
+```json
+"enemy_ai": {
+  "repeat": true,
+  "pattern": [
+    {"skill_id": "basic", "target_strategy": "first_legal"},
+    {"skill_id": "skill", "target_strategy": "lowest_hp_legal"}
+  ]
+}
+```
+
+Rules:
+- Existing character JSON files without `enemy_ai` must continue loading unchanged.
+- Enemy AI should be optional.
+- Validate that pattern is non-empty if `enemy_ai` exists.
+- Validate that each pattern step has `skill_id`.
+- If possible, validate pattern skill IDs against the character's skills.
+
+3. Store enemy AI plans and cursors in BattleState
+
+Extend `BattleState` with fields similar to:
+
+```python
+enemy_ai_plans: dict[str, EnemyAIPlan] = field(default_factory=dict)
+enemy_ai_cursors: dict[str, int] = field(default_factory=dict)
+```
+
+Rules:
+- Cursor is per unit instance, not per character template.
+- Building state from data-loaded team files should attach enemy AI plans for units whose character has `enemy_ai`.
+- Existing tests and replay files must not break.
+
+4. Implement target strategies
+
+Implement deterministic target strategy resolution.
+
+Supported MVP strategies:
+
+```text
+first_legal
+last_legal
+lowest_hp_legal
+highest_hp_legal
+explicit
+forced_rng_target
+```
+
+Definitions:
+- `first_legal`: choose the first group from existing `legal_target_groups`.
+- `last_legal`: choose the last group from existing `legal_target_groups`.
+- `lowest_hp_legal`: among single-target legal groups, choose the live target with lowest HP.
+- `highest_hp_legal`: among single-target legal groups, choose the live target with highest HP.
+- `explicit`: use `target_ids` from the pattern step, then validate with existing target legality.
+- `forced_rng_target`: use `forced_rng["enemy_target_id"]` or `forced_rng["target_id"]`, then validate with existing target legality.
+
+Rules:
+- Always use the skill's `target_type` and existing target legality.
+- Dead targets must be excluded or rejected.
+- If no legal target exists, raise a clear error.
+- For all-target or none-target skills, strategies should resolve to `[]` via existing target legality.
+- Do not invent a new target legality system.
+
+5. Implement enemy action choice
+
+Implement a function similar to:
+
+```python
+def choose_enemy_action(
+    state: BattleState,
+    skill_lookup: dict[str, dict[str, SkillSpec]],
+    actor_id: str,
+    forced_rng: dict | None = None,
+) -> ActionChoice:
+    ...
+```
+
+Rules:
+- Actor must exist.
+- Actor should be alive.
+- Actor should have an enemy AI plan.
+- Use `state.enemy_ai_cursors[actor_id]` to pick the current pattern step.
+- If `repeat=True`, wrap around the pattern.
+- If `repeat=False` and cursor exceeds pattern length, use the final step or raise a clear error; choose one behavior and document it.
+- Use existing affordability checks where applicable.
+- Use existing `action_from_skill(..., validate_targets=True)`.
+- The choice function must not mutate state.
+
+6. Implement enemy action execution helper
+
+Implement a helper similar to:
+
+```python
+def execute_enemy_ai_action(
+    state: BattleState,
+    skill_lookup: dict[str, dict[str, SkillSpec]],
+    actor_id: str,
+    turn_context: TurnContext,
+    forced_rng: dict | None = None,
+) -> ActionChoice:
+    ...
+```
+
+Rules:
+- `turn_context.actor_id` must match `actor_id`.
+- Choose the enemy action.
+- Execute it using the existing `Action.execute` pathway.
+- Increment the actor's enemy AI cursor only after successful execution.
+- If execution fails, cursor must not advance.
+- Normal turn semantics must remain normal: this is not an interrupt and not an extra turn.
+
+7. Extend Replay Validator
+
+Replay validation should support enemy AI execution for normal steps.
+
+Add an optional step field:
+
+```json
+{
+  "step": 2,
+  "expected_actor": "enemy_1",
+  "use_enemy_ai": true,
+  "forced_rng": {"enemy_target_id": "seele_like"},
+  "expect": {...}
+}
+```
+
+Rules:
+- For normal steps with `use_enemy_ai: true`, Replay Validator should call `Timeline.next_turn(state)` as usual, then execute the enemy AI action.
+- Actor must match `expected_actor` if provided.
+- `use_enemy_ai` should only be allowed for normal steps, not interrupt steps.
+- If a manual `skill_id` or `action_id` is present, existing behavior should remain unchanged.
+- Existing replay files must keep passing unchanged.
+
+8. Add / update sample enemy data
+
+Update `generic_enemy.json` or add a new sample enemy.
+
+It should include at least two enemy skills, for example:
+
+```text
+basic: single_enemy, simple damage
+heavy: single_enemy, stronger damage
+```
+
+Add an `enemy_ai` pattern such as:
+
+```json
+"enemy_ai": {
+  "repeat": true,
+  "pattern": [
+    {"skill_id": "basic", "target_strategy": "first_legal"},
+    {"skill_id": "heavy", "target_strategy": "lowest_hp_legal"}
+  ]
+}
+```
+
+Remember: from an enemy actor's perspective, `target_type: "single_enemy"` means a player-side unit, because target legality is relative to actor team.
+
+9. Add a golden replay
+
+Add:
+
+```text
+hsr_axis_sim/data/golden_replays/enemy_ai_mvp.json
+```
+
+It should demonstrate:
+
+- Enemy gets a normal turn.
+- Replay step uses `use_enemy_ai: true`.
+- Enemy chooses the correct skill from pattern cursor.
+- Enemy chooses the correct target by strategy.
+- Damage is applied.
+- Enemy cursor increments after successful action.
+- On the enemy's next AI turn, the next pattern step is used.
+
+Keep this replay small and deterministic.
+
+10. Add tests
+
+Add tests for:
+
+- enemy AI schema parses successfully.
+- character JSON without enemy_ai still loads.
+- state builder attaches enemy AI plan per enemy unit instance.
+- `choose_enemy_action` does not mutate cursor or state.
+- first_legal target strategy.
+- lowest_hp_legal target strategy.
+- explicit target strategy validates legality.
+- forced_rng_target uses forced target and validates legality.
+- dead actor or missing AI plan fails clearly.
+- missing skill in pattern fails clearly.
+- `execute_enemy_ai_action` increments cursor only after successful execution.
+- replay validator supports `use_enemy_ai: true`.
+- all existing golden replays still pass.
+
+11. Exports
+
+Export the new public helpers from `hsr_axis_sim.sim.__init__` if appropriate:
+
+- `EnemyPatternStep`
+- `EnemyAIPlan`
+- `choose_enemy_action`
+- `execute_enemy_ai_action`
+
+12. Deliverables
+
+Update `hsr_axis_sim/LUMEN_RESULT.md` with:
+
+- Files changed
+- Exact tests run
+- Exact test results
+- Golden replay CLI results
+- What was implemented
+- What is intentionally unsupported
+- Known limitations
+- Whether 001N is safe to begin
+
+Expected local commands:
+
+```bash
+python -m compileall -q hsr_axis_sim
+python -m pytest -q
+for f in hsr_axis_sim/data/golden_replays/*.json; do python -m hsr_axis_sim.sim.replay "$f"; done
+```
+
+Do not proceed to Beam Search, scoring, Huroka import, full damage formula, real character batch import, or UI in this task.

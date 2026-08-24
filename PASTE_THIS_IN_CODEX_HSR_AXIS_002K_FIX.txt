@@ -1,0 +1,130 @@
+Task ID: HSR-AXIS-002K-FIX
+Task name: Reviewed Binding Registry Strict Type and Execution-Boundary Hardening
+
+Codex Reasoning: MEDIUM
+Recommended model: GPT-5.6 Terra
+Escalate to GPT-5.6 Sol only if the existing public API cannot be hardened without a cross-module redesign.
+
+Accepted current state
+======================
+
+002K is structurally correct and independently produced:
+
+- compileall PASS
+- full pytest: 367 passed
+- locked regression: PASS 20/20
+- trace-evidence-only regression: PASS 2/2
+- registry reports byte-identical
+- existing Pela synthetic execution unchanged
+
+However, independent malformed-input testing found strict-type validation defects. Fix only these defects. Do not add Tingyun Ultimate or any second binding.
+
+Reproduced defects
+==================
+
+1. A dictionary used as `registry_entry_id` is accepted and CLI exits 0.
+2. Integer `0` used as `complete_game_skill` is accepted because `0 == False` in Python.
+3. A dictionary inside `source_atomic_fact_ids` reaches `set(...)`, raises `TypeError: unhashable type: 'dict'`, and prints a traceback.
+
+Goal
+====
+
+Make the reviewed-binding registry a strictly typed, controlled validation boundary for malformed but readable JSON and for execution through a supplied registry object.
+
+Required changes
+================
+
+1. Add strict root validation:
+   - registry document must be a JSON object;
+   - `registry_version` must exist and be a non-empty string;
+   - `entries` must be a list.
+
+2. Validate every entry before duplicate detection, sorting, set conversion, path handling, or dataclass construction:
+   - each entry must be a dictionary;
+   - all scalar string fields must be non-empty strings;
+   - `accepted_atomic_fact_sha256` must match exactly `[0-9a-f]{64}`;
+   - `complete_game_skill`, `complete_character_kit`, `synthetic_only`, and `real_trace_executable` must be exact booleans using `type(value) is bool`;
+   - `source_atomic_fact_ids`, `unresolved_atomic_fact_ids`, and `unresolved_fields` must be JSON arrays/lists of non-empty strings;
+   - reject duplicate values inside each list;
+   - reject nested objects, numbers, booleans, nulls, and a bare string where a list is required.
+
+3. Make duplicate registry-entry-ID and binding-ID checking safe after type validation. Malformed values must never produce an unhandled `TypeError`.
+
+4. Harden execution with a supplied `ReviewedBindingRegistry`:
+   - `execute_reviewed_binding(..., registry=...)` must not trust a manually constructed or mutated registry merely because its dataclass type matches;
+   - revalidate the selected handle's strict field types, safety flags, package-contained paths, files, handler key, digest, binding metadata, and atomic facts before execution; or implement an equivalent non-bypassable reviewed-loader token/contract;
+   - do not expose raw dictionaries as the reviewed execution path.
+
+5. CLI behavior:
+   - malformed but readable registry input must return exit 1;
+   - missing/unreadable/invalid-JSON input must return exit 2;
+   - neither case may print a traceback.
+
+6. Preserve:
+   - the single existing Pela entry;
+   - registry version and normalized report content unless a field is explicitly required for hardening;
+   - 002J execution result;
+   - accepted atomic digest;
+   - committed Pela audit bytes;
+   - locked manifest and counts;
+   - no damage or toughness semantics;
+   - `synthetic_only=true` and `real_trace_executable=false`.
+
+Mandatory tests
+===============
+
+Add focused tests for at least:
+
+- non-object registry root;
+- missing/empty/non-string registry version;
+- non-object entry;
+- non-string/empty registry entry ID and binding ID;
+- exact-boolean rejection of `0`, `1`, strings, and null;
+- list field supplied as string;
+- list field containing dict/list/int/bool/null;
+- duplicate fact IDs/unresolved IDs/unresolved fields;
+- invalid or uppercase/short/non-string digest;
+- malformed input returns exit 1 with no traceback;
+- unreadable/invalid JSON remains exit 2 with no traceback;
+- manually constructed unsafe registry/handle cannot bypass execution validation;
+- valid registry still loads to immutable handles;
+- accepted Pela fixture result remains exact;
+- committed Markdown and JSON reports remain byte-identical;
+- input order determinism remains intact.
+
+Scope gates
+===========
+
+Do not:
+
+- add Tingyun Ultimate;
+- add a second reviewed binding;
+- implement a complete skill or kit;
+- make the real trace executable;
+- change generic simulator primitives;
+- change search/evaluator behavior;
+- change the accepted video trace, semantic map, or frame anchors;
+- change the locked manifest or counts.
+
+Required final checks
+=====================
+
+Run:
+
+python -m compileall -q hsr_axis_sim
+python -m pytest -q
+python -m hsr_axis_sim.regression.runner --manifest hsr_axis_sim/data/regression_manifest.json --format text
+python -m hsr_axis_sim.regression.runner --manifest hsr_axis_sim/data/regression_manifest.json --only trace_evidence --format text
+python -m hsr_axis_sim.real_bindings.registry --format markdown
+python -m hsr_axis_sim.real_bindings.registry --format json
+
+Update `hsr_axis_sim/LUMEN_RESULT.md` with:
+
+- exact files changed;
+- strict validation contract;
+- execution revalidation approach;
+- malformed-input tests;
+- all command results;
+- confirmation that there is still exactly one reviewed partial binding;
+- known limitations;
+- recommended next task: HSR-AXIS-002L only after all gates pass.

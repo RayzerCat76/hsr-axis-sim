@@ -1,0 +1,49 @@
+{
+  "manifest_id": "HSR_AXIS_REGRESSION_BASELINE_001Z",
+  "project": "hsr-axis-simulator",
+  "description": "Locked MVP regression baseline plus real trace sequence and evidence intake.",
+  "groups": {
+    "replays": [
+      {"id": "break_damage_elemental_mvp", "path": "hsr_axis_sim/data/golden_replays/break_damage_elemental_mvp.json"},
+      {"id": "bronya_seele_multistep_mvp", "path": "hsr_axis_sim/data/golden_replays/bronya_seele_multistep_mvp.json"},
+      {"id": "bronya_seele_timeline_mvp", "path": "hsr_axis_sim/data/golden_replays/bronya_seele_timeline_mvp.json"},
+      {"id": "buff_duration_mvp", "path": "hsr_axis_sim/data/golden_replays/buff_duration_mvp.json"},
+      {"id": "character_kit_001_mvp", "path": "hsr_axis_sim/data/golden_replays/character_kit_001_mvp.json"},
+      {"id": "damage_formula_v1_mvp", "path": "hsr_axis_sim/data/golden_replays/damage_formula_v1_mvp.json"},
+      {"id": "damage_rng_mvp", "path": "hsr_axis_sim/data/golden_replays/damage_rng_mvp.json"},
+      {"id": "data_loaded_bronya_seele_mvp", "path": "hsr_axis_sim/data/golden_replays/data_loaded_bronya_seele_mvp.json"},
+      {"id": "enemy_ai_mvp", "path": "hsr_axis_sim/data/golden_replays/enemy_ai_mvp.json"},
+      {"id": "toughness_break_mvp", "path": "hsr_axis_sim/data/golden_replays/toughness_break_mvp.json"},
+      {"id": "trigger_on_kill_extra_turn_mvp", "path": "hsr_axis_sim/data/golden_replays/trigger_on_kill_extra_turn_mvp.json"},
+      {"id": "ultimate_interrupt_mvp", "path": "hsr_axis_sim/data/golden_replays/ultimate_interrupt_mvp.json"}
+    ],
+    "manual": [
+      {"id": "manual_video_trace_sample_mvp", "path": "hsr_axis_sim/data/manual_video_traces/samples/manual_video_trace_sample_mvp.json"}
+    ],
+    "scenarios": [
+      {"id": "basic_search_mvp", "path": "hsr_axis_sim/data/search_scenarios/basic_search_mvp.json"},
+      {"id": "constrained_search_mvp", "path": "hsr_axis_sim/data/search_scenarios/constrained_search_mvp.json"}
+    ],
+    "action_sequence_traces": [
+      {
+        "id": "real_video_trace_001_botu_dilemma_floor12_side1_action_sequence_only",
+        "path": "hsr_axis_sim/data/manual_video_traces/intake/real_video_trace_001_botu_dilemma_floor12_side1_action_sequence_only.json",
+        "checks": ["lint", "action_sequence"]
+      }
+    ],
+    "trace_evidence": [
+      {
+        "id": "real_video_trace_001_botu_dilemma_semantic_map_v0_1",
+        "path": "hsr_axis_sim/data/manual_video_traces/semantic_maps/real_video_trace_001_botu_dilemma_semantics_v0_1.json",
+        "source_trace_path": "hsr_axis_sim/data/manual_video_traces/intake/real_video_trace_001_botu_dilemma_floor12_side1_action_sequence_only.json",
+        "check": "semantic_map"
+      },
+      {
+        "id": "real_video_trace_001_botu_dilemma_frame_anchors_v0_1",
+        "path": "hsr_axis_sim/data/manual_video_traces/frame_anchors/real_video_trace_001_botu_dilemma_frame_anchors_v0_1.json",
+        "source_trace_path": "hsr_axis_sim/data/manual_video_traces/intake/real_video_trace_001_botu_dilemma_floor12_side1_action_sequence_only.json",
+        "check": "frame_anchors"
+      }
+    ]
+  }
+}

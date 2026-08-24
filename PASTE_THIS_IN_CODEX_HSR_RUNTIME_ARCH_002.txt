@@ -1,0 +1,690 @@
+Task ID: HSR-RUNTIME-ARCH-002
+Task title: Event Envelope Adapter Bridge
+
+Recommended ChatGPT model: GPT-5.6 Sol
+Codex reasoning level: HIGH
+
+Current confirmed state
+=======================
+
+`HSR-RUNTIME-ARCH-001 — Universal Runtime Contract Skeleton` has passed
+independent Luman validation.
+
+Real independent baseline:
+
+```text
+compileall: PASS
+focused ARCH-001 tests: 56/56 passed
+complete pytest: 718/718 passed
+locked regression: 20/20 passed
+trace-evidence-only regression: 2/2 passed
+```
+
+The active MVP runtime is still:
+
+```text
+hsr_axis_sim/sim/**
+```
+
+The future immutable vocabulary and envelopes are in:
+
+```text
+hsr_axis_sim/runtime_contracts/**
+```
+
+Existing production behavior remains unchanged, including the historically
+tested LIFO extra-turn stack. FIFO/LIFO game semantics remain unresolved.
+
+Objective
+=========
+
+Create a standard-library-only, manually invoked, one-way adapter that converts
+existing legacy `hsr_axis_sim.sim.events.Event` observations into immutable
+`hsr_axis_sim.runtime_contracts.RuntimeEvent` envelopes.
+
+This task creates an observation bridge only.
+
+It must not:
+
+- hook or modify `BattleState.emit_event`;
+- dispatch RuntimeEvents back into the simulator;
+- alter triggers;
+- reconstruct ActionContext, AttackContext, or HitContext;
+- infer action family, priority, turn kind, attack ID, or hit ID;
+- change any combat, replay, search, data, timeline, LIFO, formula, or lifecycle
+  behavior.
+
+Required reference-file placement
+=================================
+
+The handoff bundle contains:
+
+```text
+REFERENCE_LEGACY_EVENT_SURFACE_HSR_RUNTIME_ARCH_002.md
+REFERENCE_LEGACY_EVENT_SURFACE_HSR_RUNTIME_ARCH_002.json
+```
+
+Copy them byte-for-byte to:
+
+```text
+docs/runtime/research/REFERENCE_LEGACY_EVENT_SURFACE_HSR_RUNTIME_ARCH_002.md
+docs/runtime/research/REFERENCE_LEGACY_EVENT_SURFACE_HSR_RUNTIME_ARCH_002.json
+```
+
+Do not rewrite or normalize these files.
+
+Required implementation
+=======================
+
+Create a new package distinct from both `sim` and `runtime_contracts`:
+
+```text
+hsr_axis_sim/runtime_adapters/
+  __init__.py
+  legacy_events.py
+```
+
+Also create:
+
+```text
+docs/runtime/LEGACY_EVENT_ADAPTER_V1.md
+docs/runtime/LEGACY_EVENT_MAPPING_V1.json
+
+hsr_axis_sim/tests/test_runtime_legacy_event_mapping.py
+hsr_axis_sim/tests/test_runtime_legacy_event_adapter.py
+hsr_axis_sim/tests/test_runtime_legacy_event_stream.py
+hsr_axis_sim/tests/test_runtime_arch_002_preservation.py
+```
+
+Use only the Python standard library.
+
+Do not modify existing `runtime_contracts` files.
+
+1. Explicit adapter policies
+----------------------------
+
+Define stable string enums:
+
+```text
+UnknownLegacyEventPolicy:
+  PRESERVE_AS_CONTENT_DEFINED
+  REJECT
+
+AmbiguousLegacyEventPolicy:
+  PRESERVE_AS_CONTENT_DEFINED
+  REJECT
+```
+
+Neither policy may have a default.
+
+Create a frozen configuration dataclass:
+
+```python
+LegacyEventAdapterConfig:
+    stream_id: str
+    unknown_event_policy: UnknownLegacyEventPolicy
+    ambiguous_event_policy: AmbiguousLegacyEventPolicy
+```
+
+Requirements:
+
+- all fields are mandatory;
+- `stream_id` is a non-empty deterministic identifier;
+- no environment time, UUID, random value, object identity, or process ID may
+  be used;
+- config mutation is rejected.
+
+2. Mapping contracts
+--------------------
+
+Create a frozen `LegacyEventMapping` contract with at least:
+
+```python
+legacy_event_type: str
+runtime_event_type: RuntimeEventType
+semantic_contract: SemanticContract
+normalized_field_map: Mapping[str, str]
+notes: str | None
+```
+
+Create an immutable mapping registry containing exactly these seven known
+legacy event types:
+
+```text
+action_started
+action_finished
+turn_started
+turn_ended
+damage_dealt
+weakness_break
+unit_defeated
+```
+
+Required normalized mappings:
+
+```text
+action_started  -> ACTION_START
+action_finished -> ACTION_END
+turn_started    -> TURN_START
+turn_ended      -> TURN_END
+damage_dealt    -> DAMAGE_RESOLVED
+weakness_break  -> WEAKNESS_BROKEN
+unit_defeated   -> CONTENT_DEFINED
+```
+
+Bound field extraction:
+
+```text
+action_started:
+  actor_id <- actor_id
+  action_id <- action_id
+
+action_finished:
+  actor_id <- actor_id
+  action_id <- action_id
+
+turn_started / turn_ended:
+  actor_id <- actor_id
+
+damage_dealt / weakness_break:
+  source_id <- source_id
+  target_id <- target_id
+
+unit_defeated:
+  target_id <- target_id
+```
+
+Do not:
+
+- infer `attack_id`;
+- infer `hit_id`;
+- infer `source_id` from `killer_id`;
+- infer lifecycle type from `unit_defeated`;
+- infer turn kind or priority from `is_extra_turn`.
+
+Semantic contracts:
+
+### Six bound mappings
+
+For:
+
+```text
+action_started
+action_finished
+turn_started
+turn_ended
+damage_dealt
+weakness_break
+```
+
+use:
+
+```text
+evidence_status = CONFIRMED
+binding_status = BOUND
+selected_policy = exact RuntimeEventType string
+source_refs = fixed repository source locator(s)
+```
+
+### Ambiguous lifecycle mapping
+
+For:
+
+```text
+unit_defeated
+```
+
+use:
+
+```text
+mechanic_id = LEGACY_EVENT.UNIT_DEFEATED_LIFECYCLE
+evidence_status = UNKNOWN
+binding_status = UNRESOLVED
+selected_policy = null
+runtime_event_type = CONTENT_DEFINED
+```
+
+The adapter may preserve this event only when the caller explicitly chooses:
+
+```text
+AmbiguousLegacyEventPolicy.PRESERVE_AS_CONTENT_DEFINED
+```
+
+Otherwise raise a controlled error.
+
+3. Controlled errors
+--------------------
+
+Create controlled exception types:
+
+```text
+LegacyEventAdapterError
+UnmappedLegacyEventError
+AmbiguousLegacyEventError
+LegacyEventSchemaError
+```
+
+Requirements:
+
+- unknown legacy event with `REJECT` raises `UnmappedLegacyEventError`;
+- ambiguous `unit_defeated` with `REJECT` raises
+  `AmbiguousLegacyEventError`;
+- malformed legacy type, data mapping, or normalized ID field raises
+  `LegacyEventSchemaError`;
+- never silently fall back;
+- never stringify unsupported payload objects with `repr()`.
+
+4. Single-event adaptation
+--------------------------
+
+Provide a pure function or stateless adapter method equivalent to:
+
+```python
+adapt_legacy_event(
+    event: hsr_axis_sim.sim.events.Event,
+    *,
+    sequence: int,
+    config: LegacyEventAdapterConfig,
+) -> RuntimeEvent
+```
+
+Requirements:
+
+- `sequence >= 0`;
+- deterministic event ID:
+
+```text
+legacy:{stream_id}:{sequence}
+```
+
+- no zero-padding or locale-dependent formatting;
+- bound known events use their exact mapped RuntimeEventType;
+- ambiguous or explicitly preserved unknown events use
+  `RuntimeEventType.CONTENT_DEFINED`;
+- `attack_id = None`;
+- `hit_id = None`;
+- only explicitly listed normalized ID fields are extracted;
+- original event data is preserved under a nested `legacy_data` payload;
+- adapter metadata is preserved under a nested `adapter` payload.
+
+Required adapter payload metadata:
+
+```text
+adapter_name = legacy_mvp_event_adapter
+adapter_version = 1.0
+legacy_event_type
+mapping_status = BOUND | AMBIGUOUS | UNMAPPED_PRESERVED
+mechanic_id
+binding_status
+semantic_gap_ids
+```
+
+For unknown preserved events:
+
+```text
+mechanic_id = LEGACY_EVENT.UNMAPPED_TYPE
+binding_status = UNRESOLVED
+semantic_gap_ids = ["LEGACY_EVENT.UNMAPPED_TYPE"]
+```
+
+For `unit_defeated`:
+
+```text
+semantic_gap_ids = ["LEGACY_EVENT.UNIT_DEFEATED_LIFECYCLE"]
+```
+
+The `legacy_data` payload must be a defensive immutable snapshot. Mutating the
+original legacy event or its nested data after adaptation must not alter the
+RuntimeEvent.
+
+5. Event-stream adaptation
+--------------------------
+
+Provide a function equivalent to:
+
+```python
+adapt_legacy_event_stream(
+    events: Iterable[Event],
+    *,
+    start_sequence: int,
+    config: LegacyEventAdapterConfig,
+) -> tuple[RuntimeEvent, ...]
+```
+
+Requirements:
+
+- input order is preserved;
+- sequences are contiguous from `start_sequence`;
+- event IDs are deterministic;
+- iterable is consumed exactly once;
+- returns a tuple;
+- does not mutate or clear the input list;
+- does not read or mutate BattleState;
+- the caller may manually pass `state.pending_events`, but the adapter must not
+  import or call `BattleState.emit_event`.
+
+6. Raw-payload preservation
+---------------------------
+
+Required RuntimeEvent payload structure:
+
+```json
+{
+  "adapter": {
+    "adapter_name": "legacy_mvp_event_adapter",
+    "adapter_version": "1.0",
+    "binding_status": "...",
+    "legacy_event_type": "...",
+    "mapping_status": "...",
+    "mechanic_id": "...",
+    "semantic_gap_ids": []
+  },
+  "legacy_data": {}
+}
+```
+
+Requirements:
+
+- preserve all legacy keys and values;
+- preserve optional `is_break_damage`;
+- preserve nested `formula_parts`;
+- no field deletion;
+- no numeric rounding;
+- no conversion into `TraceNumericValue`;
+- unsupported opaque or non-finite values fail through controlled validation;
+- canonical serialization through existing runtime-contract helpers is
+  deterministic.
+
+7. Mapping documentation and JSON registry
+------------------------------------------
+
+Create:
+
+```text
+docs/runtime/LEGACY_EVENT_MAPPING_V1.json
+```
+
+It must contain exactly seven mapping entries, sorted by
+`legacy_event_type`, and include:
+
+```text
+legacy_event_type
+runtime_event_type
+mapping_status
+mechanic_id
+evidence_status
+binding_status
+selected_policy
+normalized_field_map
+source_refs
+notes
+```
+
+For `unit_defeated`:
+
+```text
+runtime_event_type = CONTENT_DEFINED
+mapping_status = AMBIGUOUS
+selected_policy = null
+```
+
+Create:
+
+```text
+docs/runtime/LEGACY_EVENT_ADAPTER_V1.md
+```
+
+Document:
+
+- one-way manual observation scope;
+- exact seven-event mapping;
+- unknown and ambiguous policy requirements;
+- raw-payload preservation;
+- deterministic event IDs and sequence;
+- no Action/Attack/Hit inference;
+- `unit_defeated` lifecycle ambiguity;
+- no hook into production dispatch;
+- existing LIFO and all simulator semantics unchanged;
+- future adapter/export boundary.
+
+Acceptance criteria
+===================
+
+1. `hsr_axis_sim.runtime_adapters` imports successfully.
+
+2. The two policy enums have exact stable string values.
+
+3. `LegacyEventAdapterConfig` requires explicit unknown and ambiguous policies.
+
+4. Mapping registry contains exactly seven immutable entries.
+
+5. Six mappings are legally bound with source references.
+
+6. `unit_defeated` remains legally unresolved and maps only to
+   `CONTENT_DEFINED`.
+
+7. `killer_id` is preserved in raw payload but never normalized as `source_id`.
+
+8. Known bound events adapt to exact RuntimeEventTypes.
+
+9. Unknown event behavior is explicitly configurable as preserve or reject.
+
+10. Ambiguous lifecycle behavior is explicitly configurable as preserve or
+    reject.
+
+11. Deterministic IDs use exactly:
+
+```text
+legacy:{stream_id}:{sequence}
+```
+
+12. Batch adaptation preserves order and contiguous sequence.
+
+13. Legacy input data and nested structures are defensively copied/frozen.
+
+14. No `ActionContext`, `AttackContext`, or `HitContext` is created or inferred.
+
+15. No production module imports `runtime_adapters`.
+
+16. No existing runtime-contract file is modified.
+
+17. No simulator, trigger, event-dispatch, replay, timeline, formula, or LIFO
+    behavior changes.
+
+18. Existing full tests and regressions remain green.
+
+Required tests
+==============
+
+Add focused tests for at least:
+
+### Mapping registry
+
+- exact seven event types;
+- deterministic sorted mapping documentation;
+- exact RuntimeEventType per mapping;
+- six `CONFIRMED + BOUND` contracts;
+- one `UNKNOWN + UNRESOLVED` lifecycle contract;
+- mapping immutability;
+- exact field-extraction maps.
+
+### Policy enforcement
+
+- config requires both policies;
+- frozen config;
+- invalid/empty stream ID;
+- unknown preserve;
+- unknown reject;
+- ambiguous preserve;
+- ambiguous reject;
+- no implicit default.
+
+### Single-event adaptation
+
+- every known event type;
+- exact normalized IDs;
+- action/attack/hit IDs remain absent where not explicitly available;
+- `killer_id` not promoted to source;
+- exact event ID;
+- negative sequence rejection;
+- malformed ID-field rejection;
+- malformed type/data rejection;
+- unsupported object rejection;
+- non-finite float rejection.
+
+### Stream adaptation
+
+- input order;
+- contiguous sequence;
+- tuple result;
+- single-pass iterable;
+- original list remains intact;
+- deterministic canonical JSON;
+- repeated adaptation with same inputs is byte-identical.
+
+### Real MVP observation smoke test
+
+Using existing simulator code only in the test:
+
+```text
+execute a simple normal action
+manually pass state.pending_events to adapter
+verify ACTION_START, DAMAGE_RESOLVED, ACTION_END
+```
+
+The test must confirm:
+
+- the adapter was called manually;
+- simulator events remain unchanged;
+- no production hook exists;
+- no Action/Attack/Hit contexts are manufactured.
+
+### Preservation
+
+- exact SHA-256 of the two supplied reference files;
+- no imports of `runtime_adapters` from existing production modules;
+- no changes to existing `runtime_contracts`;
+- existing LIFO tests and behavior unchanged.
+
+Files and areas that must remain unchanged
+==========================================
+
+Do not edit:
+
+```text
+hsr_axis_sim/sim/**
+hsr_axis_sim/runtime_contracts/**
+hsr_axis_sim/search/**
+hsr_axis_sim/regression/**
+hsr_axis_sim/adapters/**
+hsr_axis_sim/real_bindings/**
+hsr_axis_sim/data/**
+fixtures/**
+README.md
+pyproject.toml
+PACKAGE_MANIFEST.json
+all existing tests
+all HSR-AXIS-002Q-FIX artifacts
+```
+
+Allowed modifications:
+
+```text
+hsr_axis_sim/LUMEN_RESULT.md
+```
+
+Allowed additions only:
+
+```text
+hsr_axis_sim/runtime_adapters/**
+docs/runtime/LEGACY_EVENT_ADAPTER_V1.md
+docs/runtime/LEGACY_EVENT_MAPPING_V1.json
+docs/runtime/research/REFERENCE_LEGACY_EVENT_SURFACE_HSR_RUNTIME_ARCH_002.*
+the four new ARCH-002 test files
+```
+
+Explicit exclusions
+===================
+
+Do not implement:
+
+- automatic event hooks;
+- simulator event replacement;
+- two-way conversion;
+- trigger migration;
+- Action/Attack/Hit reconstruction;
+- RuntimeTraceRecord export;
+- damage/HP/toughness numeric conversion;
+- queue or priority behavior;
+- FIFO/LIFO changes;
+- lifecycle migration;
+- `unit_defeated` to `DEATH`/`KNOCKED_DOWN` binding;
+- formula execution;
+- character logic;
+- enemy AI changes;
+- UI;
+- scraping, Bilibili parsing, OCR, or video extraction;
+- any guessed PARTIAL or UNKNOWN semantic.
+
+Commands to run
+===============
+
+Run and report exact output:
+
+```bash
+python -m compileall -q hsr_axis_sim
+
+python -m pytest -q   hsr_axis_sim/tests/test_runtime_legacy_event_mapping.py   hsr_axis_sim/tests/test_runtime_legacy_event_adapter.py   hsr_axis_sim/tests/test_runtime_legacy_event_stream.py   hsr_axis_sim/tests/test_runtime_arch_002_preservation.py
+
+python -m pytest -q
+
+python -m hsr_axis_sim.regression.runner   --manifest hsr_axis_sim/data/regression_manifest.json   --format text
+
+python -m hsr_axis_sim.regression.runner   --manifest hsr_axis_sim/data/regression_manifest.json   --only trace_evidence   --format text
+
+sha256sum   docs/runtime/research/REFERENCE_LEGACY_EVENT_SURFACE_HSR_RUNTIME_ARCH_002.md   docs/runtime/research/REFERENCE_LEGACY_EVENT_SURFACE_HSR_RUNTIME_ARCH_002.json
+
+git diff --check
+```
+
+If monolithic pytest exceeds the execution window, run every test file in
+non-overlapping groups, list the exact files in each group, and report the
+summed total. Do not omit any file.
+
+Final report format
+===================
+
+Update:
+
+```text
+hsr_axis_sim/LUMEN_RESULT.md
+```
+
+Include:
+
+1. Task ID/title.
+2. Status: PASS, PARTIAL, BLOCKED, or FAIL.
+3. Implementation summary.
+4. Exact files added/modified.
+5. Exact tests added.
+6. Exact commands and real results.
+7. Focused and complete pytest counts/timings.
+8. Regression counts.
+9. Reference SHA-256 values.
+10. Exact seven-event mapping confirmation.
+11. Confirmation that `unit_defeated` stayed unresolved.
+12. Confirmation that no default unknown/ambiguous policy exists.
+13. Confirmation that no Action/Attack/Hit contexts were inferred.
+14. Confirmation that no production module imports `runtime_adapters`.
+15. Confirmation all preservation boundaries were respected.
+16. Unresolved issues.
+17. Exclusions respected.
+18. Suggested next milestone only:
+
+```text
+HSR-RUNTIME-ARCH-003 — Read-Only Runtime Trace Export
+```
+
+19. Do not start ARCH-003.
+
+Stop after HSR-RUNTIME-ARCH-002.

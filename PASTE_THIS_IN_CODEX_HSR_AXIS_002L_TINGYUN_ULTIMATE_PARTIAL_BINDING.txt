@@ -1,0 +1,242 @@
+Task ID: HSR-AXIS-002L
+Task name: Tingyun Ultimate Partial Resource/Interrupt Binding MVP
+
+Codex Reasoning: HIGH
+Recommended model: GPT-5.6 Sol
+Fallback model: GPT-5.6 Terra only if the reviewed registry refactor remains straightforward and no execution-boundary ambiguity appears.
+
+Accepted current state
+======================
+
+002K-FIX has independently passed:
+
+- compileall
+- full pytest: 370 passed
+- locked regression: PASS 20/20
+- trace-evidence-only regression: PASS 2/2
+- strict malformed-input tests
+- immutable-handle execution revalidation
+- byte-identical registry reports
+
+The registry currently contains exactly one reviewed synthetic partial binding: Pela Skill resource/target/dispel shell.
+
+Goal
+====
+
+Add a second narrowly reviewed executable shell for Tingyun Ultimate using only accepted atomic facts:
+
+- actor: `tingyun`
+- action category: `ultimate`
+- target scope: `single_ally`
+- actor Energy cost: `130`
+- selected target Energy restoration: `50`
+- timing: Ultimate interrupt
+
+This is not a complete Ultimate and not a complete Tingyun kit.
+
+Accepted source artifact
+========================
+
+Use only:
+
+`hsr_axis_sim/data/manual_video_traces/normalized_character_facts/real_video_trace_001_atomic_facts_v0_1.json`
+
+Pinned SHA-256:
+
+`b17a5f295cb8902883d6e8ddaa70c626bdbddf60572db8ce28da6eb3c555491f`
+
+Facts allowed as executable inputs:
+
+- `tingyun.ultimate.target_scope` = `single_ally`
+- `tingyun.ultimate.energy_cost` = `130`
+- `tingyun.ultimate.target_energy_restore` = `50`
+
+Facts that must remain unresolved/non-executable:
+
+- `tingyun.ultimate.damage_buff_duration`
+- `tingyun.ultimate.observed_target`
+- damage-buff magnitude
+- damage-buff duration decrement/expiration semantics
+- real-video target
+- real-video initial Energy and combat state
+
+Mandatory registry architecture change
+======================================
+
+The current registry directly imports the Pela-specific validator and digest. Before adding the second binding, replace that single-binding assumption with a static reviewed handler specification.
+
+Use an equivalent of:
+
+- static handler key;
+- static executor callable;
+- static binding validator callable;
+- static pinned atomic-fact digest.
+
+Requirements:
+
+1. Registry JSON must never provide a Python module path or callable.
+2. Handler/validator dispatch must remain an in-code static allow-list.
+3. Each entry must be validated by the validator associated with its static handler key.
+4. The actual atomic artifact digest must equal:
+   - the registry entry's accepted digest; and
+   - the handler specification's pinned digest.
+5. Execution must repeat the selected handler-specific validator before dispatch.
+6. Preserve all 002K strict-type, path, digest, metadata, partial-only, and forged-handle protections.
+7. Do not weaken Pela validation or alter Pela execution.
+
+Versioning
+==========
+
+Do not overwrite historical v0.1 registry/audit artifacts.
+
+Create a new reviewed registry version, preferably:
+
+- `hsr_axis_sim/real_bindings/registry_v0_2.json`
+- registry version `0.2`
+- make `DEFAULT_REGISTRY` point to v0.2
+- create committed v0.2 registry Markdown and JSON audit reports
+
+Keep these historical files byte-identical:
+
+- `registry_v0_1.json`
+- `reviewed_binding_registry_v0_1.md`
+- `reviewed_binding_registry_v0_1.json`
+- all 002J Pela audit artifacts
+
+Tingyun partial binding
+=======================
+
+Create a reviewed module and data, for example:
+
+- `hsr_axis_sim/real_bindings/tingyun_ultimate_v0_1.py`
+- `hsr_axis_sim/real_bindings/data/tingyun_ultimate_partial_v0_1.json`
+- `hsr_axis_sim/real_bindings/fixtures/tingyun_ultimate_partial_v0_1_synthetic.json`
+- committed Markdown/JSON audit reports
+
+Binding metadata should clearly state:
+
+- partial binding scope, such as `partial_resource_interrupt_shell`;
+- `complete_game_skill: false`;
+- `complete_character_kit: false` in the registry;
+- `synthetic_only: true`;
+- `real_trace_executable: false`;
+- damage semantics: `not_implemented`;
+- toughness semantics: `not_implemented`.
+
+Execution contract
+==================
+
+The binding must execute only through the existing reviewed registry public path.
+
+Expected behavior:
+
+1. Validate exactly one legal ally target using existing target legality.
+2. Build an `Action` for actor `tingyun` with `ends_turn=False`.
+3. Consume 130 Energy from Tingyun using the existing generic energy primitive.
+4. Restore 50 Energy to the selected ally using the existing generic energy primitive.
+5. Execute with the existing Ultimate interrupt mechanism.
+6. Return a `TurnContext` with:
+   - `is_interrupt=True`;
+   - `should_end_turn=False`.
+7. Do not advance global AV.
+8. Do not change any unit's normal timeline AV.
+9. Do not produce `normal_turn_end`.
+10. Do not change SP.
+11. Do not add a buff.
+12. Do not deal damage or toughness damage.
+
+Effect ordering must be fail-safe:
+
+- consume Tingyun's Energy before restoring target Energy;
+- if Tingyun has insufficient Energy, the action must fail before target Energy changes.
+
+Do not use the observed real-video target. The synthetic fixture target is test-only and must not be presented as trace evidence.
+
+Required validator behavior
+===========================
+
+The Tingyun validator must reject at least:
+
+- wrong actor or action category;
+- wrong target type;
+- energy cost other than 130;
+- target Energy restoration other than 50;
+- any damage effect;
+- any toughness effect;
+- any buff effect;
+- complete-skill or complete-kit claims;
+- `synthetic_only: false`;
+- real-trace executable claims;
+- missing or extra executable source fact IDs;
+- missing unresolved target/buff semantics;
+- changed atomic artifact digest.
+
+Required synthetic tests
+========================
+
+Add focused tests for at least:
+
+1. valid registry v0.2 loads two immutable reviewed handles;
+2. registry output ordering is deterministic;
+3. existing Pela registry execution remains exact;
+4. Tingyun Ultimate consumes Energy `130 -> 0`;
+5. selected ally gains Energy `40 -> 90` or another explicitly declared synthetic value;
+6. target Energy restoration respects the existing max-Energy clamp;
+7. SP is unchanged;
+8. HP and toughness are unchanged;
+9. no buff is created;
+10. global AV and every unit's current AV are unchanged;
+11. no normal turn ends;
+12. returned context is an interrupt and does not end a turn;
+13. insufficient Tingyun Energy fails before any target mutation;
+14. enemy target is rejected;
+15. malformed/forged registry handles still cannot bypass validation;
+16. handler-specific validator dispatch rejects a Tingyun binding with wrong data;
+17. handler-specific validator dispatch still rejects altered Pela data;
+18. unknown handler keys remain rejected;
+19. v0.2 Markdown and JSON audits are deterministic and byte-identical;
+20. historical v0.1 registry/audit and Pela audit files remain unchanged.
+
+Scope gates
+===========
+
+Do not:
+
+- implement Tingyun's DMG-increase buff;
+- implement its magnitude or duration semantics;
+- infer the real-video target;
+- make the accepted trace executable;
+- implement Tingyun Skill;
+- implement a complete Tingyun Ultimate or complete Tingyun kit;
+- register this shell as a normal playable character skill;
+- change generic simulator primitives unless an existing primitive is demonstrably broken;
+- change search/evaluator behavior;
+- change video trace, semantic map, frame anchors, source registry, or atomic facts;
+- change locked regression manifest or counts;
+- remove or rewrite historical registry/audit files.
+
+Required final checks
+=====================
+
+Run:
+
+python -m compileall -q hsr_axis_sim
+python -m pytest -q
+python -m hsr_axis_sim.regression.runner --manifest hsr_axis_sim/data/regression_manifest.json --format text
+python -m hsr_axis_sim.regression.runner --manifest hsr_axis_sim/data/regression_manifest.json --only trace_evidence --format text
+python -m hsr_axis_sim.real_bindings.registry --format markdown
+python -m hsr_axis_sim.real_bindings.registry --format json
+python -m hsr_axis_sim.real_bindings.tingyun_ultimate_v0_1 --format markdown
+python -m hsr_axis_sim.real_bindings.tingyun_ultimate_v0_1 --format json
+
+Update `hsr_axis_sim/LUMEN_RESULT.md` with:
+
+- exact files changed;
+- registry handler-spec architecture;
+- accepted Tingyun atomic facts and pinned digest;
+- exact synthetic fixture result;
+- full test and regression results;
+- confirmation that registry v0.2 contains exactly two reviewed partial bindings;
+- confirmation that v0.1 and Pela historical artifacts remain unchanged;
+- known limitations;
+- recommended next task.

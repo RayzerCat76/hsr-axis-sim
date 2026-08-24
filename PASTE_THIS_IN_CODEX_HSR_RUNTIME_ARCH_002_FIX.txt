@@ -1,0 +1,208 @@
+Task ID: HSR-RUNTIME-ARCH-002-FIX
+Task title: Restore ARCH-001 Artifacts and Validate Empty Stream Config
+
+Recommended ChatGPT model: GPT-5.6 Terra
+Codex reasoning level: Medium
+
+Current confirmed state
+=======================
+
+`HSR-RUNTIME-ARCH-002` is **PARTIAL — fixes required**.
+
+Independent Luman validation of the submitted package produced:
+
+```text
+compileall: PASS
+focused ARCH-002 tests: 27/27 passed
+complete tests: 743 passed / 2 failed / 745 total
+locked regression: 20/20 passed
+trace-evidence-only: 2/2 passed
+```
+
+The two full-suite failures are caused by five deleted ARCH-001 documents.
+
+The ARCH-002 adapter itself passed its focused tests and its core semantics are
+accepted.
+
+Objective
+=========
+
+Apply only two small fixes:
+
+1. restore the five deleted ARCH-001 files byte-for-byte;
+2. validate `LegacyEventAdapterConfig` at the start of
+   `adapt_legacy_event_stream()`, including empty streams.
+
+Do not start ARCH-003.
+
+Required implementation
+=======================
+
+## 1. Restore five files
+
+The handoff bundle contains exact accepted copies at their final paths:
+
+```text
+docs/runtime/ARCHITECTURE_CONTRACT_V1.md
+docs/runtime/UNRESOLVED_SEMANTICS_V1.json
+docs/runtime/research/HSR_RUNTIME_FRAMEWORK_BASELINE_V1_0.md
+docs/runtime/research/HSR_RUNTIME_FORMULA_REGISTRY_V1_0.json
+docs/runtime/research/HSR_RUNTIME_DEFENSE_TOUGHNESS_PRECISION_MODEL_V1_0.json
+```
+
+Required SHA-256:
+
+```text
+7665b8214cdd8ad12f23735b2ad4e214d33b3feafd74d2b4199a71826bdd0539  docs/runtime/ARCHITECTURE_CONTRACT_V1.md
+70b2e84706bf6fcb0c5e59a0d10fc0f223c5b217c8c2535595fb3c3884150bf5  docs/runtime/UNRESOLVED_SEMANTICS_V1.json
+cf6b94fb29ce8ca2cf5e0dbcd125c87a65c026304bf8c68dfdd0a4e7b9074817  docs/runtime/research/HSR_RUNTIME_FRAMEWORK_BASELINE_V1_0.md
+7adaeb30b38c70c9c32de39925561abdf64ef1415e9fdd57b56026feca6912d9  docs/runtime/research/HSR_RUNTIME_FORMULA_REGISTRY_V1_0.json
+cf3e46a7a0a12db73f30bc96837a143061e1a012d66384c43eb20685d6a223b3  docs/runtime/research/HSR_RUNTIME_DEFENSE_TOUGHNESS_PRECISION_MODEL_V1_0.json
+```
+
+Do not rewrite or regenerate them.
+
+## 2. Validate stream config before iteration
+
+Modify only:
+
+```text
+hsr_axis_sim/runtime_adapters/legacy_events.py
+```
+
+At the beginning of:
+
+```python
+adapt_legacy_event_stream(...)
+```
+
+validate:
+
+```python
+isinstance(config, LegacyEventAdapterConfig)
+```
+
+Invalid config must raise:
+
+```text
+LegacyEventSchemaError
+```
+
+This must happen even when `events` is empty.
+
+Do not consume the iterable before configuration and `start_sequence`
+validation complete.
+
+## 3. Add regression test
+
+Modify only the ARCH-002 test:
+
+```text
+hsr_axis_sim/tests/test_runtime_legacy_event_stream.py
+```
+
+Add a test equivalent to:
+
+```python
+with pytest.raises(LegacyEventSchemaError):
+    adapt_legacy_event_stream([], start_sequence=0, config=object())
+```
+
+Also verify the iterable is not consumed when configuration is invalid.
+
+Acceptance criteria
+===================
+
+1. All five restored files exist and match exact SHA-256 values.
+2. `adapt_legacy_event_stream()` rejects invalid config on an empty stream.
+3. Invalid config is rejected before iterable consumption.
+4. Existing seven-event mapping remains unchanged.
+5. `unit_defeated` remains `UNKNOWN + UNRESOLVED`.
+6. No default unknown/ambiguous policy is introduced.
+7. No production module imports `runtime_adapters`.
+8. Existing LIFO behavior remains unchanged.
+9. Complete pytest passes.
+10. Locked regression remains 20/20.
+11. Trace-evidence-only remains 2/2.
+12. No files outside the exact allowed set are modified.
+
+Allowed files
+=============
+
+Restore/add exactly:
+
+```text
+docs/runtime/ARCHITECTURE_CONTRACT_V1.md
+docs/runtime/UNRESOLVED_SEMANTICS_V1.json
+docs/runtime/research/HSR_RUNTIME_FRAMEWORK_BASELINE_V1_0.md
+docs/runtime/research/HSR_RUNTIME_FORMULA_REGISTRY_V1_0.json
+docs/runtime/research/HSR_RUNTIME_DEFENSE_TOUGHNESS_PRECISION_MODEL_V1_0.json
+```
+
+Modify only:
+
+```text
+hsr_axis_sim/runtime_adapters/legacy_events.py
+hsr_axis_sim/tests/test_runtime_legacy_event_stream.py
+hsr_axis_sim/LUMEN_RESULT.md
+```
+
+Everything else must remain unchanged.
+
+Explicit exclusions
+===================
+
+Do not:
+
+- change any mapping;
+- alter RuntimeEvent payload shape;
+- alter event IDs;
+- add automatic hooks;
+- modify `sim/**`;
+- modify `runtime_contracts/**`;
+- modify LIFO/FIFO behavior;
+- bind `unit_defeated`;
+- start ARCH-003;
+- refactor unrelated code.
+
+Commands to run
+===============
+
+```bash
+python -m compileall -q hsr_axis_sim
+
+python -m pytest -q   hsr_axis_sim/tests/test_runtime_legacy_event_mapping.py   hsr_axis_sim/tests/test_runtime_legacy_event_adapter.py   hsr_axis_sim/tests/test_runtime_legacy_event_stream.py   hsr_axis_sim/tests/test_runtime_arch_002_preservation.py   hsr_axis_sim/tests/test_runtime_research_artifacts.py
+
+python -m pytest -q
+
+python -m hsr_axis_sim.regression.runner   --manifest hsr_axis_sim/data/regression_manifest.json   --format text
+
+python -m hsr_axis_sim.regression.runner   --manifest hsr_axis_sim/data/regression_manifest.json   --only trace_evidence   --format text
+
+sha256sum   docs/runtime/ARCHITECTURE_CONTRACT_V1.md   docs/runtime/UNRESOLVED_SEMANTICS_V1.json   docs/runtime/research/HSR_RUNTIME_FRAMEWORK_BASELINE_V1_0.md   docs/runtime/research/HSR_RUNTIME_FORMULA_REGISTRY_V1_0.json   docs/runtime/research/HSR_RUNTIME_DEFENSE_TOUGHNESS_PRECISION_MODEL_V1_0.json
+
+git diff --check
+```
+
+If monolithic pytest exceeds the execution window, run all 56 test files in
+non-overlapping groups and report exact totals.
+
+Final report
+============
+
+Update:
+
+```text
+hsr_axis_sim/LUMEN_RESULT.md
+```
+
+Include exact files, commands, test totals, hashes, preservation confirmation,
+and final status.
+
+Suggested next milestone only after PASS:
+
+```text
+HSR-RUNTIME-ARCH-003 — Read-Only Runtime Trace Export
+```
+
+Stop after ARCH-002-FIX.

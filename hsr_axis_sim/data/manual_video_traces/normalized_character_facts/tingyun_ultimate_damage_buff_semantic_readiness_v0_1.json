@@ -1,0 +1,162 @@
+{
+  "review_id": "tingyun_ultimate_damage_buff_semantic_readiness_v0_1",
+  "version": "0.1",
+  "status": "non_executable_semantic_readiness_review",
+  "input_artifacts": [
+    {"role":"historical_fact_review","path":"data/manual_video_traces/normalized_character_facts/tingyun_ultimate_damage_buff_review_v0_1.json","sha256":"0ab56b31a2d9545ae80a2978c92c6a886393c6ceb00f7cc3d45eccf1f8d8ab2f"},
+    {"role":"magnitude_intake","path":"data/manual_video_traces/normalized_character_facts/tingyun_ultimate_damage_buff_magnitude_intake_v0_1.json","sha256":"10a949ca4ff924fda8afe428a26bf8140a0b58e9116ad8a2b19346b6321ab376"},
+    {"role":"historical_readiness_report","path":"data/manual_video_traces/real_binding_audits/tingyun_ultimate_damage_buff_readiness_v0_1.json","sha256":"8cbdbec44c0132a7cc0c0eb4029357fe1f9feaa84f49b23ad79dc5d797eaf696"},
+    {"role":"magnitude_report","path":"data/manual_video_traces/real_binding_audits/tingyun_ultimate_damage_buff_magnitude_intake_v0_1.json","sha256":"0db037a12c3b51226dce79cb333d49170ca7963cb420dfe94bf385a531b2cfba"},
+    {"role":"source_registry","path":"data/manual_video_traces/source_registry/sources_v0_1.json","sha256":"9a0fd2878e8b8bc6aec8afc6102c84627e00b08367399a21f3d9188a2a3f5408"},
+    {"role":"reviewed_binding_registry","path":"real_bindings/registry_v0_2.json","sha256":"0cd0c9f9d4594654aaae91fa834988a4a373674d8e6397e757165d4f76fd11b8"}
+  ],
+  "semantic_claims": [
+    {
+      "claim_id": "target_scope",
+      "semantic_field": "target_scope",
+      "status": "verified",
+      "normalized_value": "selected_single_ally",
+      "value_type": "target_scope",
+      "unit": null,
+      "evidence_summary": "The accepted historical review corroborates one selected ally as the Ultimate target scope.",
+      "unresolved_notes": "The selected ally in the accepted video remains unknown.",
+      "provenance": [
+        {"provenance_id":"target_scope_historical_review","artifact_role":"historical_fact_review","locator":"facts[tingyun.ultimate.damage_buff.target_scope]","relationship":"supports","evidence_summary":"Two accepted source records corroborate selected_single_ally."}
+      ],
+      "simulator_binding_allowed": false
+    },
+    {
+      "claim_id": "duration_count",
+      "semantic_field": "duration_count",
+      "status": "verified",
+      "normalized_value": 2,
+      "value_type": "integer",
+      "unit": "turn",
+      "evidence_summary": "The accepted historical review corroborates a two-turn duration count.",
+      "unresolved_notes": "The count does not resolve which already-active turn boundary consumes the first count.",
+      "provenance": [
+        {"provenance_id":"duration_count_historical_review","artifact_role":"historical_fact_review","locator":"facts[tingyun.ultimate.damage_buff.duration_turns]","relationship":"supports","evidence_summary":"Accepted structured and community records corroborate two turns."}
+      ],
+      "simulator_binding_allowed": false
+    },
+    {
+      "claim_id": "magnitude_table",
+      "semantic_field": "magnitude_table",
+      "status": "verified",
+      "normalized_value": "validated_levels_1_through_15",
+      "value_type": "trace_level_table",
+      "unit": "percent",
+      "evidence_summary": "The captured exact table validates all 15 ordered levels from two pinned repository snapshots.",
+      "unresolved_notes": "No level is selected for the accepted video.",
+      "provenance": [
+        {"provenance_id":"magnitude_captured_intake","artifact_role":"magnitude_intake","locator":"intake_status; raw_tables; normalized_table","relationship":"supports","evidence_summary":"The intake validates two distinct raw ratio tables and the ratio-to-percent normalization."},
+        {"provenance_id":"magnitude_deterministic_report","artifact_role":"magnitude_report","locator":"intake_status; magnitude table sections","relationship":"supports","evidence_summary":"The committed deterministic report matches the validated intake exactly."}
+      ],
+      "simulator_binding_allowed": false
+    },
+    {
+      "claim_id": "effect_order",
+      "semantic_field": "effect_order",
+      "status": "unresolved",
+      "normalized_value": null,
+      "value_type": "effect_order",
+      "unit": null,
+      "evidence_summary": "Accepted prose and table evidence list the buff and Energy restoration but contain no release behavior sequence.",
+      "unresolved_notes": "No accepted locator proves whether Energy restoration occurs before or after buff application, and semantic irrelevance has not been proven for every event contract.",
+      "provenance": [
+        {"provenance_id":"effect_order_historical_gap","artifact_role":"historical_fact_review","locator":"facts[tingyun.ultimate.damage_buff.application_order]","relationship":"does_not_resolve","evidence_summary":"The historical evidence explicitly preserves effect order as unresolved."},
+        {"provenance_id":"effect_order_registry_boundary","artifact_role":"reviewed_binding_registry","locator":"entries[reviewed_tingyun_ultimate_partial_v0_1]","relationship":"limits","evidence_summary":"The current reviewed binding is an Energy-only partial shell and contains no damage-buff ordering contract."}
+      ],
+      "simulator_binding_allowed": false
+    },
+    {
+      "claim_id": "same_current_turn_duration",
+      "semantic_field": "same_current_turn_duration",
+      "status": "unresolved",
+      "normalized_value": null,
+      "value_type": "duration_policy",
+      "unit": null,
+      "evidence_summary": "The current engine deterministically decrements at the end of an already-active target normal turn, but no accepted game-behavior evidence establishes equivalence.",
+      "unresolved_notes": "Engine behavior is an implementation observation, not source evidence for game semantics.",
+      "provenance": [
+        {"provenance_id":"duration_edge_historical_gap","artifact_role":"historical_readiness_report","locator":"duration_semantics.current_target_normal_turn_decrements_at_end_if_already_applied; verified_game_equivalence","relationship":"does_not_resolve","evidence_summary":"The prior audit records the engine edge and explicitly marks game equivalence false."}
+      ],
+      "simulator_binding_allowed": false
+    },
+    {
+      "claim_id": "accepted_video_target",
+      "semantic_field": "accepted_video_target",
+      "status": "missing",
+      "normalized_value": null,
+      "value_type": "actor_id",
+      "unit": null,
+      "evidence_summary": "The accepted evidence preserves the Ultimate action without a selected ally.",
+      "unresolved_notes": "Do not infer the ally from animation, role, or later actions.",
+      "provenance": [
+        {"provenance_id":"video_target_source_registry_limit","artifact_role":"source_registry","locator":"accepted Tingyun source records and local evidence boundary","relationship":"limits","evidence_summary":"The source registry does not identify the accepted video's selected ally."}
+      ],
+      "simulator_binding_allowed": false
+    },
+    {
+      "claim_id": "accepted_video_trace_level",
+      "semantic_field": "accepted_video_trace_level",
+      "status": "missing",
+      "normalized_value": null,
+      "value_type": "trace_level",
+      "unit": null,
+      "evidence_summary": "The accepted video evidence contains no Tingyun Ultimate trace level.",
+      "unresolved_notes": "The validated table must not be used to select level 10 or any other level for the video.",
+      "provenance": [
+        {"provenance_id":"video_trace_level_magnitude_limit","artifact_role":"magnitude_intake","locator":"real_video_trace_level","relationship":"limits","evidence_summary":"The captured magnitude intake preserves real_video_trace_level as null."}
+      ],
+      "simulator_binding_allowed": false
+    }
+  ],
+  "current_engine_assessment": {
+    "duration_type": "target_normal_turns",
+    "duration_count": 2,
+    "cast_interrupt_decrements": false,
+    "already_active_target_turn_decrements_at_end": true,
+    "extra_turn_decrements": false,
+    "non_ending_action_decrements": false,
+    "game_equivalence_verified": false,
+    "expiration_boundary": "The engine removes the buff at the end of the second target normal turn counted after application; an already-active target normal turn counts when it ends.",
+    "assessment_notes": "This records current implementation behavior only and does not assert matching release-game semantics."
+  },
+  "generic_binding_readiness": "blocked_by_both_semantics",
+  "accepted_video_binding_readiness": "blocked_by_unknown_target_and_trace_level",
+  "accepted_video_semantic_readiness": "blocked_by_both_semantics",
+  "generic_blockers": [
+    "Effect order relative to target Energy restoration is unresolved and not proven irrelevant to every event contract.",
+    "Same-current-turn duration behavior is unresolved against release-game evidence."
+  ],
+  "accepted_video_blockers": [
+    "Generic effect-order and duration semantics remain unresolved.",
+    "The accepted video's selected ally is unknown.",
+    "The accepted video's Tingyun Ultimate trace level is unknown."
+  ],
+  "interaction_protocols": [
+    {
+      "protocol_id": "effect_order_controlled_interaction",
+      "question": "Does target Energy restoration occur before or after DMG-buff application?",
+      "preconditions": ["Use a release build with a version recorded.", "Use a legal ally target and a known Tingyun Ultimate trace level.", "Configure an observable trigger that distinguishes Energy restoration from buff application without changing either effect."],
+      "procedure": ["Record the complete pre-cast state and trigger subscriptions.", "Cast Tingyun Ultimate as an interrupt on the selected ally.", "Capture ordered effect and trigger events from the same action boundary.", "Repeat until the ordering observation is reproducible."],
+      "required_observations": ["Ordered Energy-change event.", "Ordered damage-buff application event.", "Version, build, target, trace level, and recording protocol."],
+      "result_status": "not_run",
+      "observed_result": null,
+      "simulator_binding_allowed": false
+    },
+    {
+      "protocol_id": "same_current_turn_duration_controlled_interaction",
+      "question": "Does the end of an ally's already-active normal turn consume the first count of a two-turn Tingyun Ultimate DMG buff?",
+      "preconditions": ["Use a release build with a version recorded.", "Begin the selected ally's normal turn before casting the Ultimate interrupt.", "Use a visible or logged buff-duration indicator and avoid extra-turn effects."],
+      "procedure": ["Record the selected ally's active normal-turn state.", "Cast Tingyun Ultimate during that normal turn.", "Record buff duration immediately after application and after the current turn ends.", "Record the next two selected-ally normal-turn boundaries and exact expiration point.", "Repeat with the Ultimate cast outside the ally's active turn as a control."],
+      "required_observations": ["Duration immediately after application.", "Duration after the already-active turn ends.", "Exact expiration boundary in both test and control runs.", "Version, build, target, trace level, and recording protocol."],
+      "result_status": "not_run",
+      "observed_result": null,
+      "simulator_binding_allowed": false
+    }
+  ],
+  "selected_magnitude_level": null,
+  "simulator_binding_allowed": false
+}

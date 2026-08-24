@@ -1,0 +1,240 @@
+Task ID: HSR-AXIS-001S
+Codex Reasoning: High
+ChatGPT Model recommendation: GPT-5.5 Thinking
+
+You are continuing the existing HSR Axis Simulator project.
+
+Goal:
+Build the first deterministic Search Engine / Beam Search MVP that can automatically explore legal action sequences using the simulator core built in 001A-001R.
+
+This is the first real step toward AI axis-search, but it must remain small and testable.
+
+Do NOT:
+- Do not implement reinforcement learning.
+- Do not implement neural networks.
+- Do not scrape Bilibili, Huroka, Yatta, or any live website.
+- Do not implement a UI.
+- Do not rewrite the simulator core.
+- Do not add full real character kits beyond existing MVP data.
+- Do not silently ignore simulator errors during search.
+- Do not mutate parent states when exploring child branches.
+
+Required new module structure:
+
+hsr_axis_sim/
+  search/
+    __init__.py
+    node.py
+    evaluator.py
+    search_engine.py
+    beam_search.py
+  data/
+    golden_replays/
+      search_beam_mvp.json            # optional if useful, but do not force replay format if unit tests are clearer
+  tests/
+    test_search_engine.py
+    test_beam_search.py
+
+Core requirements:
+
+1. Search node model
+
+Create a SearchNode or equivalent data structure with:
+- state: BattleState
+- actions_taken: list of action records / human-readable step records
+- score: numeric score
+- depth: integer
+- terminal: bool
+- reason: optional string for why terminal / pruned
+
+The action record should be useful for later axis output. It should at least include:
+- actor_id
+- skill_id or action_id
+- target_ids
+- global_av_before
+- global_av_after
+- skill_points_after
+- score_after
+
+2. Safe state branching
+
+Implement a safe way to clone / copy BattleState for search.
+
+Important:
+- A child branch must not mutate the parent state.
+- Two sibling branches must not share mutable Unit, Buff, Debuff, Trigger, event log, extra_turn_stack, or RNG objects unless those objects are truly immutable.
+- If you use copy.deepcopy, wrap it in a helper such as clone_state_for_search(state) so it can be optimized later.
+
+Add tests proving:
+- Simulating one child does not alter the parent.
+- Simulating one sibling does not alter another sibling.
+
+3. Legal action expansion
+
+Use the existing Action Generator / Target Legality / Ultimate Window systems from previous tasks.
+
+The search expander should be able to generate child states from:
+- normal actor actions
+- enemy AI actions where the next actor is an enemy
+- ultimate / interrupt actions when legal, if the existing ultimate window system exposes them cleanly
+
+MVP rule:
+If ultimate windows are complex, implement them conservatively but explicitly. It is acceptable to support:
+- normal skill/basic expansion first
+- enemy AI auto-action expansion
+- optional ultimate expansion through a clearly named flag: include_ultimates=True
+
+Do not fake ultimate behavior by treating it as a normal turn if that would advance/reset AV incorrectly.
+
+4. Terminal conditions
+
+Implement terminal checks:
+- all enemies defeated
+- all allies defeated
+- max_depth reached
+- optional max_global_av reached
+- optional max_nodes_expanded reached
+
+Terminal node should contain a reason string, for example:
+- "all_enemies_defeated"
+- "all_allies_defeated"
+- "max_depth"
+- "max_global_av"
+- "max_nodes_expanded"
+
+5. Evaluator MVP
+
+Create an Evaluator / ScoreConfig scaffold.
+
+The first evaluator should be simple and deterministic, but explicit:
+
+Suggested scoring:
+- + large bonus for defeated enemies
+- + total damage dealt or enemy HP missing
+- - global_av penalty
+- - depth/action count penalty
+- + remaining skill points small bonus
+- + ally survival bonus
+
+Keep the exact weights configurable.
+
+Example:
+
+score =
+  defeated_enemies * 100000
+  + enemy_hp_missing * 1.0
+  - state.global_av * 10
+  - depth * 100
+  + state.skill_points * 50
+  + alive_allies * 500
+
+Do not pretend this is final endgame scoring. It is only an MVP evaluator.
+
+6. Beam search MVP
+
+Implement beam search:
+
+Input:
+- initial BattleState
+- max_depth
+- beam_width
+- evaluator
+- optional max_nodes_expanded
+- optional include_ultimates
+
+Algorithm:
+- Start with one root node.
+- Expand each non-terminal node.
+- Score all children.
+- Keep top beam_width nodes per depth.
+- Return a SearchResult with:
+  - best_node
+  - final_beam
+  - nodes_expanded
+  - depth_reached
+  - terminated_reason / status
+
+Add deterministic tie-breaking, e.g. by:
+- higher score first
+- lower global_av
+- shorter actions_taken
+- lexicographic action key
+
+Tests must not rely on nondeterministic ordering.
+
+7. Minimal scenario tests
+
+Add tests for at least:
+
+A. Search can find a kill action
+- Use an existing simple character / enemy setup or create a tiny test fixture.
+- One action kills an enemy, another does not.
+- Search should choose the kill action.
+
+B. Beam width prunes worse branches
+- Create a scenario where multiple actions exist.
+- beam_width=1 keeps only the best-scored child.
+
+C. Parent state isolation
+- Parent state remains unchanged after expansion.
+
+D. Enemy auto-action expansion
+- If next actor is enemy, search can apply enemy AI action without requiring player target selection.
+
+E. Max depth terminal
+- Search stops with reason max_depth when no earlier terminal condition happens.
+
+F. All enemies defeated terminal
+- Search marks terminal when enemies are all defeated.
+
+8. Logging / result readability
+
+SearchResult should be inspectable in tests and useful for future CLI output.
+
+Add a function like:
+- format_axis(node) -> str
+
+MVP formatted axis can be plain text:
+
+AV 0.000 | carry uses skill on enemy_low | SP=1 | score=...
+AV 0.000 | carry uses basic on enemy_tough | SP=2 | score=...
+
+This is not full UI. It is only text formatting.
+
+9. Preserve existing tests and replays
+
+Before finishing, run:
+
+python -m pytest -q
+
+And run all golden replay CLIs:
+
+for f in hsr_axis_sim/data/golden_replays/*.json; do python -m hsr_axis_sim.sim.replay "$f"; done
+
+Run manual trace lint/replay:
+
+python -m hsr_axis_sim.sim.replay_lint hsr_axis_sim/data/manual_video_traces/samples/manual_video_trace_sample_mvp.json
+python -m hsr_axis_sim.sim.replay hsr_axis_sim/data/manual_video_traces/samples/manual_video_trace_sample_mvp.json
+
+10. LUMEN_RESULT update
+
+Update hsr_axis_sim/LUMEN_RESULT.md with:
+
+- Task ID: HSR-AXIS-001S
+- Files changed
+- Tests run
+- Exact pass/fail results
+- Search examples tested
+- Known limitations
+- Whether 001T is safe to begin
+
+Known limitations should explicitly say:
+- Search evaluator is MVP only.
+- No mode-specific scoring yet.
+- No real Bilibili trace search yet.
+- No UI.
+- No RL/neural policy.
+- No guarantee that the best score corresponds to real endgame optimality yet.
+
+Deliverable:
+A working, tested beam search MVP that can branch from legal actions, preserve parent state isolation, score candidate axes, and return a readable best action sequence.

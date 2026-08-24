@@ -1,0 +1,96 @@
+{
+  "accepted_schema": {
+    "schema_name": "hsr_runtime_trace",
+    "schema_version": "1.0"
+  },
+  "canonical_forms": {
+    "COMPACT_ONLY": [
+      "COMPACT"
+    ],
+    "EITHER_CANONICAL": [
+      "COMPACT",
+      "PRETTY"
+    ],
+    "PRETTY_ONLY": [
+      "PRETTY"
+    ]
+  },
+  "digest_policies": {
+    "REQUIRE_MATCH": "Expected lowercase SHA-256 is mandatory and must match.",
+    "SKIP": "Expected SHA-256 must be null; source digest is still calculated.",
+    "VERIFY_IF_PROVIDED": "Expected SHA-256 may be null; when present it must match."
+  },
+  "exact_fields": {
+    "document": [
+      "event_type_counts",
+      "first_sequence",
+      "last_sequence",
+      "metadata",
+      "record_count",
+      "records",
+      "schema_name",
+      "schema_version",
+      "semantic_gap_ids",
+      "sequence_policy",
+      "trace_id"
+    ],
+    "event": [
+      "action_id",
+      "actor_id",
+      "attack_id",
+      "event_id",
+      "event_type",
+      "hit_id",
+      "payload",
+      "sequence",
+      "source_id",
+      "target_id"
+    ],
+    "record": [
+      "action_context",
+      "attack_context",
+      "event",
+      "hit_context",
+      "notes",
+      "numeric_values",
+      "sequence"
+    ]
+  },
+  "integrity_invariants": [
+    "record.sequence equals record.event.sequence",
+    "event_id values are unique",
+    "selected sequence policy holds",
+    "record count and first/last boundaries are exact",
+    "event type counts are exact",
+    "semantic gap summary is the exact sorted unique validated union"
+  ],
+  "projection_constraints": {
+    "action_context": null,
+    "attack_context": null,
+    "hit_context": null,
+    "notes": [],
+    "numeric_values": {}
+  },
+  "prohibited_repair_or_inference": [
+    "repair",
+    "normalization",
+    "migration",
+    "renumbering",
+    "deduplication",
+    "context reconstruction",
+    "numeric extraction",
+    "lifecycle binding",
+    "trace comparison"
+  ],
+  "validation_order": [
+    "CONFIG",
+    "PAYLOAD_TYPE_AND_SIZE",
+    "SHA256_POLICY",
+    "UTF8_AND_BOM",
+    "JSON_DUPLICATE_KEYS_AND_CONSTANTS",
+    "EXACT_SCHEMA_AND_ENUMS",
+    "CONTRACT_RECONSTRUCTION",
+    "DOCUMENT_INTEGRITY",
+    "CANONICAL_FORM"
+  ]
+}

@@ -1,0 +1,43 @@
+HSR-AXIS-002M-FIX — Independent Test Results
+
+Project reviewed:
+  hsr_axis_001a_package(48).zip
+
+Environment:
+  Python 3.13.5
+  pytest 9.0.2
+
+1. Compilation
+   python -m compileall -q hsr_axis_sim
+   PASS
+
+2. Full test suite
+   python -m pytest -vv
+   419 passed in 47.74s
+
+3. Locked manifest regression
+   PASS 12/12 golden replays
+   PASS 2/2 manual checks
+   PASS 2/2 search scenarios
+   PASS 2/2 action-sequence trace checks
+   PASS 2/2 trace evidence checks
+
+4. Trace-evidence-only regression
+   PASS 2/2
+
+5. Deterministic reports
+   Markdown regeneration: BYTE-IDENTICAL
+   JSON regeneration: BYTE-IDENTICAL
+
+6. Adversarial combined malformed-input probes
+
+   A. duplicate valid provenance source ID + object locator
+      FAIL — raw TypeError escaped:
+      '<' not supported between instances of 'dict' and 'str'
+
+   B. two invalid source IDs + mixed locator types
+      FAIL — raw TypeError escaped:
+      '<' not supported between instances of 'str' and 'dict'
+
+Final gate:
+  BLOCKED — HSR-AXIS-002M-FIX2 required before 002N.

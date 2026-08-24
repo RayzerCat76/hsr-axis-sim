@@ -1,0 +1,35 @@
+{
+  "template_id": "tingyun_ultimate_duration_bilibili_evidence_intake_template_v0_1",
+  "version": "0.1",
+  "status": "unfilled_candidate_evidence_template",
+  "verification_status": "candidate_identified_page_or_frames_not_retrieved",
+  "bvid": "BV1yz4y1t79s",
+  "direct_url": "https://www.bilibili.com/video/BV1yz4y1t79s",
+  "video_title": "【崩坏星穹铁道】景元深度测评：光锥伤害对比+停云布洛妮娅对景元的提升幅度计算+配队思路+体力规划思路",
+  "uploader": null,
+  "publication_date": null,
+  "game_version_or_build": null,
+  "timestamp_start_seconds": null,
+  "timestamp_end_seconds": null,
+  "frame_range": [],
+  "target_identity_evidence": null,
+  "target_active_turn_state_evidence": null,
+  "visible_buff_icon_or_counter_evidence": null,
+  "damage_based_observable": null,
+  "target_normal_turn_entry_boundaries": [],
+  "transition_2_to_1_observation": null,
+  "transition_1_to_0_observation": null,
+  "effect_active_during_entered_turn_observation": null,
+  "extra_action_classification": null,
+  "extra_turn_classification": null,
+  "exclusions": [
+    "Do not infer a timestamp, frame range, uploader, publication date, or game build from the candidate identifier alone.",
+    "Do not treat damage variation as a duration observation without controlling all other modifiers.",
+    "Do not infer extra-action or extra-turn consumption from normal-turn-entry wording."
+  ],
+  "uncertainty_notes": [
+    "The candidate page or frame sequence was not retrieved in the supplied research environment.",
+    "Independent frame verification of the accepted project-domain correction remains pending."
+  ],
+  "simulator_binding_allowed": false
+}

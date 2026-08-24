@@ -1,0 +1,203 @@
+Task ID: HSR-AXIS-001E
+Reasoning: HIGH
+
+You are continuing the same permanent Python project for a Honkai: Star Rail inspired action-axis simulator.
+
+Previous accepted tasks:
+- 001A: deterministic action value timeline core
+- 001A-FIX: resource validation and turn actor validation
+- 001B: replay validator MVP
+- 001C: multi-step Bronya-like + Seele-like replay
+- 001D: generic buff/debuff duration semantics
+
+Do not scrape Huroka/Yatta/HoneyHunter yet.
+Do not implement all real HSR characters yet.
+Do not implement AI axis search yet.
+Do not implement enemy AI yet.
+
+Goal of this task:
+Build a deterministic Damage / Stats / Forced RNG MVP so that future golden replays can validate HP changes from calculated damage rather than fixed damage only.
+
+Important philosophy:
+This is NOT the final full HSR damage formula yet. It is a clean, testable scaffold that can later be extended to the full formula. Preserve backward compatibility with the current fixed `DealDamage(amount=...)` behavior.
+
+Required deliverables:
+1. Add a stats model for units.
+2. Add effective-stat aggregation from base stats + buffs/debuffs.
+3. Add a calculated damage mode for `DealDamage`.
+4. Add deterministic crit / no-crit forced RNG support.
+5. Add replay support for `forced_rng` fields.
+6. Add tests proving calculated damage, buff-modified damage, crit damage, and replay forced RNG work.
+7. Update README and `hsr_axis_sim/LUMEN_RESULT.md`.
+
+Suggested architecture:
+
+hsr_axis_sim/
+  sim/
+    stats.py              # new; stat model and aggregation helpers
+    damage.py             # new; DamageSpec / DamageResult / calculator
+    rng.py                # new; ForcedRng / RngContext or similar
+    effects.py            # update DealDamage to support calculated mode
+    replay.py             # update to pass forced_rng into action execution
+    turn_context.py       # may store forced_rng for current action/step
+  tests/
+    test_damage.py        # new
+    test_replay_validator.py  # extend
+  data/golden_replays/
+    damage_rng_mvp.json   # new small golden replay
+
+Data model requirements:
+
+A Unit should support base combat stats needed for MVP damage:
+- atk
+- def
+- crit_rate
+- crit_dmg
+- dmg_bonus
+- damage_reduction or vulnerability can be optional for now
+
+Keep existing Unit construction backward compatible. Existing tests that instantiate `Unit("id", "Name", "ally", 100)` must still work.
+
+Recommended default stats:
+- atk: 100
+- def: 0
+- crit_rate: 0
+- crit_dmg: 0.5
+- dmg_bonus: 0
+
+Buff stat modification:
+Use existing `Buff.data` to hold stat mods. Keep it simple and explicit.
+
+Recommended buff data shape:
+
+```python
+{
+  "stat_mods": {
+    "atk_pct": 0.20,
+    "atk_flat": 50,
+    "dmg_bonus": 0.30,
+    "crit_rate": 0.10,
+    "crit_dmg": 0.40
+  }
+}
+```
+
+Aggregation rules for MVP:
+- effective_atk = base_atk * (1 + sum(atk_pct)) + sum(atk_flat)
+- effective_dmg_bonus = base_dmg_bonus + sum(dmg_bonus)
+- effective_crit_rate = base_crit_rate + sum(crit_rate)
+- effective_crit_dmg = base_crit_dmg + sum(crit_dmg)
+
+Damage formula MVP:
+
+If `DealDamage` has fixed `amount`, preserve current behavior exactly.
+
+If `DealDamage` has calculated mode, support fields like:
+- `multiplier`
+- `stat`: default `atk`
+- `can_crit`: default True
+- `damage_type`: optional string metadata
+
+Recommended MVP formula:
+
+```text
+base_damage = effective_stat(attacker, stat) * multiplier
+bonus_damage = base_damage * (1 + effective_dmg_bonus(attacker))
+if can_crit and crit_result is true:
+    final_damage = bonus_damage * (1 + effective_crit_dmg(attacker))
+else:
+    final_damage = bonus_damage
+```
+
+Do not add full HSR defense/resistance/toughness/break formula in this task. Add hooks/classes so it can be extended later, but keep the tested formula simple.
+
+Forced RNG requirements:
+
+Support deterministic crit behavior.
+
+Replay step example:
+
+```json
+{
+  "step": 1,
+  "expected_actor": "dps",
+  "action_id": "dps_skill",
+  "target_ids": ["enemy_1"],
+  "forced_rng": {
+    "crit": true
+  },
+  "expect": {
+    "units": {
+      "enemy_1": {"hp": 7000}
+    }
+  }
+}
+```
+
+Implementation guidance:
+- Store forced RNG on `TurnContext`, or pass it cleanly into action/effect execution.
+- If `forced_rng.crit` is present, use it.
+- If `forced_rng.crit` is absent, use deterministic default behavior. For MVP, default can be `False` rather than random.
+- Do not introduce nondeterministic random behavior yet.
+
+Replay validator updates:
+- It should read optional `forced_rng` from each step.
+- It should pass that forced RNG into the action execution path.
+- Existing replays without `forced_rng` must still pass.
+
+Tests required:
+
+1. Fixed damage backward compatibility
+- Existing `DealDamage(amount=...)` behavior still works.
+
+2. Calculated no-crit damage
+- Attacker atk = 1000, multiplier = 2.0, dmg_bonus = 0.
+- forced crit false.
+- Expected damage = 2000.
+
+3. Calculated crit damage
+- Attacker atk = 1000, multiplier = 2.0, crit_dmg = 0.5.
+- forced crit true.
+- Expected damage = 3000.
+
+4. Buff modifies damage
+- Add a buff with `data.stat_mods.dmg_bonus = 0.5` or `atk_pct = 0.5`.
+- Confirm calculated damage changes correctly.
+
+5. Buff duration + damage interaction
+- A target-normal-turn buff should affect damage before it expires.
+- After the holder completes the relevant normal turn and the buff expires, damage should no longer include it.
+
+6. Replay forced RNG
+- Add `damage_rng_mvp.json` and validate it through the replay validator CLI.
+
+7. Non-regression
+- All existing tests must pass.
+- Existing golden replay CLI files must still pass.
+
+Expected commands to run:
+
+```bash
+python -m compileall -q hsr_axis_sim
+python -m pytest -q
+python -m hsr_axis_sim.sim.replay hsr_axis_sim/data/golden_replays/bronya_seele_timeline_mvp.json
+python -m hsr_axis_sim.sim.replay hsr_axis_sim/data/golden_replays/bronya_seele_multistep_mvp.json
+python -m hsr_axis_sim.sim.replay hsr_axis_sim/data/golden_replays/buff_duration_mvp.json
+python -m hsr_axis_sim.sim.replay hsr_axis_sim/data/golden_replays/damage_rng_mvp.json
+```
+
+Update `hsr_axis_sim/LUMEN_RESULT.md` with:
+- files changed
+- exact tests run
+- exact test results
+- formula implemented
+- what is intentionally not full-HSR-accurate yet
+- known assumptions
+- whether 001F is safe to begin
+
+Acceptance criteria:
+- Test suite passes.
+- Existing replay JSONs still pass.
+- New damage replay passes.
+- Fixed damage mode is not broken.
+- No website scraping, no Huroka import, no full character kits, no AI search.

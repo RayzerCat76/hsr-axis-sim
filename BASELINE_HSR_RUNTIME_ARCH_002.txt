@@ -1,0 +1,43 @@
+HSR-RUNTIME-ARCH-002 — Independent Starting Baseline
+====================================================
+
+Validation date: 2026-07-12
+Submitted repository: hsr_axis_001a_package(1).zip
+
+Latest completed task
+---------------------
+HSR-RUNTIME-ARCH-001 — Universal Runtime Contract Skeleton
+
+Luman decision:
+PASS — proceed
+
+Independent results
+-------------------
+- python -m compileall -q hsr_axis_sim: PASS
+- focused ARCH-001 tests: 56 / 56 passed
+- complete pytest collection: 718 / 718 passed
+- locked regression: 20 / 20 passed
+- trace-evidence-only regression: 2 / 2 passed
+
+ARCH-001 integrity
+------------------
+- runtime_contracts is sidecar-only.
+- No numeric priority was added.
+- No FIFO/LIFO default was added.
+- Existing production LIFO behavior is unchanged.
+- Formula Registry v1.0 remains:
+  200 total / 107 CONFIRMED / 81 PARTIAL / 12 UNKNOWN.
+- No blocker remains.
+
+Current ARCH-002 boundary
+-------------------------
+Create a manually invoked, one-way adapter from legacy sim Event objects to
+immutable RuntimeEvent envelopes.
+
+Do not:
+- hook BattleState.emit_event;
+- modify sim dispatch;
+- infer Action/Attack/Hit contexts;
+- map unit_defeated to DEATH or KNOCKED_DOWN;
+- choose silent unknown/ambiguous fallbacks;
+- change LIFO, formulas, triggers, replay, or combat behavior.

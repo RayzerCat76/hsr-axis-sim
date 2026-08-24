@@ -1,0 +1,110 @@
+Task ID: HSR-AXIS-002M
+Task name: Tingyun Ultimate Damage-Buff Fact Completion and Duration-Semantics Review
+
+Codex Reasoning: HIGH
+Recommended model: GPT-5.6 Sol
+Fallback: GPT-5.6 Terra only after all source facts and duration semantics are unambiguous.
+
+Current accepted state
+======================
+
+HSR-AXIS-002L-FIX has passed:
+
+- compileall;
+- 409/409 pytest tests;
+- locked regression PASS 20/20;
+- trace-evidence-only regression PASS 2/2;
+- reviewed registry v0.2 with exactly two static partial bindings;
+- malformed-input hardening for both Pela and Tingyun validators.
+
+Do not alter accepted execution behavior in this task.
+
+Goal
+====
+
+Complete the evidence and normalization work needed to decide whether Tingyun Ultimate's damage-increase buff is ready for a later reviewed executable binding.
+
+This task is evidence/normalization/review only. Do not apply the buff in the simulator yet.
+
+Required work
+=============
+
+1. Identify source-backed atomic facts for Tingyun Ultimate's damage-increase component, including:
+   - magnitude by relevant trace level;
+   - target scope;
+   - duration in turns;
+   - whether the buff is applied before or after Energy restoration, if source evidence distinguishes this;
+   - any version or release-scope qualifiers.
+
+2. Record field-level provenance:
+   - source URL or existing registered source reference;
+   - locator/field path;
+   - official/release/beta status;
+   - corroboration status;
+   - conflicts or unresolved translation ambiguity.
+
+3. Keep facts atomic. Do not combine magnitude, duration, target, and execution order into one fact.
+
+4. Review the existing generic buff-duration engine against the verified two-turn behavior. Document:
+   - when the duration starts;
+   - whether the cast interrupt window decrements it;
+   - whether the target's current normal turn decrements it if cast during that turn;
+   - whether extra turns decrement it;
+   - whether actions that do not end the current turn decrement it;
+   - the exact expiration boundary the current engine would use.
+
+5. Produce a deterministic binding-readiness report with one of:
+   - `ready_for_separate_binding_task`;
+   - `blocked_by_source_gap`;
+   - `blocked_by_duration_semantics_gap`;
+   - `blocked_by_both`.
+
+6. If the current generic duration engine cannot represent the verified behavior without distortion, report the gap precisely. Do not modify the engine in this task.
+
+Required deliverables
+=====================
+
+Create appropriately named files under the existing source-fact / reviewed-binding evidence structure, plus:
+
+- deterministic Markdown report;
+- deterministic JSON report;
+- CLI supporting stdout and output-file modes;
+- focused tests for schema, provenance, ordering, invalid inputs, duration-boundary assessment, deterministic output, and exit codes;
+- updated `hsr_axis_sim/LUMEN_RESULT.md`.
+
+Safety boundaries
+=================
+
+Do not:
+
+- apply Tingyun's damage buff in executable binding code;
+- change the accepted Tingyun Energy restoration behavior;
+- infer the real-video target;
+- assume a trace level for the real video;
+- make the action-sequence trace executable;
+- implement Tingyun's complete Ultimate or kit;
+- modify Pela's reviewed partial binding;
+- change the reviewed registry public API or entries;
+- change simulator, search, evaluator, replay, or regression-manifest behavior;
+- begin HSR-AXIS-002N.
+
+Validation requirements
+=======================
+
+Run:
+
+python -m compileall -q hsr_axis_sim
+python -m pytest -q
+python -m hsr_axis_sim.regression.runner --manifest hsr_axis_sim/data/regression_manifest.json --format text
+python -m hsr_axis_sim.regression.runner --manifest hsr_axis_sim/data/regression_manifest.json --only trace_evidence --format text
+
+Also run the new 002M CLI in Markdown and JSON modes and confirm committed reports are byte-identical to regenerated output.
+
+Update LUMEN_RESULT with:
+
+- exact files changed;
+- exact facts added and their verification states;
+- duration-semantics conclusions;
+- binding-readiness status;
+- test and regression results;
+- confirmation that no executable damage buff was added.

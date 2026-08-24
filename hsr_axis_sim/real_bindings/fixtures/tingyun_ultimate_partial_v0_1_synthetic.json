@@ -1,0 +1,9 @@
+{
+  "fixture_id": "tingyun_ultimate_partial_v0_1_synthetic",
+  "global_av": 17,
+  "skill_points": 3,
+  "selected_target_id": "ally",
+  "actor": {"id": "tingyun", "team": "ally", "speed": 112, "current_av": 41, "energy": 130, "max_energy": 130, "hp": 1000, "toughness": 0},
+  "ally": {"id": "ally", "team": "ally", "speed": 100, "current_av": 62, "energy": 40, "max_energy": 100, "hp": 1200, "toughness": 0},
+  "enemy": {"id": "enemy", "team": "enemy", "speed": 90, "current_av": 73, "energy": 0, "max_energy": 100, "hp": 2000, "toughness": 60}
+}

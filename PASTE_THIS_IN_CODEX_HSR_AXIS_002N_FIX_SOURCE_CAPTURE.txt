@@ -1,0 +1,122 @@
+Task ID: HSR-AXIS-002N-FIX
+Task name: Replace false blocked intake with verified Tingyun Ultimate magnitude table
+
+Codex Reasoning: MEDIUM
+Recommended model: GPT-5.6 Terra
+Upgrade to GPT-5.6 Sol only if the existing evidence schema cannot represent the two exact sources without architectural changes.
+
+Starting point
+==============
+
+The 002N implementation and tests are structurally sound, but independent review found that the committed `blocked_source_unavailable` result is factually outdated. Two commit-pinned structured sources expose the exact same 15-row Tingyun Ultimate DMG-increase table.
+
+Use the reviewer-provided files in the review package:
+
+- `VERIFIED_SOURCE_CAPTURE_HSR_AXIS_002N.md`
+- `REFERENCE_002N_TINGYUN_ULTIMATE_MAGNITUDE_TABLE.json`
+- `LUMEN_REVIEW_HSR_AXIS_002N_AFTER_CODEX.md`
+
+Goal
+====
+
+Convert the committed 002N intake from a blocked result into a source-backed `captured_exact_table` result while preserving every non-executable safety boundary.
+
+Exact sources to record
+=======================
+
+Source A:
+- repository: `Mar-7th/StarRailRes`
+- commit: `7b349e39ee0f6f3bf814567995829b99c95e7a93`
+- path: `index_new/en/character_skills.json`
+- skill ID: `120203`
+- raw table locator: `content["120203"].params`
+- magnitude locator: `content["120203"].params[*][2]`
+- snapshot qualification: commit message states update to version 4.3
+
+Source B:
+- repository: `KQM-git/SRL`
+- commit: `de0e5c09c8dbba9577367ad86e991fe91c4f0e36`
+- path: `src/data/characters/Tingyun.json`
+- skill selector: `skills[]` where name is `Amidst the Rejoicing Clouds`
+- raw table locator: selected skill `.params`
+- magnitude locator: selected skill `.params[*][2]`
+- snapshot qualification: pinned repository commit dated 2025-11-03
+
+Context-only check:
+- `https://hsr.gachabase.net/characters/1202/tingyun/release`
+- identifies v4.3.0 release data and confirms Ultimate Lv. 10 = 50% for 2 turns with 50 Energy restoration
+- do not treat this as a complete exact-table source
+
+Required table
+==============
+
+Raw ratios by ordered level 1-15:
+
+`0.20, 0.23, 0.26, 0.29, 0.32, 0.35, 0.3875, 0.425, 0.4625, 0.50, 0.53, 0.56, 0.59, 0.62, 0.65`
+
+Normalized percentages:
+
+`20, 23, 26, 29, 32, 35, 38.75, 42.5, 46.25, 50, 53, 56, 59, 62, 65`
+
+Required implementation
+=======================
+
+1. Update `tingyun_ultimate_damage_buff_magnitude_intake_v0_1.json` to `captured_exact_table`.
+2. Add both exact sources with immutable commit URLs, exact field locators, retrieval date, language, source type, snapshot qualification, and level-mapping basis.
+3. Preserve two independent raw tables. Do not merge them before validation.
+4. Normalize levels 1-15 and reference the matching raw row from both exact sources on every normalized row.
+5. Keep raw source units clear. If the current schema stores percentages, explicitly document the ratio-to-percent normalization. Do not silently confuse `0.2` with `0.2%`.
+6. Update acquisition attempts and blocked reasons consistently. A captured intake must have no blocked reasons.
+7. Update deterministic Markdown/JSON reports.
+8. Update focused tests so the committed captured artifact is checked, not the old blocked artifact.
+9. Preserve malformed-input tests and add a regression proving the two source tables conflict if any one row differs.
+10. Preserve deterministic ordering when sources, tables, rows, and references are reversed.
+
+Strict preservation
+===================
+
+Keep exactly:
+
+- `real_video_trace_level: null`
+- real-video selected ally unknown
+- effect order unresolved
+- same-current-turn duration semantics unresolved
+- readiness `blocked_by_both`
+- `simulator_binding_allowed: false`
+- no executable AddBuff
+- Tingyun Energy partial binding unchanged
+- Pela partial binding unchanged
+- reviewed registry exactly two entries
+- simulator/search/evaluator/replay unchanged
+- locked manifest/counts unchanged
+- no HSR-AXIS-002O work
+
+Do not claim
+============
+
+- Do not claim either source is byte-identical to game version 3.4.
+- Do not claim the two repositories are independent upstream extractions; say they are separate repository snapshots that corroborate the rows.
+- Do not infer the accepted video's Tingyun trace level.
+- Do not select a DMG magnitude for the video.
+
+Required tests and gates
+========================
+
+Run:
+
+`python -m compileall -q hsr_axis_sim`
+`python -m pytest -q`
+`python -m hsr_axis_sim.regression.runner --manifest hsr_axis_sim/data/regression_manifest.json --format text`
+`python -m hsr_axis_sim.regression.runner --manifest hsr_axis_sim/data/regression_manifest.json --only trace_evidence --format text`
+
+Regenerate the new magnitude Markdown and JSON reports and verify byte identity.
+
+LUMEN_RESULT must state:
+
+- exact source repository, commit, path, and field locator for both exact tables;
+- exact raw rows and normalized rows;
+- why Gachabase is context-only;
+- what remains unresolved;
+- why readiness remains `blocked_by_both`;
+- exact test/regression results;
+- confirmation that no executable buff or 002O work was added.

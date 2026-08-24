@@ -1,0 +1,121 @@
+Task ID: HSR-AXIS-002A
+Task name: First Real Manual Video Trace Fixture MVP
+
+Codex Reasoning: Medium
+ChatGPT Model suggestion: GPT-5.5
+Reason: This task is primarily fixture intake, linting, manifest update, and regression validation. Do not use GPT-5.5 Thinking unless the provided trace fails because of a suspected simulator mechanism mismatch.
+
+Context:
+You are continuing the HSR Axis Simulator project. 001Z passed Lumen review and added a locked regression manifest:
+
+hsr_axis_sim/data/regression_manifest.json
+
+The next phase is to add the first real manually recorded gameplay video trace.
+
+Important boundaries:
+- Do NOT browse Bilibili or any external website.
+- Do NOT download videos.
+- Do NOT invent a real trace.
+- Do NOT fabricate builds, HP values, SP values, energy values, or step sequences.
+- Do NOT modify combat core, timeline, damage, break, buff/debuff, target legality, enemy AI, action generation, ultimate windows, or beam search behavior in this task.
+- Only integrate a trace that Ray/Lumen already provided locally.
+
+Required input:
+A completed manual trace JSON must be present in one of these forms:
+
+1. A local file under:
+   incoming_manual_video_traces/*.json
+
+or
+
+2. The full completed JSON pasted into this Codex task.
+
+If no completed real manual trace data is provided, stop. Do not invent one. Update `hsr_axis_sim/LUMEN_RESULT.md` with status `BLOCKED — missing real manual trace input` and explain exactly what input is needed.
+
+Goal:
+Add the first real manually recorded video trace fixture to the regression baseline without changing simulator mechanics.
+
+Implementation steps:
+
+1. Add a real-trace directory if it does not exist:
+
+   hsr_axis_sim/data/manual_video_traces/real/
+
+2. Copy the provided completed real trace JSON into:
+
+   hsr_axis_sim/data/manual_video_traces/real/<trace_id>.json
+
+Use the trace `name` as the filename when safe. Keep it lowercase snake_case.
+
+3. Validate the trace with the existing manual trace lint tool.
+
+Expected command shape:
+
+python -m hsr_axis_sim.sim.replay_lint hsr_axis_sim/data/manual_video_traces/real/<trace_id>.json
+
+4. Attempt to run the replay validator on the trace.
+
+Expected command shape:
+
+python -m hsr_axis_sim.sim.replay hsr_axis_sim/data/manual_video_traces/real/<trace_id>.json
+
+If the replay fails:
+- Do not silently change expected values.
+- Do not change simulator mechanics.
+- Record the mismatch clearly in `LUMEN_RESULT.md`.
+- Add a note saying this trace requires Lumen/Ray review before mechanism changes.
+- It is acceptable for 002A to end as `TRACE_IMPORTED_BUT_REPLAY_MISMATCH` if the trace is real and linted.
+
+5. If lint and replay pass, update the manifest:
+
+   hsr_axis_sim/data/regression_manifest.json
+
+Add the new trace under `groups.manual` with a unique id and path:
+
+   hsr_axis_sim/data/manual_video_traces/real/<trace_id>.json
+
+6. Run manifest regression:
+
+python -m hsr_axis_sim.regression.runner --manifest hsr_axis_sim/data/regression_manifest.json --format text
+python -m hsr_axis_sim.regression.runner --manifest hsr_axis_sim/data/regression_manifest.json --format json
+
+7. Run tests:
+
+python -m pytest -q
+
+8. Add or update tests only if needed for fixture path/manifest behavior.
+Do not rewrite existing core tests.
+
+Expected acceptance criteria:
+- If real trace is provided and passes:
+  - pytest passes.
+  - manual trace lint passes.
+  - manual trace replay passes.
+  - manifest regression passes.
+  - manifest manual count increases from 1 to 2.
+  - no combat core behavior changes.
+
+- If real trace is provided but replay mismatches:
+  - trace file is added only if lint is valid.
+  - manifest should NOT be updated to include a failing trace unless explicitly marked/allowed by existing test system.
+  - `LUMEN_RESULT.md` documents exact mismatches and blockers.
+  - no combat core behavior changes.
+
+- If real trace is missing:
+  - no fake fixture is created.
+  - no manifest changes are made.
+  - `LUMEN_RESULT.md` says blocked and lists required input.
+
+Update `hsr_axis_sim/LUMEN_RESULT.md` with:
+- Files changed
+- Whether real trace input was found
+- Trace metadata summary
+- Lint result
+- Replay result
+- Manifest update result
+- Tests run
+- Exact pass/fail results
+- Any mismatches or uncertainties
+- Whether 002B is safe to begin
+
+Do not proceed to Huroka/Yatta live import, real website scraping, UI, or broader AI-search improvements in this task.

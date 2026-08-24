@@ -1,0 +1,64 @@
+HSR-AXIS-002K-FIX independent test results
+============================================
+
+Environment
+-----------
+Python 3.13.5
+
+Commands and results
+--------------------
+1. python -m compileall -q hsr_axis_sim
+   PASS
+
+2. python -m pytest -q
+   370 passed in 36.89s
+
+3. python -m hsr_axis_sim.regression.runner --manifest hsr_axis_sim/data/regression_manifest.json --format text
+   PASS 12/12 golden replays
+   PASS 2/2 manual checks
+   PASS 2/2 search scenarios
+   PASS 2/2 action-sequence trace checks
+   PASS 2/2 trace evidence checks
+   Total: PASS 20/20
+
+4. python -m hsr_axis_sim.regression.runner --manifest hsr_axis_sim/data/regression_manifest.json --only trace_evidence --format text
+   PASS 2/2
+
+5. python -m hsr_axis_sim.real_bindings.registry --format json
+   Generated output SHA-256:
+   ae5ba824df5e9fc7d89fa44ea008e94a7e454eb7ce4456b22771db3644536117
+   Committed output SHA-256:
+   ae5ba824df5e9fc7d89fa44ea008e94a7e454eb7ce4456b22771db3644536117
+   BYTE-IDENTICAL
+
+6. python -m hsr_axis_sim.real_bindings.registry --format markdown
+   Generated output SHA-256:
+   64aa1d5cd13d83ec1c91066295abe83fa3fe86cb52033c0d54df103bdd6d8831
+   Committed output SHA-256:
+   64aa1d5cd13d83ec1c91066295abe83fa3fe86cb52033c0d54df103bdd6d8831
+   BYTE-IDENTICAL
+
+Malformed readable registry checks
+----------------------------------
+- dictionary registry_entry_id: exit 1, no traceback
+- integer 0 complete_game_skill: exit 1, no traceback
+- dictionary in source_atomic_fact_ids: exit 1, no traceback
+- non-object registry root: exit 1, no traceback
+
+Pinned artifact hashes
+----------------------
+Atomic facts:
+b17a5f295cb8902883d6e8ddaa70c626bdbddf60572db8ce28da6eb3c555491f
+
+Registry v0.1:
+66c9d3ea8f502fd6ad6eec783dd41d44b1ee6fadb71516c862aaa0fd5c907858
+
+Registry JSON audit:
+ae5ba824df5e9fc7d89fa44ea008e94a7e454eb7ce4456b22771db3644536117
+
+Registry Markdown audit:
+64aa1d5cd13d83ec1c91066295abe83fa3fe86cb52033c0d54df103bdd6d8831
+
+Decision
+--------
+PASS. Proceed to HSR-AXIS-002L.

@@ -1,0 +1,197 @@
+Task ID: HSR-AXIS-001B
+Reasoning: HIGH
+
+You are continuing the same permanent Python project for a Honkai: Star Rail inspired action-axis simulator.
+
+Previous task status:
+- HSR-AXIS-001A implemented the deterministic action-value simulator core.
+- HSR-AXIS-001A-FIX added safety checks and stricter tests.
+- Current test suite should have 26 passing tests before you begin.
+
+Goal of this task:
+Build the MVP Golden Replay Validator.
+
+Important scope limits:
+- Do NOT scrape Huroka, Yatta, HoneyHunter, Bilibili, or any external website.
+- Do NOT implement real HSR character kits.
+- Do NOT implement the full damage formula.
+- Do NOT implement AI axis search yet.
+- Do NOT refactor the whole simulator unless necessary.
+- Preserve all existing tests and behavior from 001A-FIX.
+
+What the replay validator is for:
+A human will manually extract a small gameplay trace from a video. The replay JSON will contain initial state, chosen actions, forced RNG placeholders, and expected outcomes. The validator should replay those steps through the simulator and report whether the simulator matches the trace.
+
+Required new structure:
+
+hsr_axis_sim/
+  sim/
+    replay.py
+  data/
+    golden_replays/
+      bronya_seele_timeline_mvp.json
+  tests/
+    test_replay_validator.py
+  LUMEN_RESULT.md
+
+Required classes / data structures:
+
+1. ReplayValidationError
+   - A clear exception or result object for validation failures.
+
+2. ReplayCheckResult
+   Fields should include:
+   - passed: bool
+   - replay_name: str
+   - checked_steps: int
+   - mismatches: list[str]
+
+3. ReplayRunner or ReplayValidator
+   Must expose a method such as:
+   - load_replay(path)
+   - run_replay(replay_data)
+   - validate(replay_data) -> ReplayCheckResult
+
+Replay JSON schema MVP:
+
+{
+  "name": "bronya_seele_timeline_mvp",
+  "tolerance": 0.001,
+  "initial_state": {
+    "global_av": 0,
+    "skill_points": 3,
+    "max_skill_points": 5,
+    "units": [
+      {
+        "id": "seele",
+        "name": "Seele-like DPS",
+        "team": "ally",
+        "base_speed": 143,
+        "speed": 143,
+        "current_av": 69.9300699301,
+        "energy": 60,
+        "max_energy": 120,
+        "hp": 3000,
+        "max_hp": 3000
+      }
+    ]
+  },
+  "actions": {
+    "seele_basic": {
+      "id": "seele_basic",
+      "name": "Basic Attack",
+      "actor_id": "seele",
+      "target_ids": ["enemy_1"],
+      "ends_turn": true,
+      "effects": [
+        {"type": "GainSkillPoint", "amount": 1},
+        {"type": "GainEnergy", "amount": 20, "target_ids": ["seele"]},
+        {"type": "DealDamage", "amount": 1000, "target_ids": ["enemy_1"]}
+      ]
+    }
+  },
+  "steps": [
+    {
+      "step": 1,
+      "expected_actor": "seele",
+      "action_id": "seele_basic",
+      "target_ids": ["enemy_1"],
+      "expect": {
+        "global_av": 69.9300699301,
+        "skill_points": 4,
+        "units": {
+          "seele": {
+            "current_av": 69.9300699301,
+            "energy": 80
+          },
+          "enemy_1": {
+            "hp": 9000
+          }
+        }
+      }
+    }
+  ]
+}
+
+Effect deserialization:
+Implement JSON-to-effect conversion for the existing generic effect primitives:
+- DealDamage
+- GainEnergy
+- ConsumeEnergy
+- GainSkillPoint
+- ConsumeSkillPoint
+- AdvanceAction
+- DelayAction
+- ChangeSpeed
+- ImmediateAction
+- GrantExtraTurn
+- DoesNotEndTurn
+
+For effects that inherit UnitEffect, support optional `target_ids` in JSON.
+If `target_ids` are omitted, preserve existing default behavior.
+
+Replay execution rules:
+1. Build a `BattleState` from `initial_state`.
+2. For each step:
+   - Call `Timeline.next_turn(state)`.
+   - Compare the selected actor to `expected_actor`.
+   - Load the specified action from the replay `actions` map.
+   - Override the action's `target_ids` with the step `target_ids` if provided.
+   - Execute the action with the active `TurnContext`.
+   - Compare expected values after execution.
+3. Use numeric tolerance for float comparisons.
+4. Return a structured result with all mismatches, not just the first mismatch.
+5. Do not rely on pytest for normal validator operation. The validator should be callable from code.
+
+Expected value checks:
+Support checking:
+- global_av
+- skill_points
+- extra_turn_stack
+- each unit's:
+  - current_av
+  - speed
+  - base_av
+  - energy
+  - hp
+  - is_alive
+
+Unknown fields:
+- If the replay contains an unsupported expected field, record a mismatch saying the field is unsupported.
+- If the replay references an unknown unit or action, raise or record a clear validation failure.
+
+Tests to add:
+
+1. test_replay_validator_passes_sample_replay
+   - Load the included golden replay and assert `passed is True`.
+
+2. test_replay_validator_reports_wrong_actor
+   - Modify expected_actor to an incorrect value and assert the result fails with a useful mismatch.
+
+3. test_replay_validator_reports_numeric_mismatch
+   - Modify an expected AV or HP value and assert the result fails with a useful mismatch.
+
+4. test_replay_validator_deserializes_effects
+   - Confirm JSON effect specs become the correct Effect classes.
+
+5. test_replay_validator_rejects_unknown_effect_type
+   - Unknown effect type should raise a clear error or produce a clear failed result.
+
+6. test_existing_001a_tests_still_pass
+   - Do not need a literal test with this name, but the whole previous suite must still pass.
+
+Deliverables:
+1. `hsr_axis_sim/sim/replay.py`
+2. `hsr_axis_sim/data/golden_replays/bronya_seele_timeline_mvp.json`
+3. `hsr_axis_sim/tests/test_replay_validator.py`
+4. Updated README section explaining how to run replay validation.
+5. Updated `LUMEN_RESULT.md` with:
+   - files changed
+   - exact tests run
+   - exact pytest result
+   - what the replay validator checks
+   - what it intentionally does not check
+   - known assumptions
+   - whether 001C is safe to begin
+
+Do not move on to Huroka import, real damage formula, real character kits, or AI search in this task.

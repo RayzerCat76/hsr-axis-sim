@@ -1,0 +1,30 @@
+HSR-AXIS-002F independent verification
+
+python -m compileall -q hsr_axis_sim
+PASS
+
+python -m pytest -q
+330 passed in 13.24s
+
+python -m hsr_axis_sim.regression.runner --manifest hsr_axis_sim/data/regression_manifest.json --format text
+PASS 20/20 total checks
+- replays=12
+- manual=1
+- scenarios=2
+- action_sequence_traces=1
+- trace_evidence=2
+
+python -m hsr_axis_sim.regression.runner --manifest hsr_axis_sim/data/regression_manifest.json --only trace_evidence --format text
+PASS 2/2
+
+Trace evidence report CLI, Markdown mode
+PASS
+
+Trace evidence report CLI, JSON mode
+PASS
+
+Generated Markdown equals committed accepted Markdown
+PASS
+
+Generated JSON equals committed accepted JSON
+PASS

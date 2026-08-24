@@ -1,0 +1,105 @@
+HSR-AXIS-002O-FIX independent test results
+===========================================
+
+Project reviewed:
+/mnt/data/hsr_axis_review_54/hsr_axis_001a_package
+
+1. Compile gate
+---------------
+python -m compileall -q hsr_axis_sim
+PASS
+
+2. Focused 002O tests
+---------------------
+python -m pytest -q hsr_axis_sim/tests/test_tingyun_ultimate_damage_buff_semantic_readiness.py
+57 passed in 8.00s
+
+3. Complete pytest collection
+-----------------------------
+The monolithic command exceeded the review command time limit, so the complete set of 45 test files was partitioned into mutually exclusive groups.
+
+Sorted test files 1-15:
+121 passed in 0.32s
+
+Sorted test files 16-30:
+175 passed in 18.72s
+
+Sorted test files 31-37:
+116 passed in 22.75s
+
+Sorted test files 38-45:
+75 passed in 20.54s
+
+TOTAL: 487 passed, 0 failed
+Coverage: all 45 test files, no overlap, no omission
+
+4. Locked regression
+--------------------
+python -m hsr_axis_sim.regression.runner \
+  --manifest hsr_axis_sim/data/regression_manifest.json \
+  --format text
+
+PASS 12/12 golden replays
+PASS 2/2 manual checks
+PASS 2/2 search scenarios
+PASS 2/2 action-sequence trace checks
+PASS 2/2 trace evidence checks
+TOTAL: PASS 20/20
+
+Manifest counts unchanged:
+replays=12
+manual=1
+scenarios=2
+action_sequence_traces=1
+trace_evidence=2
+
+5. Trace-evidence-only regression
+---------------------------------
+python -m hsr_axis_sim.regression.runner \
+  --manifest hsr_axis_sim/data/regression_manifest.json \
+  --only trace_evidence \
+  --format text
+
+PASS 2/2
+
+6. Report regeneration
+----------------------
+002O Markdown report: byte-identical PASS
+002O JSON report: byte-identical PASS
+
+7. Independent malformed-input matrix
+--------------------------------------
+Fields:
+claim_id
+semantic_field
+status
+normalized_value
+value_type
+unit
+evidence_summary
+unresolved_notes
+simulator_binding_allowed
+
+Values per field:
+object
+list
+boolean
+number
+null
+
+Controlled ValueError: 45
+Native exceptions: 0
+Incorrectly accepted: 0
+
+8. Direct CLI checks
+--------------------
+status object: exit 1, validation message present, traceback absent
+status list: exit 1, validation message present, traceback absent
+missing input: exit 2, input-failure message present, traceback absent
+
+9. Determinism
+--------------
+Reversed input_artifacts, semantic_claims, interaction_protocols, and provenance ordering:
+Rendered valid JSON remains identical: PASS
+
+FINAL RESULT: PASS

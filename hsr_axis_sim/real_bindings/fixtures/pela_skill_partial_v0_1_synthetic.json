@@ -1,0 +1,11 @@
+{
+  "fixture_id": "pela_skill_partial_v0_1_synthetic",
+  "skill_points": 3,
+  "actor": {"id": "pela", "team": "ally", "speed": 100, "energy": 10, "max_energy": 110, "hp": 1000, "toughness": 0},
+  "ally": {"id": "ally", "team": "ally", "speed": 90, "hp": 1000, "toughness": 0},
+  "target": {"id": "enemy", "team": "enemy", "speed": 80, "hp": 2000, "toughness": 60, "buffs": [
+    {"id": "zeta_power", "name": "Zeta Power", "removable": true},
+    {"id": "alpha_guard", "name": "Alpha Guard", "removable": true},
+    {"id": "innate_aura", "name": "Innate Aura", "removable": false}
+  ]}
+}

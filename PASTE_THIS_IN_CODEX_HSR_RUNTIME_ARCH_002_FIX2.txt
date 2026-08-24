@@ -1,0 +1,148 @@
+Task ID: HSR-RUNTIME-ARCH-002-FIX2
+Task title: Restore Missing ARCH-002 Documentation Artifacts
+
+Recommended ChatGPT model: GPT-5.6 Luna
+Codex reasoning level: LOW
+
+Current confirmed state
+=======================
+
+`HSR-RUNTIME-ARCH-002-FIX` is still **PARTIAL — fixes required**.
+
+The code fix is correct:
+
+- empty event streams validate `LegacyEventAdapterConfig`;
+- invalid configuration is rejected before iterable consumption;
+- no production semantics changed.
+
+Independent results on the submitted package:
+
+```text
+compileall: PASS
+focused tests: 28 passed / 2 failed
+complete tests: 744 passed / 2 failed / 746 total
+locked regression: 20/20 passed
+trace-evidence-only: 2/2 passed
+```
+
+Both failures are packaging omissions. No further code change is required.
+
+Objective
+=========
+
+Restore exactly four previously accepted ARCH-002 files byte-for-byte, update
+the result report, run validation, and stop.
+
+Required restoration
+====================
+
+The handoff bundle contains the exact files at their final repository paths:
+
+```text
+docs/runtime/LEGACY_EVENT_ADAPTER_V1.md
+docs/runtime/LEGACY_EVENT_MAPPING_V1.json
+docs/runtime/research/REFERENCE_LEGACY_EVENT_SURFACE_HSR_RUNTIME_ARCH_002.md
+docs/runtime/research/REFERENCE_LEGACY_EVENT_SURFACE_HSR_RUNTIME_ARCH_002.json
+```
+
+Required SHA-256 values:
+
+```text
+4fbab876c3263c7bc0a6ef7ea9a890a9007f5da7b7974feba9448695f05ea958  docs/runtime/LEGACY_EVENT_ADAPTER_V1.md
+c9a1ee54ea358cebebf205b20e55818ac5e935d80352e2fc0172d7ac659ffb39  docs/runtime/LEGACY_EVENT_MAPPING_V1.json
+6d28569b81c11c6620c6bb69984e3cf9da1162f2169fc4b1022198519abbb7fe  docs/runtime/research/REFERENCE_LEGACY_EVENT_SURFACE_HSR_RUNTIME_ARCH_002.md
+97142cfc8e8834c99f53ae9bf133e73b723e96fefe30b9c4649c92304e2d4b19  docs/runtime/research/REFERENCE_LEGACY_EVENT_SURFACE_HSR_RUNTIME_ARCH_002.json
+```
+
+Copy them byte-for-byte.
+
+Do not regenerate, reformat, or normalize them.
+
+Allowed changes
+===============
+
+Restore/add only the four files above.
+
+Modify only:
+
+```text
+hsr_axis_sim/LUMEN_RESULT.md
+```
+
+Do not modify:
+
+```text
+hsr_axis_sim/runtime_adapters/**
+hsr_axis_sim/runtime_contracts/**
+hsr_axis_sim/sim/**
+hsr_axis_sim/tests/**
+hsr_axis_sim/search/**
+hsr_axis_sim/regression/**
+hsr_axis_sim/adapters/**
+hsr_axis_sim/real_bindings/**
+hsr_axis_sim/data/**
+fixtures/**
+README.md
+pyproject.toml
+PACKAGE_MANIFEST.json
+```
+
+Acceptance criteria
+===================
+
+1. All four files exist at the exact paths.
+2. All four SHA-256 values match.
+3. Existing empty-stream config fix remains unchanged.
+4. Exact seven-event mapping remains unchanged.
+5. `unit_defeated` remains `UNKNOWN + UNRESOLVED`.
+6. No production module imports `runtime_adapters`.
+7. No Action/Attack/Hit contexts are inferred.
+8. No FIFO/LIFO behavior changes.
+9. Complete pytest passes.
+10. Locked regression remains 20/20.
+11. Trace-evidence-only remains 2/2.
+12. No files outside the allowed set change.
+
+Commands to run
+===============
+
+```bash
+python -m compileall -q hsr_axis_sim
+
+python -m pytest -q   hsr_axis_sim/tests/test_runtime_legacy_event_mapping.py   hsr_axis_sim/tests/test_runtime_legacy_event_adapter.py   hsr_axis_sim/tests/test_runtime_legacy_event_stream.py   hsr_axis_sim/tests/test_runtime_arch_002_preservation.py   hsr_axis_sim/tests/test_runtime_research_artifacts.py
+
+python -m pytest -q
+
+python -m hsr_axis_sim.regression.runner   --manifest hsr_axis_sim/data/regression_manifest.json   --format text
+
+python -m hsr_axis_sim.regression.runner   --manifest hsr_axis_sim/data/regression_manifest.json   --only trace_evidence   --format text
+
+sha256sum   docs/runtime/LEGACY_EVENT_ADAPTER_V1.md   docs/runtime/LEGACY_EVENT_MAPPING_V1.json   docs/runtime/research/REFERENCE_LEGACY_EVENT_SURFACE_HSR_RUNTIME_ARCH_002.md   docs/runtime/research/REFERENCE_LEGACY_EVENT_SURFACE_HSR_RUNTIME_ARCH_002.json
+
+git diff --check
+```
+
+If monolithic pytest exceeds the execution window, run all 56 test files in
+non-overlapping groups and report the summed total.
+
+Final report
+============
+
+Update:
+
+```text
+hsr_axis_sim/LUMEN_RESULT.md
+```
+
+Report exact files, commands, hashes, test totals, regression totals, and
+preservation confirmation.
+
+Suggested next milestone only after independent PASS:
+
+```text
+HSR-RUNTIME-ARCH-003 — Read-Only Runtime Trace Export
+```
+
+Do not start ARCH-003.
+
+Stop after HSR-RUNTIME-ARCH-002-FIX2.

@@ -1,0 +1,217 @@
+{
+  "metadata": {
+    "task_id": "HSR-RUNTIME-ARCH-003",
+    "title": "Read-Only Runtime Trace Export",
+    "reference_version": "1.0",
+    "inspection_date": "2026-07-12",
+    "starting_package": "hsr_axis_001a_package(4).zip",
+    "policy": "Read-only observation; no hierarchy inference; Unknown > Guess"
+  },
+  "trace_document_contract": {
+    "schema_name": "hsr_runtime_trace",
+    "schema_version": "1.0",
+    "required_fields": [
+      "schema_name",
+      "schema_version",
+      "trace_id",
+      "sequence_policy",
+      "record_count",
+      "first_sequence",
+      "last_sequence",
+      "event_type_counts",
+      "semantic_gap_ids",
+      "records",
+      "metadata"
+    ],
+    "record_contract": "hsr_axis_sim.runtime_contracts.RuntimeTraceRecord",
+    "context_policy": {
+      "action_context": null,
+      "attack_context": null,
+      "hit_context": null
+    },
+    "numeric_policy": {
+      "numeric_values": {},
+      "reason": "ARCH-002 preserves legacy numeric payloads without binding quantization or exact raw-number semantics."
+    }
+  },
+  "policies": {
+    "sequence": [
+      "CONTIGUOUS",
+      "STRICTLY_INCREASING"
+    ],
+    "empty_trace": [
+      "ALLOW",
+      "REJECT"
+    ],
+    "defaults_forbidden": true
+  },
+  "sample": {
+    "config": {
+      "trace_id": "sample-trace",
+      "sequence_policy": "CONTIGUOUS",
+      "empty_trace_policy": "ALLOW",
+      "metadata": {
+        "source": "ARCH-003 reference"
+      }
+    },
+    "input_runtime_events": [
+      {
+        "event_id": "legacy:sample-stream:10",
+        "event_type": "ACTION_START",
+        "sequence": 10,
+        "action_id": "action-1",
+        "attack_id": null,
+        "hit_id": null,
+        "actor_id": "actor-1",
+        "source_id": null,
+        "target_id": null,
+        "payload": {
+          "adapter": {
+            "adapter_name": "legacy_mvp_event_adapter",
+            "adapter_version": "1.0",
+            "binding_status": "BOUND",
+            "legacy_event_type": "action_started",
+            "mapping_status": "BOUND",
+            "mechanic_id": "LEGACY_EVENT.ACTION_STARTED",
+            "semantic_gap_ids": []
+          },
+          "legacy_data": {
+            "action_id": "action-1",
+            "actor_id": "actor-1"
+          }
+        }
+      },
+      {
+        "event_id": "legacy:sample-stream:11",
+        "event_type": "CONTENT_DEFINED",
+        "sequence": 11,
+        "action_id": null,
+        "attack_id": null,
+        "hit_id": null,
+        "actor_id": null,
+        "source_id": null,
+        "target_id": "enemy-1",
+        "payload": {
+          "adapter": {
+            "adapter_name": "legacy_mvp_event_adapter",
+            "adapter_version": "1.0",
+            "binding_status": "UNRESOLVED",
+            "legacy_event_type": "unit_defeated",
+            "mapping_status": "AMBIGUOUS",
+            "mechanic_id": "LEGACY_EVENT.UNIT_DEFEATED_LIFECYCLE",
+            "semantic_gap_ids": [
+              "LEGACY_EVENT.UNIT_DEFEATED_LIFECYCLE"
+            ]
+          },
+          "legacy_data": {
+            "killer_id": "actor-1",
+            "target_id": "enemy-1"
+          }
+        }
+      }
+    ],
+    "expected_document": {
+      "schema_name": "hsr_runtime_trace",
+      "schema_version": "1.0",
+      "trace_id": "sample-trace",
+      "sequence_policy": "CONTIGUOUS",
+      "record_count": 2,
+      "first_sequence": 10,
+      "last_sequence": 11,
+      "event_type_counts": {
+        "ACTION_START": 1,
+        "CONTENT_DEFINED": 1
+      },
+      "semantic_gap_ids": [
+        "LEGACY_EVENT.UNIT_DEFEATED_LIFECYCLE"
+      ],
+      "records": [
+        {
+          "sequence": 10,
+          "event": {
+            "event_id": "legacy:sample-stream:10",
+            "event_type": "ACTION_START",
+            "sequence": 10,
+            "action_id": "action-1",
+            "attack_id": null,
+            "hit_id": null,
+            "actor_id": "actor-1",
+            "source_id": null,
+            "target_id": null,
+            "payload": {
+              "adapter": {
+                "adapter_name": "legacy_mvp_event_adapter",
+                "adapter_version": "1.0",
+                "binding_status": "BOUND",
+                "legacy_event_type": "action_started",
+                "mapping_status": "BOUND",
+                "mechanic_id": "LEGACY_EVENT.ACTION_STARTED",
+                "semantic_gap_ids": []
+              },
+              "legacy_data": {
+                "action_id": "action-1",
+                "actor_id": "actor-1"
+              }
+            }
+          },
+          "action_context": null,
+          "attack_context": null,
+          "hit_context": null,
+          "numeric_values": {},
+          "notes": []
+        },
+        {
+          "sequence": 11,
+          "event": {
+            "event_id": "legacy:sample-stream:11",
+            "event_type": "CONTENT_DEFINED",
+            "sequence": 11,
+            "action_id": null,
+            "attack_id": null,
+            "hit_id": null,
+            "actor_id": null,
+            "source_id": null,
+            "target_id": "enemy-1",
+            "payload": {
+              "adapter": {
+                "adapter_name": "legacy_mvp_event_adapter",
+                "adapter_version": "1.0",
+                "binding_status": "UNRESOLVED",
+                "legacy_event_type": "unit_defeated",
+                "mapping_status": "AMBIGUOUS",
+                "mechanic_id": "LEGACY_EVENT.UNIT_DEFEATED_LIFECYCLE",
+                "semantic_gap_ids": [
+                  "LEGACY_EVENT.UNIT_DEFEATED_LIFECYCLE"
+                ]
+              },
+              "legacy_data": {
+                "killer_id": "actor-1",
+                "target_id": "enemy-1"
+              }
+            }
+          },
+          "action_context": null,
+          "attack_context": null,
+          "hit_context": null,
+          "numeric_values": {},
+          "notes": []
+        }
+      ],
+      "metadata": {
+        "source": "ARCH-003 reference"
+      }
+    },
+    "expected_compact_json": "{\"event_type_counts\":{\"ACTION_START\":1,\"CONTENT_DEFINED\":1},\"first_sequence\":10,\"last_sequence\":11,\"metadata\":{\"source\":\"ARCH-003 reference\"},\"record_count\":2,\"records\":[{\"action_context\":null,\"attack_context\":null,\"event\":{\"action_id\":\"action-1\",\"actor_id\":\"actor-1\",\"attack_id\":null,\"event_id\":\"legacy:sample-stream:10\",\"event_type\":\"ACTION_START\",\"hit_id\":null,\"payload\":{\"adapter\":{\"adapter_name\":\"legacy_mvp_event_adapter\",\"adapter_version\":\"1.0\",\"binding_status\":\"BOUND\",\"legacy_event_type\":\"action_started\",\"mapping_status\":\"BOUND\",\"mechanic_id\":\"LEGACY_EVENT.ACTION_STARTED\",\"semantic_gap_ids\":[]},\"legacy_data\":{\"action_id\":\"action-1\",\"actor_id\":\"actor-1\"}},\"sequence\":10,\"source_id\":null,\"target_id\":null},\"hit_context\":null,\"notes\":[],\"numeric_values\":{},\"sequence\":10},{\"action_context\":null,\"attack_context\":null,\"event\":{\"action_id\":null,\"actor_id\":null,\"attack_id\":null,\"event_id\":\"legacy:sample-stream:11\",\"event_type\":\"CONTENT_DEFINED\",\"hit_id\":null,\"payload\":{\"adapter\":{\"adapter_name\":\"legacy_mvp_event_adapter\",\"adapter_version\":\"1.0\",\"binding_status\":\"UNRESOLVED\",\"legacy_event_type\":\"unit_defeated\",\"mapping_status\":\"AMBIGUOUS\",\"mechanic_id\":\"LEGACY_EVENT.UNIT_DEFEATED_LIFECYCLE\",\"semantic_gap_ids\":[\"LEGACY_EVENT.UNIT_DEFEATED_LIFECYCLE\"]},\"legacy_data\":{\"killer_id\":\"actor-1\",\"target_id\":\"enemy-1\"}},\"sequence\":11,\"source_id\":null,\"target_id\":\"enemy-1\"},\"hit_context\":null,\"notes\":[],\"numeric_values\":{},\"sequence\":11}],\"schema_name\":\"hsr_runtime_trace\",\"schema_version\":\"1.0\",\"semantic_gap_ids\":[\"LEGACY_EVENT.UNIT_DEFEATED_LIFECYCLE\"],\"sequence_policy\":\"CONTIGUOUS\",\"trace_id\":\"sample-trace\"}",
+    "expected_compact_sha256": "d9a123ccc03b1eec9a816ec0d55bf024998d3b656b27fa4f807439d7e34ad6bd",
+    "expected_pretty_sha256": "71fa9c77239c30c2aa694a2a8e16f84538b37e3191db4318cf20c09154834d8f"
+  },
+  "prohibited_inference": [
+    "ActionContext",
+    "AttackContext",
+    "HitContext",
+    "TraceNumericValue from legacy amount/formula_parts",
+    "HP_LOST from DAMAGE_RESOLVED",
+    "DEATH or KNOCKED_DOWN from unit_defeated",
+    "FIFO or LIFO semantics"
+  ]
+}

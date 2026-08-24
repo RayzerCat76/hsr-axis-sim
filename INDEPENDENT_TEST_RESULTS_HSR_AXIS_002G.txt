@@ -1,0 +1,21 @@
+HSR-AXIS-002G independent test results
+
+python -m compileall -q hsr_axis_sim
+PASS
+
+python -m pytest -q
+337 passed in 16.41s
+
+python -m hsr_axis_sim.regression.runner --manifest hsr_axis_sim/data/regression_manifest.json --format text
+PASS 20/20
+Manifest counts: replays=12 manual=1 scenarios=2 action_sequence_traces=1 trace_evidence=2
+
+python -m hsr_axis_sim.regression.runner --manifest hsr_axis_sim/data/regression_manifest.json --only trace_evidence --format text
+PASS 2/2
+
+Binding-gap CLI checks
+- valid invocation: exit 0
+- missing input file: exit 2
+- source-report mismatch: exit 1
+
+Final independent verdict: PASS

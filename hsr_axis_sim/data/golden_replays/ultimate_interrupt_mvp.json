@@ -1,0 +1,95 @@
+{
+  "name": "ultimate_interrupt_mvp",
+  "tolerance": 0.001,
+  "data_sources": {
+    "characters_dir": "hsr_axis_sim/data/sample_characters",
+    "team": "hsr_axis_sim/data/sample_teams/bronya_seele_team.json"
+  },
+  "steps": [
+    {
+      "step": 1,
+      "expected_actor": "seele_like",
+      "skill_id": "basic",
+      "target_ids": ["enemy_2"],
+      "expect": {
+        "global_av": 0,
+        "skill_points": 4,
+        "units": {
+          "seele_like": {
+            "current_av": 69.9300699301,
+            "energy": 80
+          },
+          "bronya_like": {
+            "current_av": 60,
+            "energy": 80
+          },
+          "enemy_1": {
+            "current_av": 100,
+            "hp": 500
+          },
+          "enemy_2": {
+            "current_av": 100,
+            "hp": 500
+          }
+        }
+      }
+    },
+    {
+      "step": 2,
+      "step_type": "interrupt",
+      "actor_id": "seele_like",
+      "skill_id": "ultimate",
+      "target_ids": ["enemy_2"],
+      "expect": {
+        "global_av": 0,
+        "skill_points": 4,
+        "units": {
+          "seele_like": {
+            "current_av": 69.9300699301,
+            "energy": 0
+          },
+          "bronya_like": {
+            "current_av": 60
+          },
+          "enemy_1": {
+            "current_av": 100,
+            "hp": 500
+          },
+          "enemy_2": {
+            "current_av": 100,
+            "hp": 100,
+            "is_alive": true
+          }
+        }
+      }
+    },
+    {
+      "step": 3,
+      "expected_actor": "bronya_like",
+      "skill_id": "basic",
+      "target_ids": ["enemy_1"],
+      "expect": {
+        "global_av": 60,
+        "skill_points": 5,
+        "units": {
+          "seele_like": {
+            "current_av": 9.9300699301,
+            "energy": 0
+          },
+          "bronya_like": {
+            "current_av": 74.6268656716,
+            "energy": 100
+          },
+          "enemy_1": {
+            "current_av": 40,
+            "hp": 300
+          },
+          "enemy_2": {
+            "current_av": 40,
+            "hp": 100
+          }
+        }
+      }
+    }
+  ]
+}

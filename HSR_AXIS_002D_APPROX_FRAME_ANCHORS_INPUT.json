@@ -1,0 +1,159 @@
+{
+  "anchor_input_id": "real_video_trace_001_botu_dilemma_frame_anchor_input_v0_1",
+  "source_trace": "real_video_trace_001_botu_dilemma_floor12_side1_action_sequence_only",
+  "source_media": {
+    "kind": "local_clip_from_bilibili_video",
+    "clip_filename": "sample1.mov",
+    "video_bvid": "BV1CXtVzaEQB",
+    "timestamp_basis": "seconds from the start of sample1.mov"
+  },
+  "policy": {
+    "approximate_media_timestamps_only": true,
+    "executable": false,
+    "combat_numeric_claims_allowed": false,
+    "unknowns_allowed": true
+  },
+  "prebattle": [
+    {
+      "actor": "pela",
+      "action": "technique",
+      "time_start_seconds": 0.0,
+      "time_end_seconds": 1.5,
+      "representative_frames": [
+        "t_000.0.jpg",
+        "t_000.5.jpg",
+        "t_001.0.jpg"
+      ],
+      "confidence": "high",
+      "notes": "Pela technique engagement and battle entry."
+    }
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "actor": "tingyun",
+      "action": "ultimate",
+      "time_start_seconds": 2.0,
+      "time_end_seconds": 5.5,
+      "representative_frames": [
+        "t_002.0.jpg",
+        "t_003.5.jpg",
+        "t_005.5.jpg"
+      ],
+      "confidence": "high",
+      "notes": "Tingyun ultimate animation."
+    },
+    {
+      "step": 2,
+      "actor": "pela",
+      "action": "skill",
+      "time_start_seconds": 6.0,
+      "time_end_seconds": 7.0,
+      "representative_frames": [
+        "t_006.0.jpg",
+        "t_006.5.jpg",
+        "t_007.0.jpg"
+      ],
+      "confidence": "high",
+      "notes": "Pela skill action."
+    },
+    {
+      "step": 3,
+      "actor": "remembrance_trailblazer",
+      "action": "skill",
+      "time_start_seconds": 7.5,
+      "time_end_seconds": 8.5,
+      "representative_frames": [
+        "t_007.5.jpg",
+        "t_008.0.jpg",
+        "t_008.5.jpg"
+      ],
+      "confidence": "high",
+      "notes": "Remembrance Trailblazer skill and companion-related animation."
+    },
+    {
+      "step": 4,
+      "actor": "tingyun",
+      "action": "skill",
+      "time_start_seconds": 9.0,
+      "time_end_seconds": 9.5,
+      "representative_frames": [
+        "t_009.0.jpg",
+        "t_009.5.jpg"
+      ],
+      "confidence": "high",
+      "notes": "Tingyun skill."
+    },
+    {
+      "step": 5,
+      "actor": "pela",
+      "action": "ultimate",
+      "time_start_seconds": 10.0,
+      "time_end_seconds": 12.0,
+      "representative_frames": [
+        "t_010.0.jpg",
+        "t_011.0.jpg",
+        "t_012.0.jpg"
+      ],
+      "confidence": "high",
+      "notes": "Pela ultimate animation."
+    },
+    {
+      "step": 6,
+      "actor": "naxia",
+      "action": "ultimate",
+      "time_start_seconds": 12.5,
+      "time_end_seconds": 14.5,
+      "representative_frames": [
+        "t_012.5.jpg",
+        "t_013.5.jpg",
+        "t_014.5.jpg"
+      ],
+      "confidence": "high",
+      "notes": "Anaxa ultimate animation."
+    },
+    {
+      "step": 7,
+      "actor": "naxia",
+      "action": "basic_plus_extra_skill",
+      "time_start_seconds": 15.0,
+      "time_end_seconds": 16.5,
+      "representative_frames": [
+        "t_015.0.jpg",
+        "t_015.5.jpg",
+        "t_016.0.jpg",
+        "t_016.5.jpg"
+      ],
+      "confidence": "medium",
+      "notes": "Observed composite sequence; frame boundary between basic and extra skill is approximate."
+    },
+    {
+      "step": 8,
+      "actor": "mem",
+      "action": "advance_naxia",
+      "time_start_seconds": 17.0,
+      "time_end_seconds": 17.5,
+      "representative_frames": [
+        "t_017.0.jpg",
+        "t_017.5.jpg"
+      ],
+      "confidence": "medium",
+      "notes": "Mem animation associated with advancing Anaxa; no action-advance amount is asserted."
+    },
+    {
+      "step": 9,
+      "actor": "naxia",
+      "action": "skill_plus_extra_skill",
+      "time_start_seconds": 17.5,
+      "time_end_seconds": 19.0,
+      "representative_frames": [
+        "t_017.5.jpg",
+        "t_018.0.jpg",
+        "t_018.5.jpg",
+        "t_019.0.jpg"
+      ],
+      "confidence": "medium",
+      "notes": "Observed composite sequence after Mem; internal split is approximate."
+    }
+  ]
+}

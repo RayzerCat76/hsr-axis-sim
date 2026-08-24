@@ -1,0 +1,378 @@
+Task ID: HSR-AXIS-002I
+Task name: Source-Backed Atomic Character Fact Normalization MVP
+
+Codex Reasoning: HIGH
+Recommended model: GPT-5.6 Sol
+Fallback model: GPT-5.6 Terra only if the work remains deterministic normalization and no provenance conflict appears.
+
+Why this combination:
+This task converts source-sensitive, version-qualified evidence into a normalized layer that will later govern real simulator binding. A false inherited verification status or an incorrect distinction between immediate action, action advance, extra action, resource threshold, and resource cost would contaminate later implementation. Use Sol for the primary pass.
+
+Accepted prior gate
+===================
+
+HSR-AXIS-002H has passed independent review:
+
+- compileall: PASS
+- full pytest: 345 passed
+- locked regression: PASS 20/20
+- trace-evidence-only regression: PASS 2/2
+- source-registry Markdown/JSON CLI: PASS
+- committed reports byte-identical to generated reports
+
+Accepted source registry inputs:
+
+- `hsr_axis_sim/data/manual_video_traces/source_registry/sources_v0_1.json`
+- `hsr_axis_sim/data/manual_video_traces/source_registry/real_video_trace_001_required_facts_v0_1.json`
+- `hsr_axis_sim/data/manual_video_traces/source_registry/reports/real_video_trace_001_character_source_registry_v0_1.json`
+- `hsr_axis_sim/data/manual_video_traces/binding_inventories/real_video_trace_001_botu_dilemma_binding_gap_inventory_v0_1.json`
+
+Compatibility actor IDs must remain unchanged:
+
+- `tingyun`
+- `pela`
+- `remembrance_trailblazer`
+- `mem`
+- `naxia`
+
+Goal
+====
+
+Create a deterministic, still non-executable normalized character-fact layer for the exact facts required by the first real trace.
+
+The output must make later binding review possible without generating any simulator kit, SkillSpec, CharacterSpec, Effect, Trigger, or executable action.
+
+Mandatory pre-flight hardening
+==============================
+
+1. Atomize compound facts.
+
+The 002H registry contains compound values such as `action_structure` and `action_and_trigger_structure`. Do not carry their verification status into every nested field automatically.
+
+Convert them into atomic normalized records, for example:
+
+```text
+tingyun.ultimate.target_type
+tingyun.ultimate.energy_cost
+tingyun.ultimate.target_energy_restore
+tingyun.ultimate.damage_buff_duration
+pela.skill.target_type
+pela.skill.sp_delta
+pela.skill.dispel_count
+pela.skill.energy_generation
+pela.skill.toughness_value
+```
+
+Each atomic fact must have its own:
+
+- normalized field ID;
+- value and unit;
+- verification status;
+- exact provenance references;
+- version applicability;
+- trace requirement links;
+- unresolved notes;
+- `simulator_binding_allowed: false`.
+
+A fact may be `corroborated` only when at least two sources actually support that exact atomic field. If only one source supports a subfield, downgrade it to the appropriate controlled status rather than inheriting corroboration from the parent object.
+
+2. Separate Mem timing and Charge semantics.
+
+Create distinct atomic facts for:
+
+- Charge readiness threshold (`100%` if source-backed);
+- Charge consumption/cost (`100%` only if directly source-backed);
+- Mem immediately taking its own action when Charge becomes ready;
+- the selected ally receiving 100% action advance;
+- support duration;
+- target scope;
+- whether self-targeting suppresses the action-advance component, only if sourced and relevant.
+
+Do not conflate:
+
+```text
+Mem immediately takes action
+```
+
+with:
+
+```text
+target ally action advances by 100%
+```
+
+If the existing 002H sources do not directly support the Charge-cost field, retain it as missing or partial. Do not infer cost from the readiness threshold.
+
+3. Normalize toughness units without silently converting.
+
+The accepted sources may expose different display conventions for toughness/break values. Every toughness fact must record:
+
+- source-native value;
+- source-native unit/convention;
+- normalized value only when a documented conversion rule exists;
+- otherwise `normalized_value: null` with an explicit ambiguity note.
+
+Do not assume that a source label such as `Break (In-Game) 10` is interchangeable with another site's `Weakness Break 30` without a documented conversion layer.
+
+Required normalization vocabularies
+===================================
+
+Define and strictly validate controlled values for at least:
+
+Action categories:
+
+- `technique_attack`
+- `basic_attack`
+- `skill`
+- `ultimate`
+- `summon_skill`
+- `memosprite_skill`
+- `passive_trigger`
+
+Target scopes:
+
+- `self`
+- `single_ally`
+- `single_enemy`
+- `all_allies`
+- `all_enemies`
+- `random_enemy`
+- `bounce_from_selected_enemy`
+- `companion_mem`
+- `unknown`
+
+Resource kinds:
+
+- `skill_point`
+- `energy`
+- `charge`
+- `none`
+
+Timing classifications:
+
+- `normal_action`
+- `ultimate_interrupt`
+- `immediate_action_self`
+- `action_advance_target`
+- `additional_skill_cast`
+- `non_recursive_additional_cast`
+- `unknown`
+
+Duration anchors:
+
+- `target_turn_end`
+- `target_turn_start`
+- `source_turn_end`
+- `source_turn_start`
+- `fixed_turn_count`
+- `until_target_turn_start`
+- `unknown`
+
+Verification statuses must remain compatible with 002H and strictly validated.
+
+Required implementation
+=======================
+
+1. Add a module such as:
+
+`hsr_axis_sim/tools/trace_character_fact_normalization.py`
+
+2. Add normalized artifacts under:
+
+`hsr_axis_sim/data/manual_video_traces/normalized_character_facts/`
+
+Suggested files:
+
+- `real_video_trace_001_atomic_facts_v0_1.json`
+- `reports/real_video_trace_001_binding_readiness_v0_1.md`
+- `reports/real_video_trace_001_binding_readiness_v0_1.json`
+- `README.md`
+
+3. Define validated models for at least:
+
+- AtomicCharacterFact
+- AtomicFactProvenance
+- NormalizedResourceChange
+- NormalizedDuration
+- NormalizedTimingClassification
+- NormalizedToughnessValue
+- TraceActionBindingReadiness
+- CharacterFactNormalizationReport
+
+4. Every atomic fact must include at least:
+
+- atomic fact ID;
+- source registry fact ID(s);
+- internal actor ID;
+- action scope;
+- normalized field name;
+- normalized value or null;
+- value type and unit;
+- source-native value where relevant;
+- verification status;
+- field-level provenance;
+- version applicability;
+- trace step/prebattle link;
+- unresolved notes;
+- `simulator_binding_allowed: false`.
+
+5. Produce a binding-readiness matrix for prebattle + all nine steps.
+
+For each trace action, report:
+
+- required atomic facts;
+- source-resolved atomic facts;
+- partial atomic facts;
+- missing/conflicting atomic facts;
+- trace-observation blockers;
+- source/version blockers;
+- engine-capability blockers;
+- readiness status:
+  - `not_ready`
+  - `source_ready_trace_blocked`
+  - `source_and_trace_ready_engine_review_required`
+- `simulator_binding_allowed: false`.
+
+No action may be labeled executable or ready for binding in this task.
+
+6. Validation requirements:
+
+- atomic fact IDs unique;
+- every source-registry fact reference resolves;
+- every source reference resolves;
+- actor/action/step links match accepted evidence;
+- every atomic fact's status is justified by its exact field-level provenance;
+- corroborated requires two sources supporting that exact field;
+- missing requires null value;
+- conflicting requires at least two explicit conflicting entries;
+- no automatic verification inheritance from a compound parent fact;
+- no undocumented toughness unit conversion;
+- no simulator-binding permission;
+- no executable effect or character schema keys.
+
+7. Deterministic renderers.
+
+Markdown must include:
+
+- strong non-executable warning;
+- normalization vocabulary summary;
+- atomic fact table by character/action;
+- exact provenance per atomic field;
+- toughness unit/convention notes;
+- Mem threshold/cost/immediate-action/action-advance separation;
+- readiness matrix for prebattle + nine steps;
+- unresolved source and trace blockers;
+- candidate actions for a later binding review, without selecting or implementing one.
+
+8. CLI:
+
+```bash
+python -m hsr_axis_sim.tools.trace_character_fact_normalization \
+  --source-registry <accepted-registry-report.json> \
+  --gap-inventory <accepted-gap-inventory.json> \
+  --format markdown|json \
+  [--output <path>]
+```
+
+CLI behavior:
+
+- exit 0 success;
+- exit 1 validated normalization/provenance/link mismatch;
+- exit 2 unreadable input, malformed JSON, or unexpected runtime failure;
+- no traceback for expected validation failures;
+- stdout without `--output`;
+- UTF-8 output with `--output`.
+
+Required tests
+==============
+
+Add focused tests covering at least:
+
+- exact prebattle + nine-step coverage;
+- compound 002H facts are atomized;
+- exact field-level provenance is retained;
+- corroborated status cannot be inherited without two field-supporting sources;
+- Mem threshold, cost, own immediate action, and target action advance are separate facts;
+- unsupported Mem Charge cost remains partial/missing rather than inferred;
+- toughness source-native convention is retained;
+- undocumented toughness conversion is rejected;
+- unsupported action/target/resource/timing/duration vocabularies rejected;
+- dangling source-registry fact references rejected;
+- missing fact with non-null value rejected;
+- any simulator-binding permission rejected;
+- executable schemas rejected;
+- deterministic output independent of input order;
+- committed outputs byte-identical to generation;
+- CLI stdout, file output, exit 1, and exit 2.
+
+Scope gates
+===========
+
+Do not:
+
+- implement any real character kit;
+- generate CharacterSpec, SkillSpec, Effect, Trigger, or executable actions;
+- alter the accepted 002H registry in-place merely to make normalization easier;
+- rename trace actor IDs;
+- make the trace executable;
+- infer observed targets or initial combat state;
+- modify combat, replay, search, evaluator, or regression code;
+- modify the locked regression manifest;
+- add a regression group in this task;
+- begin HSR-AXIS-002J binding.
+
+Required gates
+==============
+
+Run:
+
+```bash
+python -m compileall -q hsr_axis_sim
+python -m pytest -q
+python -m hsr_axis_sim.regression.runner \
+  --manifest hsr_axis_sim/data/regression_manifest.json \
+  --format text
+python -m hsr_axis_sim.regression.runner \
+  --manifest hsr_axis_sim/data/regression_manifest.json \
+  --only trace_evidence \
+  --format text
+```
+
+Expected locked regression remains:
+
+```text
+PASS 20/20
+replays=12
+manual=1
+scenarios=2
+action_sequence_traces=1
+trace_evidence=2
+```
+
+Also run the new normalization CLI in Markdown and JSON modes, one validated-failure case, and one unreadable-input case.
+
+Deliverables
+============
+
+- normalization tool module;
+- normalized atomic-facts artifact;
+- deterministic Markdown and JSON binding-readiness reports;
+- focused tests;
+- README;
+- updated `hsr_axis_sim/LUMEN_RESULT.md`;
+- no production simulator binding.
+
+`LUMEN_RESULT.md` must state:
+
+1. exact files changed;
+2. atomic-fact and readiness counts;
+3. exact provenance downgrades from compound 002H records;
+4. Mem threshold/cost/timing normalization outcome;
+5. toughness unit/convention decisions;
+6. tests and CLI results;
+7. existing regression results;
+8. confirmation manifest unchanged;
+9. confirmation no executable kit/binding added;
+10. limitations;
+11. next task only after every gate passes.
+
+Do not claim completion when full pytest is unavailable or failing. Preserve the implementation and report BLOCKED when a required gate cannot run.

@@ -1,0 +1,76 @@
+{
+  "id": "kill_chain_carry_mvp",
+  "name": "Kill Chain Carry MVP",
+  "team": "ally",
+  "element": "quantum",
+  "path": "hunt_like",
+  "base_stats": {
+    "hp": 3000,
+    "atk": 1000,
+    "defense": 0,
+    "base_speed": 143,
+    "max_energy": 120,
+    "crit_rate": 0,
+    "crit_dmg": 0.5,
+    "dmg_bonus": 0,
+    "break_effect": 0,
+    "max_toughness": 0,
+    "weaknesses": []
+  },
+  "skills": [
+    {
+      "id": "basic",
+      "name": "MVP Basic",
+      "skill_type": "basic",
+      "target_type": "single_enemy",
+      "sp_delta": 1,
+      "energy_delta": 20,
+      "ends_turn": true,
+      "effects": [
+        {"type": "GainSkillPoint", "amount": 1},
+        {"type": "GainEnergy", "amount": 20, "target_ref": "actor"},
+        {"type": "DealDamage", "amount": 400, "target_ref": "action_targets"},
+        {"type": "DealToughnessDamage", "amount": 30, "element": "quantum", "target_ref": "action_targets"}
+      ]
+    },
+    {
+      "id": "skill",
+      "name": "MVP Skill",
+      "skill_type": "skill",
+      "target_type": "single_enemy",
+      "sp_delta": -1,
+      "energy_delta": 30,
+      "ends_turn": true,
+      "effects": [
+        {"type": "ConsumeSkillPoint", "amount": 1},
+        {"type": "GainEnergy", "amount": 30, "target_ref": "actor"},
+        {"type": "DealDamage", "amount": 800, "target_ref": "action_targets"},
+        {"type": "DealToughnessDamage", "amount": 60, "element": "quantum", "target_ref": "action_targets"}
+      ]
+    },
+    {
+      "id": "ultimate",
+      "name": "MVP Ultimate",
+      "skill_type": "ultimate",
+      "target_type": "single_enemy",
+      "sp_delta": 0,
+      "energy_delta": -100,
+      "ends_turn": false,
+      "effects": [
+        {"type": "ConsumeEnergy", "amount": 100, "target_ref": "actor"},
+        {"type": "DealDamage", "amount": 1200, "target_ref": "action_targets"},
+        {"type": "DealToughnessDamage", "amount": 60, "element": "quantum", "target_ref": "action_targets"}
+      ]
+    }
+  ],
+  "triggers": [
+    {
+      "id": "kill_chain_carry_on_kill_extra_turn",
+      "event_type": "unit_defeated",
+      "condition": {"type": "event_killer_is_owner"},
+      "effects": [{"type": "GrantExtraTurn", "target_ref": "actor"}],
+      "max_triggers_per_action": 1,
+      "enabled": true
+    }
+  ]
+}

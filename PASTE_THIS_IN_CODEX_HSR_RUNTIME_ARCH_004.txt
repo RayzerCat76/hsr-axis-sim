@@ -1,0 +1,756 @@
+Task ID: HSR-RUNTIME-ARCH-004
+Task title: Trace Document Loader and Integrity Validator
+
+Recommended ChatGPT model: GPT-5.6 Sol
+Codex reasoning level: HIGH
+
+Current confirmed state
+=======================
+
+`HSR-RUNTIME-ARCH-003 — Read-Only Runtime Trace Export` has passed independent
+Luman validation.
+
+Real baseline:
+
+```text
+compileall: PASS
+ARCH-001/002/003 focused checks: 104/104 passed
+complete pytest: 766/766 passed
+locked regression: 20/20 passed
+trace-evidence-only regression: 2/2 passed
+```
+
+Current sidecar flow:
+
+```text
+legacy Event
+→ RuntimeEvent
+→ RuntimeTraceRecord
+→ RuntimeTraceDocument
+→ canonical JSON artifact
+```
+
+The production simulator remains unchanged. Existing LIFO behavior remains
+unchanged. `unit_defeated` remains `UNKNOWN + UNRESOLVED`.
+
+Objective
+=========
+
+Create a standard-library-only, strict loader and integrity validator for exact
+ARCH-003 schema-v1 trace artifacts.
+
+Allowed direction:
+
+```text
+explicit bytes or explicit file
+→ validate exact SHA-256 policy
+→ strict UTF-8/JSON/schema/integrity/canonical checks
+→ immutable RuntimeTraceDocument
+→ RuntimeTraceArtifact preserving exact source bytes
+```
+
+This task must not compare expected and actual traces.
+
+It must not repair, normalize, migrate, renumber, deduplicate, or infer missing
+semantics.
+
+Required reference-file placement
+=================================
+
+Copy the supplied files byte-for-byte to:
+
+```text
+docs/runtime/research/REFERENCE_RUNTIME_TRACE_LOAD_VALIDATE_HSR_RUNTIME_ARCH_004.md
+docs/runtime/research/REFERENCE_RUNTIME_TRACE_LOAD_VALIDATE_HSR_RUNTIME_ARCH_004.json
+```
+
+Required SHA-256:
+
+```text
+REFERENCE_RUNTIME_TRACE_LOAD_VALIDATE_HSR_RUNTIME_ARCH_004.md
+09734938828c8cc44e0d9cd776b9ec8738ae39dd7a4d62a0df714c646bce5241
+
+REFERENCE_RUNTIME_TRACE_LOAD_VALIDATE_HSR_RUNTIME_ARCH_004.json
+548313a263f05891b432b51d5833009341f481291f8a30d3a96108f24fcef4f4
+```
+
+Do not rewrite or regenerate them.
+
+Required implementation
+=======================
+
+Create:
+
+```text
+hsr_axis_sim/runtime_loaders/
+  __init__.py
+  enums.py
+  model.py
+  json_decode.py
+  validation.py
+  trace_load.py
+  files.py
+```
+
+Also create:
+
+```text
+docs/runtime/RUNTIME_TRACE_LOAD_VALIDATE_V1.md
+docs/runtime/RUNTIME_TRACE_LOAD_SCHEMA_V1.json
+
+hsr_axis_sim/tests/test_runtime_trace_loader_model.py
+hsr_axis_sim/tests/test_runtime_trace_loader_json.py
+hsr_axis_sim/tests/test_runtime_trace_loader_validation.py
+hsr_axis_sim/tests/test_runtime_trace_loader_bytes.py
+hsr_axis_sim/tests/test_runtime_trace_loader_file.py
+hsr_axis_sim/tests/test_runtime_arch_004_preservation.py
+```
+
+Use only the standard library.
+
+Do not modify:
+
+```text
+hsr_axis_sim/runtime_contracts/**
+hsr_axis_sim/runtime_adapters/**
+hsr_axis_sim/runtime_exports/**
+```
+
+1. Explicit loader policies
+---------------------------
+
+Define stable string enums:
+
+```text
+TraceCanonicalFormPolicy:
+  COMPACT_ONLY
+  PRETTY_ONLY
+  EITHER_CANONICAL
+
+TraceCanonicalForm:
+  COMPACT
+  PRETTY
+
+TraceDigestPolicy:
+  REQUIRE_MATCH
+  VERIFY_IF_PROVIDED
+  SKIP
+
+TraceDigestStatus:
+  MATCHED
+  NOT_PROVIDED
+  SKIPPED
+```
+
+No policy may have a default.
+
+Create a frozen config:
+
+```python
+RuntimeTraceLoadConfig:
+    canonical_form_policy: TraceCanonicalFormPolicy
+    digest_policy: TraceDigestPolicy
+    expected_sha256: str | None
+    max_bytes: int
+```
+
+Validation:
+
+- all fields are mandatory;
+- enum values must be exact enum instances;
+- `max_bytes` is an integer greater than zero and not bool;
+- expected digest, when present, is exactly 64 lowercase hexadecimal chars;
+- `REQUIRE_MATCH` requires a digest;
+- `VERIFY_IF_PROVIDED` permits null or a valid digest;
+- `SKIP` requires null expected digest;
+- config is frozen.
+
+2. Controlled errors
+--------------------
+
+Create:
+
+```text
+RuntimeTraceLoadError
+RuntimeTraceLoadConfigError
+RuntimeTraceSizeLimitError
+RuntimeTraceDigestMismatchError
+RuntimeTraceEncodingError
+RuntimeTraceJsonError
+DuplicateJsonKeyError
+RuntimeTraceSchemaError
+UnsupportedRuntimeTraceVersionError
+RuntimeTraceIntegrityError
+RuntimeTraceCanonicalityError
+RuntimeTraceReadError
+```
+
+All invalid external input must fail through these controlled errors.
+
+Preserve causes when wrapping lower-level decode, JSON, contract, or filesystem
+errors.
+
+3. Load result
+--------------
+
+Create a frozen dataclass:
+
+```python
+RuntimeTraceLoadResult:
+    artifact: RuntimeTraceArtifact
+    canonical_form: TraceCanonicalForm
+    digest_status: TraceDigestStatus
+    expected_sha256: str | None
+    source_size_bytes: int
+```
+
+Validation:
+
+- artifact is a RuntimeTraceArtifact;
+- canonical form agrees with `artifact.pretty`;
+- source size equals `len(artifact.payload_bytes)`;
+- expected digest format is valid if present;
+- MATCHED requires an expected digest equal to artifact SHA-256;
+- NOT_PROVIDED requires expected digest null;
+- SKIPPED requires expected digest null;
+- frozen.
+
+4. Strict JSON decoding
+-----------------------
+
+Create a decoder that:
+
+- accepts text already decoded as strict UTF-8;
+- rejects duplicate keys at every nesting level with `DuplicateJsonKeyError`;
+- rejects NaN, Infinity, and -Infinity;
+- requires the root to be a JSON object;
+- does not use `object_hook` behavior that loses duplicate-key information;
+- does not coerce unknown objects;
+- returns ordinary JSON-native data for schema reconstruction.
+
+Input bytes:
+
+- must be exact `bytes`, not arbitrary buffer objects;
+- must not exceed `max_bytes`;
+- must decode with strict UTF-8;
+- UTF-8 BOM is rejected explicitly;
+- empty input fails as controlled JSON/encoding input.
+
+5. Exact schema-v1 reconstruction
+---------------------------------
+
+Accept only:
+
+```text
+schema_name = hsr_runtime_trace
+schema_version = 1.0
+```
+
+Unknown versions raise:
+
+```text
+UnsupportedRuntimeTraceVersionError
+```
+
+Use exact-key validation:
+
+### Top level
+
+```text
+schema_name
+schema_version
+trace_id
+sequence_policy
+record_count
+first_sequence
+last_sequence
+event_type_counts
+semantic_gap_ids
+records
+metadata
+```
+
+### Record
+
+```text
+sequence
+event
+action_context
+attack_context
+hit_context
+numeric_values
+notes
+```
+
+### RuntimeEvent
+
+```text
+event_id
+event_type
+sequence
+action_id
+attack_id
+hit_id
+actor_id
+source_id
+target_id
+payload
+```
+
+Reject all missing and extra fields.
+
+For schema v1 require exactly:
+
+```text
+action_context = null
+attack_context = null
+hit_context = null
+numeric_values = {}
+notes = []
+```
+
+Do not parse or accept future contexts/numerics as schema v1.
+
+Reconstruct exact existing objects:
+
+```text
+RuntimeEvent
+RuntimeTraceRecord
+RuntimeTraceDocument
+RuntimeTraceArtifact
+```
+
+Requirements:
+
+- parse enum strings through the exact current enums;
+- reject unknown RuntimeEventType or TraceSequencePolicy values;
+- reject bool where integer is required;
+- reject negative sequences;
+- preserve JSON strings/numbers/bools/null in payload and metadata;
+- do not infer, repair, or normalize semantic content.
+
+6. Independent document-integrity validator
+-------------------------------------------
+
+Provide:
+
+```python
+validate_runtime_trace_document_v1(
+    document: RuntimeTraceDocument,
+) -> None
+```
+
+It must independently verify:
+
+- exact schema name/version;
+- every record's `sequence == record.event.sequence`;
+- all event IDs are unique;
+- selected sequence policy:
+  - CONTIGUOUS: next == previous + 1
+  - STRICTLY_INCREASING: next > previous
+- record count;
+- first/last boundaries;
+- exact event-type counts;
+- all record contexts are None;
+- all numeric mappings are empty;
+- all notes are empty;
+- semantic-gap IDs equal the exact sorted unique union from validated
+  `event.payload.adapter.semantic_gap_ids`.
+
+Semantic-gap rules:
+
+- absent adapter contributes no gaps;
+- adapter, if present, must be a mapping;
+- absent semantic_gap_ids contributes no gaps;
+- semantic_gap_ids must be a JSON array/sequence, not a string scalar;
+- every ID is a non-empty string;
+- duplicate IDs within one event are rejected;
+- no gap is inferred from event type.
+
+Do not silently recompute and replace incorrect summary fields.
+
+7. Bytes loading
+----------------
+
+Provide:
+
+```python
+load_runtime_trace_bytes(
+    payload_bytes: bytes,
+    *,
+    config: RuntimeTraceLoadConfig,
+) -> RuntimeTraceLoadResult
+```
+
+Required validation order:
+
+```text
+1. config
+2. payload type and max size
+3. calculate SHA-256 and enforce digest policy
+4. UTF-8/BOM
+5. JSON duplicate keys/constants
+6. exact schema and enums
+7. immutable reconstruction
+8. document integrity
+9. canonical form
+```
+
+Digest behavior:
+
+```text
+REQUIRE_MATCH:
+  mismatch → RuntimeTraceDigestMismatchError
+  match → MATCHED
+
+VERIFY_IF_PROVIDED:
+  expected null → NOT_PROVIDED
+  expected present and match → MATCHED
+  mismatch → RuntimeTraceDigestMismatchError
+
+SKIP:
+  digest is still calculated for RuntimeTraceArtifact
+  digest_status = SKIPPED
+```
+
+Canonical behavior:
+
+- reconstruct document;
+- generate exact compact and pretty bytes using existing
+  `canonical_json_bytes`;
+- source bytes must equal one canonical form;
+- enforce selected canonical-form policy;
+- equivalent noncanonical JSON is rejected;
+- artifact payload must remain the exact source bytes;
+- do not embed or rewrite hashes.
+
+8. Explicit file reading
+------------------------
+
+Provide:
+
+```python
+read_runtime_trace_file(
+    path: str | pathlib.Path,
+    *,
+    config: RuntimeTraceLoadConfig,
+) -> RuntimeTraceLoadResult
+```
+
+Requirements:
+
+- validate config before filesystem access;
+- path must resolve to an existing regular file;
+- reject directories and missing paths;
+- open read-only binary;
+- enforce max size by reading at most `max_bytes + 1`;
+- no writes;
+- no sidecar creation;
+- no automatic discovery;
+- no directory creation;
+- wrap filesystem failures in RuntimeTraceReadError;
+- delegate bytes validation to `load_runtime_trace_bytes`.
+
+9. Schema/documentation
+-----------------------
+
+Create:
+
+```text
+docs/runtime/RUNTIME_TRACE_LOAD_SCHEMA_V1.json
+```
+
+It must be a deterministic machine-readable projection of:
+
+- accepted schema/version;
+- exact field sets;
+- enum policies;
+- validation order;
+- projection constraints;
+- integrity invariants;
+- canonical forms;
+- digest policies;
+- prohibited repair/inference.
+
+Create:
+
+```text
+docs/runtime/RUNTIME_TRACE_LOAD_VALIDATE_V1.md
+```
+
+Document:
+
+- explicit bytes/file boundary;
+- strict schema-v1 only;
+- duplicate-key handling;
+- UTF-8/BOM/non-finite rules;
+- digest policies;
+- canonical form policies;
+- reconstruction and integrity checks;
+- semantic-gap verification;
+- exact source-byte retention;
+- no repair/migration/comparison;
+- no simulator, adapter, exporter, or LIFO changes.
+
+Acceptance criteria
+===================
+
+1. `hsr_axis_sim.runtime_loaders` imports successfully.
+2. All enum values are exact and stable.
+3. All policies are mandatory; no defaults.
+4. Config coherence is strictly validated.
+5. Duplicate JSON keys are rejected at any depth.
+6. NaN/Infinity, invalid UTF-8, and BOM are rejected.
+7. Only exact schema name/version 1.0 is accepted.
+8. Missing/extra fields are rejected.
+9. Unknown enum values are rejected.
+10. Schema-v1 contexts remain null and numeric/notes remain empty.
+11. Immutable RuntimeEvent/RuntimeTraceRecord/RuntimeTraceDocument objects are
+    reconstructed.
+12. Record/event sequence equality is independently checked.
+13. Sequence policy is independently checked.
+14. Duplicate event IDs are rejected.
+15. Counts, boundaries, and semantic-gap summary are independently checked.
+16. Compact and pretty reference samples load successfully.
+17. Noncanonical equivalent JSON is rejected.
+18. Digest policies behave exactly as specified.
+19. Load result retains exact source bytes.
+20. File reading is explicit and read-only.
+21. No repair, migration, comparison, or automatic observation is introduced.
+22. No existing behavior or accepted file changes.
+23. Complete tests and regressions remain green.
+
+Required tests
+==============
+
+Add focused tests for at least:
+
+### Enums/config/result
+
+- exact enum values;
+- missing policies;
+- wrong enum types;
+- invalid max_bytes including bool/zero/negative;
+- valid/invalid lowercase digest;
+- every coherent/incoherent digest-policy combination;
+- frozen config/result;
+- result canonical-form and digest-status coherence.
+
+### Strict JSON
+
+- valid object;
+- invalid UTF-8;
+- BOM;
+- empty bytes;
+- NaN/Infinity/-Infinity;
+- duplicate top-level key;
+- duplicate deeply nested key;
+- non-object root;
+- malformed JSON;
+- max-size exact boundary and overflow.
+
+### Exact schema reconstruction
+
+- compact valid reference;
+- pretty valid reference;
+- wrong schema name;
+- unsupported version;
+- missing/extra top-level field;
+- missing/extra record field;
+- missing/extra event field;
+- unknown event type;
+- unknown sequence policy;
+- bool numeric fields;
+- negative sequences;
+- non-null contexts;
+- nonempty numeric values;
+- nonempty notes.
+
+### Integrity
+
+- record/event sequence mismatch;
+- duplicate event IDs;
+- contiguous success/gap/fall/repeat;
+- strictly increasing success/gap/fall/repeat;
+- record count mismatch;
+- first/last mismatch;
+- event count mismatch;
+- exact semantic-gap match;
+- summary missing/extra gap;
+- malformed adapter/gap list;
+- duplicate gap in one event;
+- no gap inference from CONTENT_DEFINED.
+
+### Digest/canonicality
+
+- REQUIRE_MATCH success/mismatch/missing digest;
+- VERIFY_IF_PROVIDED with null/success/mismatch;
+- SKIP;
+- exact compact-only;
+- exact pretty-only;
+- EITHER accepts both;
+- compact policy rejects pretty;
+- pretty policy rejects compact;
+- noncanonical whitespace/key order rejection;
+- exact reference SHA-256 values;
+- artifact source bytes are object-equal to input bytes.
+
+### File reading
+
+- valid compact file;
+- valid pretty file;
+- missing file;
+- directory;
+- max-size overflow;
+- invalid config before filesystem access;
+- file remains byte-identical;
+- no sidecar/output files.
+
+### Exporter round-trip smoke test
+
+Using existing ARCH-003 code:
+
+```text
+build RuntimeEvent(s)
+→ build document/artifact
+→ load artifact bytes
+```
+
+Verify:
+
+- reconstructed document canonical bytes equal original bytes;
+- event IDs, sequences, payloads, gaps, counts, and metadata are equal;
+- no contexts or numeric values appear;
+- no simulator or adapter hook is involved.
+
+### Preservation
+
+- exact hashes of both supplied ARCH-004 references;
+- all ARCH-001/002/003 accepted docs remain present;
+- no production module imports runtime_loaders;
+- no existing runtime_contracts/runtime_adapters/runtime_exports file changed;
+- existing LIFO behavior unchanged.
+
+Files and areas that must remain unchanged
+==========================================
+
+Do not edit:
+
+```text
+hsr_axis_sim/sim/**
+hsr_axis_sim/runtime_contracts/**
+hsr_axis_sim/runtime_adapters/**
+hsr_axis_sim/runtime_exports/**
+hsr_axis_sim/search/**
+hsr_axis_sim/regression/**
+hsr_axis_sim/adapters/**
+hsr_axis_sim/real_bindings/**
+hsr_axis_sim/data/**
+fixtures/**
+README.md
+pyproject.toml
+PACKAGE_MANIFEST.json
+all existing tests
+all existing docs/runtime files
+all HSR-AXIS-002Q-FIX artifacts
+```
+
+Allowed modification:
+
+```text
+hsr_axis_sim/LUMEN_RESULT.md
+```
+
+Allowed additions only:
+
+```text
+hsr_axis_sim/runtime_loaders/**
+docs/runtime/RUNTIME_TRACE_LOAD_VALIDATE_V1.md
+docs/runtime/RUNTIME_TRACE_LOAD_SCHEMA_V1.json
+docs/runtime/research/REFERENCE_RUNTIME_TRACE_LOAD_VALIDATE_HSR_RUNTIME_ARCH_004.md
+docs/runtime/research/REFERENCE_RUNTIME_TRACE_LOAD_VALIDATE_HSR_RUNTIME_ARCH_004.json
+the six new ARCH-004 test files
+```
+
+Explicit exclusions
+===================
+
+Do not implement:
+
+- expected-vs-actual trace comparison;
+- first-divergence reporting;
+- trace repair;
+- schema migration;
+- future-version compatibility;
+- JSONL or append mode;
+- automatic file discovery;
+- automatic simulator observation;
+- BattleState/pending_events/emit_event access;
+- Action/Attack/Hit reconstruction;
+- numeric extraction or quantization;
+- formula execution;
+- character logic;
+- lifecycle binding;
+- FIFO/LIFO changes;
+- UI, scraping, OCR, or video parsing.
+
+Commands to run
+===============
+
+```bash
+python -m compileall -q hsr_axis_sim
+
+python -m pytest -q   hsr_axis_sim/tests/test_runtime_trace_loader_model.py   hsr_axis_sim/tests/test_runtime_trace_loader_json.py   hsr_axis_sim/tests/test_runtime_trace_loader_validation.py   hsr_axis_sim/tests/test_runtime_trace_loader_bytes.py   hsr_axis_sim/tests/test_runtime_trace_loader_file.py   hsr_axis_sim/tests/test_runtime_arch_004_preservation.py
+
+python -m pytest -q
+
+python -m hsr_axis_sim.regression.runner   --manifest hsr_axis_sim/data/regression_manifest.json   --format text
+
+python -m hsr_axis_sim.regression.runner   --manifest hsr_axis_sim/data/regression_manifest.json   --only trace_evidence   --format text
+
+sha256sum   docs/runtime/research/REFERENCE_RUNTIME_TRACE_LOAD_VALIDATE_HSR_RUNTIME_ARCH_004.md   docs/runtime/research/REFERENCE_RUNTIME_TRACE_LOAD_VALIDATE_HSR_RUNTIME_ARCH_004.json
+
+git diff --check
+```
+
+If monolithic pytest exceeds the execution window, run every test file in
+non-overlapping groups, list exact composition, and report the summed total.
+
+Final report
+============
+
+Update:
+
+```text
+hsr_axis_sim/LUMEN_RESULT.md
+```
+
+Include:
+
+1. Task ID/title.
+2. Status: PASS, PARTIAL, BLOCKED, or FAIL.
+3. Implementation summary.
+4. Exact files added/modified.
+5. Exact tests added.
+6. Exact commands and real results.
+7. Focused/full pytest counts and timings.
+8. Regression counts.
+9. Reference hashes.
+10. Valid sample compact/pretty hashes.
+11. Confirmation duplicate keys and noncanonical JSON are rejected.
+12. Confirmation exact schema v1 only.
+13. Confirmation no repair or comparison.
+14. Confirmation exact source bytes retained.
+15. Confirmation no existing sidecar or production file changed.
+16. Confirmation prior docs remain present.
+17. Unresolved issues.
+18. Exclusions respected.
+19. Suggested next milestone only:
+
+```text
+HSR-RUNTIME-ARCH-005 — Expected vs Actual Trace Comparator
+```
+
+20. Do not start ARCH-005.
+
+Stop after HSR-RUNTIME-ARCH-004.

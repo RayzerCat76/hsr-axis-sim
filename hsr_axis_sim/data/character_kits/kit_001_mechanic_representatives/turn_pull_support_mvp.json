@@ -1,0 +1,81 @@
+{
+  "id": "turn_pull_support_mvp",
+  "name": "Turn Pull Support MVP",
+  "team": "ally",
+  "element": "wind",
+  "path": "harmony_like",
+  "base_stats": {
+    "hp": 3200,
+    "atk": 700,
+    "defense": 0,
+    "base_speed": 134,
+    "max_energy": 120,
+    "crit_rate": 0,
+    "crit_dmg": 0.5,
+    "dmg_bonus": 0,
+    "break_effect": 0,
+    "max_toughness": 0,
+    "weaknesses": []
+  },
+  "skills": [
+    {
+      "id": "basic",
+      "name": "MVP Basic",
+      "skill_type": "basic",
+      "target_type": "single_enemy",
+      "sp_delta": 1,
+      "energy_delta": 20,
+      "ends_turn": true,
+      "effects": [
+        {"type": "GainSkillPoint", "amount": 1},
+        {"type": "GainEnergy", "amount": 20, "target_ref": "actor"},
+        {"type": "DealDamage", "amount": 200, "target_ref": "action_targets"}
+      ]
+    },
+    {
+      "id": "skill",
+      "name": "MVP Turn Pull",
+      "skill_type": "skill",
+      "target_type": "single_other_ally",
+      "sp_delta": -1,
+      "energy_delta": 30,
+      "ends_turn": true,
+      "effects": [
+        {"type": "ConsumeSkillPoint", "amount": 1},
+        {"type": "GainEnergy", "amount": 30, "target_ref": "actor"},
+        {
+          "type": "AddBuff",
+          "id": "turn_pull_damage_buff",
+          "name": "Turn Pull Damage Buff",
+          "target_ref": "action_targets",
+          "duration_type": "target_normal_turns",
+          "remaining_turns": 1,
+          "data": {"stat_mods": {"dmg_bonus": 0.5}}
+        },
+        {"type": "ImmediateAction", "target_ref": "action_targets"}
+      ]
+    },
+    {
+      "id": "ultimate",
+      "name": "MVP Team Offense",
+      "skill_type": "ultimate",
+      "target_type": "all_allies",
+      "sp_delta": 0,
+      "energy_delta": -100,
+      "ends_turn": false,
+      "effects": [
+        {"type": "ConsumeEnergy", "amount": 100, "target_ref": "actor"},
+        {
+          "type": "AddBuff",
+          "id": "team_offense_buff",
+          "name": "Team Offense Buff",
+          "target_ref": "alive_allies",
+          "duration_type": "target_normal_turns",
+          "remaining_turns": 2,
+          "data": {"stat_mods": {"atk_pct": 0.2, "crit_dmg": 0.3}}
+        }
+      ]
+    }
+  ],
+  "triggers": []
+}

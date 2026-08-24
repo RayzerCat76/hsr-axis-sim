@@ -1,0 +1,95 @@
+Task ID: HSR-AXIS-002B
+Task name: Action-Sequence Trace Regression Manifest Group
+Reasoning: Medium
+ChatGPT model recommendation: GPT-5.5
+
+Context:
+We have completed HSR-AXIS-002A as an action-sequence-only real video trace intake. The first real trace is:
+
+hsr_axis_sim/data/manual_video_traces/intake/real_video_trace_001_botu_dilemma_floor12_side1_action_sequence_only.json
+
+It intentionally uses:
+- check_mode: action_sequence_only
+- unknown_allowed: true
+- numeric_expectations: skip
+
+This trace should not be treated as a numeric combat replay. It only verifies observable actor/action order from the Bilibili video.
+
+Current problem:
+The existing locked regression manifest still only covers:
+- 12 golden replays
+- 1 manual sample trace with lint + replay
+- 2 search scenarios
+
+The new real action-sequence trace is tested by pytest, but it is not yet part of the locked regression manifest. We need a separate manifest group so real action-sequence traces cannot be silently removed or broken.
+
+Goal:
+Add a dedicated regression manifest group for action-sequence-only real traces.
+
+Do NOT:
+- Do not convert the real trace into a full combat replay.
+- Do not add fake SP, energy, HP, toughness, damage, target, or RNG values.
+- Do not modify combat mechanics.
+- Do not implement Naxia, Tingyun, Pela, or Remembrance Trailblazer real kits in this task.
+- Do not add Huroka/Yatta scraping.
+- Do not change the meaning of existing numeric golden replays.
+
+Required behavior:
+1. Extend the regression manifest schema to support a new group, for example:
+
+   action_sequence_traces
+
+2. Add the real trace to that group:
+
+   id: real_video_trace_001_botu_dilemma_floor12_side1_action_sequence_only
+   path: hsr_axis_sim/data/manual_video_traces/intake/real_video_trace_001_botu_dilemma_floor12_side1_action_sequence_only.json
+   checks:
+     - lint
+     - action_sequence
+
+3. The regression runner should run both checks:
+   - lint: use the manual video trace lint path, and require it to pass.
+   - action_sequence: use ReplayValidator, and require it to pass with checked_steps = 9.
+
+4. The regression report should include this group separately from numeric replays and ordinary manual checks.
+
+Example text report shape:
+
+   PASS 12/12 golden replays
+   PASS 2/2 manual checks
+   PASS 2/2 search scenarios
+   PASS 2/2 action-sequence trace checks
+
+or, if represented as one item with two checks, make the output equally clear.
+
+5. Existing regression manifest behavior must remain backward compatible.
+
+6. Existing tests must continue to pass.
+
+7. Add focused tests for:
+   - manifest loads with the new action_sequence_traces group.
+   - the real trace is included in manifest counts.
+   - regression runner passes lint + action_sequence checks for the real trace.
+   - a missing action-sequence trace path causes regression failure.
+   - an invalid action-sequence trace causes regression failure.
+   - existing replays/manual/scenarios still pass.
+
+8. Update hsr_axis_sim/LUMEN_RESULT.md with:
+   - files changed
+   - commands run
+   - test results
+   - manifest counts before/after
+   - known limitations
+   - next recommended task
+
+Expected test commands:
+
+python -m compileall -q hsr_axis_sim
+pytest -q
+python -m hsr_axis_sim.regression.runner --manifest hsr_axis_sim/data/regression_manifest.json --format text
+
+Acceptance criteria:
+- All tests pass.
+- The regression manifest formally locks the real action-sequence trace.
+- The real trace is still action-sequence-only; no numeric expectations are invented.
+- Existing numeric replay baseline is not reinterpreted.

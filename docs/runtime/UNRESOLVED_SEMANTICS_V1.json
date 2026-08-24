@@ -1,0 +1,110 @@
+[
+  {
+    "binding_status": "UNRESOLVED",
+    "evidence_status": "UNKNOWN",
+    "mechanic_id": "BOUNCE.REPEAT_TARGET_POLICY",
+    "notes": "Descriptions prove a fresh random enemy selection per extra hit but do not establish one universal rule for whether the same target may be selected repeatedly. Keep WITH_REPLACEMENT, WITHOUT_REPLACEMENT, WEIGHTED, and CONTENT_DEFINED.",
+    "production_binding_allowed": false,
+    "selected_policy": null,
+    "source_registry_version": "1.0"
+  },
+  {
+    "binding_status": "UNRESOLVED",
+    "evidence_status": "UNKNOWN",
+    "mechanic_id": "CONTROL.FROZEN_DAMAGE_FORMULA",
+    "notes": "The universal current-version coefficient for Weakness-Break Frozen Additional DMG was not locked in this pass. Keep a BreakAdditionalDamageRequest with content/version data.",
+    "production_binding_allowed": false,
+    "selected_policy": null,
+    "source_registry_version": "1.0"
+  },
+  {
+    "binding_status": "UNRESOLVED",
+    "evidence_status": "UNKNOWN",
+    "mechanic_id": "COUNTER.ELIGIBILITY_POLICY",
+    "notes": "Generic Counter terminology uses 'attacked', while individual effects may use 'hit'. Eligibility for miss, zero damage, shield-only, distributed damage, redirected damage, DoT, Additional DMG, or each hit in a multi-hit action is not globally locked.",
+    "production_binding_allowed": false,
+    "selected_policy": null,
+    "source_registry_version": "1.0"
+  },
+  {
+    "binding_status": "UNRESOLVED",
+    "evidence_status": "UNKNOWN",
+    "mechanic_id": "COUNTER.SHIELD_BARRIER_INTERACTION",
+    "notes": "Barrier proves attack contact can occur at zero damage; normal Shield can absorb all HP damage. Whether every Counter listens to TARGET_ATTACKED, HIT_RESOLVED, SHIELD_DAMAGED, or HP_DAMAGED remains effect-specific and unresolved.",
+    "production_binding_allowed": false,
+    "selected_policy": null,
+    "source_registry_version": "1.0"
+  },
+  {
+    "binding_status": "UNRESOLVED",
+    "evidence_status": "UNKNOWN",
+    "mechanic_id": "DOT.SNAPSHOT_POLICY",
+    "notes": "No sufficiently reliable multi-source evidence was found proving a universal application-time snapshot or trigger-time dynamic recomputation rule. The DoT instance must explicitly support SNAPSHOT, DYNAMIC, HYBRID, or CONTENT_DEFINED.",
+    "production_binding_allowed": false,
+    "selected_policy": null,
+    "source_registry_version": "1.0"
+  },
+  {
+    "binding_status": "UNRESOLVED",
+    "evidence_status": "UNKNOWN",
+    "mechanic_id": "ELATION.GENERIC",
+    "notes": "Version 4.x officially exposes Elation damage, Laughter points, Aha Moment, and related extra-turn/resource interactions. No universal formula is locked yet; model as an extension namespace rather than forcing it into ordinary direct damage.",
+    "production_binding_allowed": false,
+    "selected_policy": null,
+    "source_registry_version": "1.0"
+  },
+  {
+    "binding_status": "UNRESOLVED",
+    "evidence_status": "UNKNOWN",
+    "mechanic_id": "MAX_HP.AUTO_CURRENT_HP_CHANGE",
+    "notes": "No universal rule was found for automatic current-HP adjustment when Max HP changes. The separate-clause pattern argues against assuming automatic healing, but does not prove the exact default for every system-level Max HP change.",
+    "production_binding_allowed": false,
+    "selected_policy": null,
+    "source_registry_version": "1.0"
+  },
+  {
+    "binding_status": "UNRESOLVED",
+    "evidence_status": "UNKNOWN",
+    "mechanic_id": "MAX_HP.CHANGE_POLICY",
+    "notes": "The global rule for current-HP adjustment when Max HP rises or falls is not locked. Store an explicit preserve_current, preserve_ratio, add_delta, or content_defined policy; never infer one default from a character description.",
+    "production_binding_allowed": false,
+    "selected_policy": null,
+    "source_registry_version": "1.0"
+  },
+  {
+    "binding_status": "UNRESOLVED",
+    "evidence_status": "UNKNOWN",
+    "mechanic_id": "MAX_HP.CURRENT_HP_COUPLING",
+    "notes": "Current content proves Max HP can change temporarily and dynamically, but text does not establish one global current-HP adjustment rule. Require explicit policies: PRESERVE_CURRENT, PRESERVE_RATIO, ADD_DELTA, CLAMP_ONLY, LINK_PERCENTAGE, or CONTENT_DEFINED.",
+    "production_binding_allowed": false,
+    "selected_policy": null,
+    "source_registry_version": "1.0"
+  },
+  {
+    "binding_status": "UNRESOLVED",
+    "evidence_status": "UNKNOWN",
+    "mechanic_id": "PRECISION.DAMAGE_HP_ROUNDING",
+    "notes": "No reliable multi-source evidence was found for the universal hidden rounding stage of damage, healing, Shield, HP, and overflow values. Keep full precision internally and record displayed and observed integer values separately until controlled captures lock each family.",
+    "production_binding_allowed": false,
+    "selected_policy": null,
+    "source_registry_version": "1.0"
+  },
+  {
+    "binding_status": "UNRESOLVED",
+    "evidence_status": "UNKNOWN",
+    "mechanic_id": "REMOVE.SELECTION_PRIORITY",
+    "notes": "No reliable multi-source evidence was found for the global priority used when an ability removes exactly one buff/debuff from multiple eligible effects. The request must support EXPLICIT, RANDOM, OLDEST, NEWEST, PRIORITY_TAG, and CONTENT_DEFINED without choosing a production default.",
+    "production_binding_allowed": false,
+    "selected_policy": null,
+    "source_registry_version": "1.0"
+  },
+  {
+    "binding_status": "UNRESOLVED",
+    "evidence_status": "UNKNOWN",
+    "mechanic_id": "TRIGGER.COUNTER_SOURCE_EVENT",
+    "notes": "Skill text distinguishes 'attacked' and 'hit' in different effects, but a universal current event boundary for counter eligibility across miss, shield-only, redirected, distributed, DoT, and additional damage is not locked.",
+    "production_binding_allowed": false,
+    "selected_policy": null,
+    "source_registry_version": "1.0"
+  }
+]

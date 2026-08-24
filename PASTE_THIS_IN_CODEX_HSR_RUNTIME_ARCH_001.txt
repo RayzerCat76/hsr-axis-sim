@@ -1,0 +1,859 @@
+Task ID: HSR-RUNTIME-ARCH-001
+Task title: Universal Runtime Contract Skeleton
+
+Recommended ChatGPT model: GPT-5.6 Sol
+Codex reasoning level: HIGH
+
+Current confirmed state
+=======================
+
+The existing repository is a mature deterministic MVP with timeline, replay,
+search, data-loading, evidence, and regression tooling.
+
+Independent validation of the supplied repository on 2026-07-12 produced:
+
+- `python -m compileall -q hsr_axis_sim`: PASS
+- complete pytest collection: 662 / 662 passed
+- locked regression: PASS 20 / 20
+
+The complete pytest collection was run in six non-overlapping file groups
+because one monolithic invocation exceeded the review command window.
+
+The current production runtime remains under:
+
+- `hsr_axis_sim/sim/**`
+
+The existing README explicitly documents:
+
+- LIFO extra-turn stack behavior
+
+That behavior is historically tested but is in semantic conflict with later
+research evidence. This task must not change it.
+
+The repository also contains HSR-AXIS-002Q-FIX work. Its previous
+`hsr_axis_sim/LUMEN_RESULT.md` was blocked only because pytest was unavailable
+in that Codex environment. HSR-AXIS-002Q-FIX is frozen and outside this task.
+Do not edit, validate, reinterpret, or extend its Tingyun-specific artifacts.
+
+The new research baseline is:
+
+- `HSR_RUNTIME_FRAMEWORK_BASELINE_V1_0.md`
+- `HSR_RUNTIME_FORMULA_REGISTRY_V1_0.json`
+- `HSR_RUNTIME_DEFENSE_TOUGHNESS_PRECISION_MODEL_V1_0.json`
+
+Registry status:
+
+- 200 total rules
+- 107 CONFIRMED
+- 81 PARTIAL
+- 12 UNKNOWN
+
+Objective
+=========
+
+Create a clean, non-invasive, importable contract skeleton for the future
+universal HSR Runtime.
+
+This task is interface-only.
+
+It must provide:
+
+1. stable string enums for generic runtime concepts;
+2. immutable Action / Attack / Hit context dataclasses;
+3. a generic runtime event envelope;
+4. evidence and semantic-binding gates;
+5. deterministic canonical serialization;
+6. trace-record structures that separate raw/internal values from displayed
+   values;
+7. a checked-in unresolved-semantics registry generated from the v1.0 research
+   baseline;
+8. documentation describing the migration boundary.
+
+Do not connect the new contracts to the existing simulator execution path.
+Do not modify production combat behavior.
+
+Required handoff-file placement
+===============================
+
+The handoff bundle contains the three v1.0 research files.
+
+Copy them byte-for-byte to:
+
+```text
+docs/runtime/research/HSR_RUNTIME_FRAMEWORK_BASELINE_V1_0.md
+docs/runtime/research/HSR_RUNTIME_FORMULA_REGISTRY_V1_0.json
+docs/runtime/research/HSR_RUNTIME_DEFENSE_TOUGHNESS_PRECISION_MODEL_V1_0.json
+```
+
+Required SHA-256 values:
+
+```text
+HSR_RUNTIME_FRAMEWORK_BASELINE_V1_0.md
+cf6b94fb29ce8ca2cf5e0dbcd125c87a65c026304bf8c68dfdd0a4e7b9074817
+
+HSR_RUNTIME_FORMULA_REGISTRY_V1_0.json
+7adaeb30b38c70c9c32de39925561abdf64ef1415e9fdd57b56026feca6912d9
+
+HSR_RUNTIME_DEFENSE_TOUGHNESS_PRECISION_MODEL_V1_0.json
+cf3e46a7a0a12db73f30bc96837a143061e1a012d66384c43eb20685d6a223b3
+```
+
+Do not rewrite, reformat, normalize, or regenerate these three reference files.
+
+Required implementation
+=======================
+
+Create this new sidecar package:
+
+```text
+hsr_axis_sim/runtime_contracts/
+  __init__.py
+  enums.py
+  contexts.py
+  events.py
+  gates.py
+  serialization.py
+  trace.py
+```
+
+Also create:
+
+```text
+docs/runtime/ARCHITECTURE_CONTRACT_V1.md
+docs/runtime/UNRESOLVED_SEMANTICS_V1.json
+
+hsr_axis_sim/tests/test_runtime_contract_enums.py
+hsr_axis_sim/tests/test_runtime_contexts.py
+hsr_axis_sim/tests/test_runtime_semantic_gates.py
+hsr_axis_sim/tests/test_runtime_trace_serialization.py
+hsr_axis_sim/tests/test_runtime_research_artifacts.py
+```
+
+Use only the Python standard library. Add no dependencies.
+
+1. String enums
+---------------
+
+Use `enum.StrEnum` when supported by the repository Python version, or a
+compatible `str, Enum` base if required.
+
+At minimum define these stable string enums.
+
+### Evidence and binding
+
+```text
+EvidenceStatus:
+  CONFIRMED
+  PARTIAL
+  UNKNOWN
+
+BindingStatus:
+  BOUND
+  INTERFACE_ONLY
+  UNRESOLVED
+```
+
+### Action and timeline concepts
+
+```text
+TurnKind:
+  NORMAL
+  EXTRA
+  INTERRUPT
+  NONE
+
+ActionFamily:
+  NORMAL_TURN
+  EXTRA_TURN
+  EXTRA_ACTION
+  FOLLOW_UP
+  COUNTER
+  ULTIMATE_INTERRUPT
+  DOES_NOT_END_TURN
+  SUMMON_ACTION
+  JOINT_ACTION
+  CONTENT_DEFINED
+
+PriorityClass:
+  FOLLOW_UP
+  ULTIMATE_OR_EXTRA_TURN
+  DOES_NOT_END_TURN
+  NORMAL_TURN
+  CONTENT_DEFINED
+
+SamePriorityPolicy:
+  FIFO
+  LIFO
+  EXPLICIT_ORDER
+  UNRESOLVED
+```
+
+Important:
+
+- Do not assign numeric priority ranks.
+- Do not implement ordering comparisons.
+- Do not choose FIFO or LIFO as a default.
+- `SamePriorityPolicy` must be supplied explicitly wherever required.
+
+### Targeting and continuation
+
+```text
+TargetPolicyKind:
+  SINGLE
+  BLAST
+  AOE
+  BOUNCE
+  RANDOM
+  LOCKED
+  ADJACENT
+  CONTENT_DEFINED
+
+TargetInvalidationPolicy:
+  ABORT
+  RETARGET_RANDOM
+  RETARGET_LOCKED
+  RETARGET_MARKED
+  WAIT_FOR_NEW_TARGET
+  CONTINUE_CHAIN
+  CONTENT_DEFINED
+
+MultiHitContinuationPolicy:
+  STOP
+  RETARGET
+  CONTINUE_ON_CORPSE
+  CONTINUE_CHAIN
+  CONTENT_DEFINED
+
+BounceRepeatPolicy:
+  WITH_REPLACEMENT
+  WITHOUT_REPLACEMENT
+  WEIGHTED
+  CONTENT_DEFINED
+  UNRESOLVED
+```
+
+### Effect, lifecycle, wave, and precision
+
+```text
+TriggerScope:
+  PER_ACTION
+  PER_ATTACK
+  PER_HIT
+  PER_TARGET
+  PER_DISTINCT_TARGET
+  PER_EFFECT_ACTIVATION
+  PER_TURN
+  PER_WAVE
+  PER_BATTLE
+
+StackPolicy:
+  NON_STACKING
+  ADD_STACK
+  EXTEND_DURATION
+  REFRESH_DURATION
+  REPLACE_VALUE
+  INDEPENDENT_INSTANCES
+  CONTENT_DEFINED
+
+WavePolicy:
+  KEEP
+  REMOVE
+  RESET_COUNTER
+  KEEP_AV
+  REBASE_AV
+  REAPPLY
+  CONTENT_DEFINED
+
+RemovalChannel:
+  CLEANSE
+  DISPEL
+  NATURAL_EXPIRATION
+  TRANSFORM
+  WEAKNESS_BREAK
+  KILLING_BLOW
+  OWNER_DOWNED
+  COUNTDOWN
+  RESOURCE_DEPLETION
+  LINKED_ENTITY_DEFEATED
+  PHASE_CHANGE
+  SCRIPTED
+
+LifecycleState:
+  ACTIVE
+  DISABLED
+  CROWD_CONTROLLED
+  OFF_FIELD
+  UNTARGETABLE
+  REMOVED
+  KNOCKED_DOWN
+  DEAD
+  PENDING_REVIVE
+  REVIVING
+  REVIVED
+  DESPAWNED
+
+QuantizationPolicy:
+  NONE
+  FLOOR
+  CEIL
+  ROUND_HALF_UP
+  ROUND_HALF_EVEN
+  TRUNCATE
+  DISPLAY_ONLY
+  CONTENT_DEFINED
+
+DotEvaluationPolicy:
+  SNAPSHOT
+  DYNAMIC
+  HYBRID
+  CONTENT_DEFINED
+  UNRESOLVED
+
+MaxHpCouplingPolicy:
+  PRESERVE_CURRENT
+  PRESERVE_RATIO
+  ADD_DELTA
+  CLAMP_ONLY
+  LINK_PERCENTAGE
+  CONTENT_DEFINED
+  UNRESOLVED
+```
+
+Also define stable enums for:
+
+```text
+DamageFamily
+DefenseMechanism
+RuntimeEventType
+TargetRole
+```
+
+Use the v1.0 research files to choose names. Do not add numeric formulas or
+execution logic.
+
+2. Context dataclasses
+----------------------
+
+Create frozen dataclasses:
+
+```text
+ActionContext
+AttackContext
+HitContext
+```
+
+### ActionContext minimum fields
+
+```python
+action_id: str
+actor_id: str
+owner_id: str | None
+source_id: str | None
+family: ActionFamily
+turn_kind: TurnKind
+priority_class: PriorityClass
+trigger_sequence: int | None
+parent_event_id: str | None
+rng_scope: str | None
+metadata: Mapping[str, JSON-compatible value]
+```
+
+### AttackContext minimum fields
+
+```python
+attack_id: str
+action_id: str
+attacker_id: str
+attack_tags: tuple[str, ...]
+target_policy: TargetPolicyKind
+selected_primary_target_id: str | None
+is_follow_up: bool
+is_counter: bool
+metadata: Mapping[str, JSON-compatible value]
+```
+
+Validation requirements:
+
+- `is_counter=True` requires `is_follow_up=True`.
+- IDs must be non-empty strings.
+- Tags must be unique and stored in deterministic tuple order.
+- A policy that requires a primary target must reject a missing primary target.
+- Do not resolve targets or run RNG.
+
+### HitContext minimum fields
+
+```python
+hit_id: str
+attack_id: str
+hit_index: int
+target_id: str
+target_role: TargetRole
+damage_request_id: str | None
+toughness_request_id: str | None
+application_request_ids: tuple[str, ...]
+metadata: Mapping[str, JSON-compatible value]
+```
+
+Validation requirements:
+
+- `hit_index >= 0`.
+- IDs are non-empty.
+- Application request IDs are unique and deterministic.
+
+The dataclasses are contracts only. They must not import or call:
+
+- `hsr_axis_sim.sim.Action`
+- `BattleState`
+- `Timeline`
+- existing `Effect` classes
+- search or regression code
+
+3. Runtime event envelope
+-------------------------
+
+Create a frozen `RuntimeEvent` dataclass with at least:
+
+```python
+event_id: str
+event_type: RuntimeEventType
+sequence: int
+action_id: str | None
+attack_id: str | None
+hit_id: str | None
+actor_id: str | None
+source_id: str | None
+target_id: str | None
+payload: Mapping[str, JSON-compatible value]
+```
+
+Validation:
+
+- non-empty `event_id`;
+- `sequence >= 0`;
+- payload is copied/frozen or serialized defensively;
+- no implicit event dispatch behavior.
+
+`RuntimeEventType` must include core names needed by the v1.0 baseline,
+including:
+
+```text
+BATTLE_START
+WAVE_START
+TURN_ENTRY
+TURN_START
+ACTION_QUEUED
+ACTION_START
+ATTACK_DECLARED
+TARGET_ATTACKED
+HIT_RESOLVED
+BEFORE_DAMAGE
+DAMAGE_RESOLVED
+SHIELD_CHANGED
+HP_CHANGED
+HP_LOST
+TOUGHNESS_REDUCED
+WEAKNESS_BROKEN
+EFFECT_APPLICATION_ATTEMPT
+EFFECT_APPLIED
+EFFECT_RESISTED
+EFFECT_IMMUNE
+EFFECT_REMOVED
+EFFECT_TRANSFORMED
+FOLLOW_UP_QUEUED
+COUNTER_QUEUED
+EXTRA_TURN_QUEUED
+ACTION_END
+TURN_END
+BEFORE_LETHAL
+LETHAL_INTERCEPTED
+KNOCKED_DOWN
+DEATH
+REVIVE
+WAVE_END
+BATTLE_END
+CONTENT_DEFINED
+```
+
+The enum establishes vocabulary only. It must not alter existing lower-case MVP
+event strings.
+
+4. Evidence and semantic gates
+------------------------------
+
+Create:
+
+```text
+SemanticContract
+UnresolvedMechanicError
+```
+
+`SemanticContract` minimum fields:
+
+```python
+mechanic_id: str
+evidence_status: EvidenceStatus
+binding_status: BindingStatus
+selected_policy: str | None
+source_refs: tuple[str, ...]
+notes: str | None
+```
+
+Validation rules:
+
+- `CONFIRMED + BOUND` requires at least one source reference.
+- `PARTIAL` may only be `INTERFACE_ONLY` or `UNRESOLVED`.
+- `UNKNOWN` must be `UNRESOLVED`.
+- `BOUND` is forbidden for `PARTIAL` or `UNKNOWN`.
+- `UNRESOLVED` must not invent a selected policy.
+- no empty source-reference strings;
+- source references are unique and deterministically ordered.
+
+Add an explicit method such as:
+
+```python
+require_bound()
+```
+
+It must raise controlled `UnresolvedMechanicError` unless the contract is
+legally `BOUND`.
+
+No silent fallback is allowed.
+
+5. Unresolved semantics registry
+--------------------------------
+
+Generate and commit:
+
+```text
+docs/runtime/UNRESOLVED_SEMANTICS_V1.json
+```
+
+It must be derived from the copied v1.0 Formula Registry and contain exactly
+the entries whose status is `UNKNOWN`.
+
+Expected count:
+
+```text
+12
+```
+
+Expected IDs:
+
+```text
+ELATION.GENERIC
+MAX_HP.CHANGE_POLICY
+CONTROL.FROZEN_DAMAGE_FORMULA
+DOT.SNAPSHOT_POLICY
+MAX_HP.CURRENT_HP_COUPLING
+MAX_HP.AUTO_CURRENT_HP_CHANGE
+TRIGGER.COUNTER_SOURCE_EVENT
+COUNTER.ELIGIBILITY_POLICY
+REMOVE.SELECTION_PRIORITY
+BOUNCE.REPEAT_TARGET_POLICY
+PRECISION.DAMAGE_HP_ROUNDING
+COUNTER.SHIELD_BARRIER_INTERACTION
+```
+
+Each JSON entry must include:
+
+```text
+mechanic_id
+evidence_status = UNKNOWN
+binding_status = UNRESOLVED
+selected_policy = null
+production_binding_allowed = false
+source_registry_version = 1.0
+notes
+```
+
+Ordering must be deterministic by `mechanic_id`.
+
+Do not merge related IDs or reduce the count.
+
+6. Deterministic serialization
+------------------------------
+
+Create canonical serialization helpers.
+
+Requirements:
+
+- stable dictionary field order or canonical `sort_keys=True` JSON;
+- compact deterministic JSON option;
+- pretty deterministic JSON option;
+- tuples/enums/dataclasses serialize deterministically;
+- reject unsupported opaque Python objects with controlled `TypeError`;
+- never silently convert an unknown object using `repr()`.
+
+Do not serialize binary floats as rounded UI values.
+
+7. Trace contracts
+------------------
+
+Create frozen trace structures, at minimum:
+
+```text
+TraceNumericValue
+RuntimeTraceRecord
+```
+
+`TraceNumericValue` must separate:
+
+```python
+raw_value: str
+displayed_value: str | None
+quantization_policy: QuantizationPolicy
+```
+
+Using a string for `raw_value` is intentional: this contract must be able to
+preserve Decimal/rational text without forcing binary-float rounding.
+
+`RuntimeTraceRecord` must include:
+
+```python
+sequence: int
+event: RuntimeEvent
+action_context: ActionContext | None
+attack_context: AttackContext | None
+hit_context: HitContext | None
+numeric_values: Mapping[str, TraceNumericValue]
+notes: tuple[str, ...]
+```
+
+Validation:
+
+- `sequence >= 0`;
+- nested context IDs must agree when multiple contexts are present;
+- numeric-value keys and notes are deterministic;
+- canonical JSON round-trip is byte-stable.
+
+Do not add a trace writer to the existing simulator in this task.
+
+8. Documentation
+----------------
+
+Create:
+
+```text
+docs/runtime/ARCHITECTURE_CONTRACT_V1.md
+```
+
+It must explain:
+
+- sidecar-only scope;
+- `sim` remains the active MVP runtime;
+- no behavior migration occurs in ARCH-001;
+- Action / Attack / Hit hierarchy;
+- event vocabulary;
+- evidence-status binding rules;
+- raw versus displayed numeric values;
+- unresolved semantic blockers;
+- planned future adapter boundary;
+- LIFO/FIFO conflict remains unresolved and unchanged in production.
+
+Acceptance criteria
+===================
+
+1. New `hsr_axis_sim.runtime_contracts` package imports successfully.
+
+2. Every required enum has exact stable string values.
+
+3. No enum or class encodes numeric action priority.
+
+4. No queue policy defaults to FIFO or LIFO.
+
+5. Context dataclasses are frozen, validated, and JSON-serializable.
+
+6. Counter cannot be represented without Follow-Up classification.
+
+7. Runtime event vocabulary is available without altering existing MVP events.
+
+8. Semantic gates reject:
+   - `PARTIAL + BOUND`;
+   - `UNKNOWN + BOUND`;
+   - `UNKNOWN + INTERFACE_ONLY`;
+   - `UNRESOLVED` with an invented selected policy;
+   - `CONFIRMED + BOUND` without source references.
+
+9. `require_bound()` raises controlled `UnresolvedMechanicError` for every
+   non-bound contract.
+
+10. `UNRESOLVED_SEMANTICS_V1.json` contains exactly the 12 expected UNKNOWN
+    IDs, sorted deterministically, with null selected policies.
+
+11. The three research files are byte-identical to the supplied files and
+    match the required SHA-256 values.
+
+12. Canonical JSON serialization is deterministic and byte-stable.
+
+13. Trace numeric data stores raw and displayed values separately.
+
+14. No existing file under these paths is modified:
+
+```text
+hsr_axis_sim/sim/**
+hsr_axis_sim/search/**
+hsr_axis_sim/regression/**
+hsr_axis_sim/adapters/**
+hsr_axis_sim/real_bindings/**
+hsr_axis_sim/data/**
+fixtures/**
+```
+
+15. Do not modify:
+
+```text
+README.md
+pyproject.toml
+PACKAGE_MANIFEST.json
+```
+
+16. Existing LIFO extra-turn behavior and tests remain unchanged.
+
+17. Existing HSR-AXIS-002Q-FIX files and semantic contracts remain unchanged.
+
+18. Complete existing test and regression baselines still pass.
+
+Required tests
+==============
+
+Add focused tests for at least:
+
+### Enum stability
+- exact values for every required enum;
+- JSON encoding as strings;
+- no numeric priority or ordering API;
+- queue policy must be explicit.
+
+### Context validation
+- valid Action/Attack/Hit construction;
+- empty-ID rejection;
+- negative hit index rejection;
+- Counter without Follow-Up rejection;
+- missing primary target rejection for relevant target policies;
+- duplicate tag/request-ID rejection or canonical deterministic normalization;
+- frozen dataclass mutation rejection.
+
+### Semantic gates
+- every legal evidence/binding combination;
+- every illegal evidence/binding combination;
+- missing source refs for bound confirmed mechanics;
+- invented policy on unresolved contract;
+- controlled `UnresolvedMechanicError`.
+
+### Event and trace
+- valid event envelope;
+- negative sequence rejection;
+- nested context-ID mismatch rejection;
+- raw/display value separation;
+- deterministic compact and pretty serialization;
+- round-trip byte stability;
+- unsupported-object rejection.
+
+### Research artifacts
+- exact SHA-256 of all three copied research files;
+- exact Formula Registry version `1.0`;
+- exact total/status counts `200 / 107 / 81 / 12`;
+- exact set and sorted order of the 12 UNKNOWN entries;
+- no non-UNKNOWN item appears in the unresolved registry.
+
+Files and areas that must remain unchanged
+==========================================
+
+Do not edit or refactor:
+
+- existing simulator production code;
+- existing action/timeline/event/effect classes;
+- existing tests except adding the new focused test files;
+- replay fixtures;
+- search logic;
+- regression runner or manifest;
+- Tingyun/Pela evidence and bindings;
+- existing reports;
+- existing README explanation of LIFO;
+- any 002R work.
+
+Do not import the new package from existing production modules.
+
+Explicit exclusions
+===================
+
+Do not implement:
+
+- a new battle loop;
+- formula execution;
+- damage resolver changes;
+- timeline migration;
+- FIFO/LIFO behavior changes;
+- DoT ticking;
+- Shield absorption;
+- Break or Super Break execution;
+- Counter execution;
+- summons or memosprites;
+- enemy AI migration;
+- character kits;
+- UI;
+- web scraping;
+- Bilibili parsing;
+- video OCR;
+- automatic trace creation;
+- Codex-generated guesses for PARTIAL or UNKNOWN mechanics.
+
+Commands to run
+===============
+
+Run and report exact output for:
+
+```bash
+python -m compileall -q hsr_axis_sim
+
+python -m pytest -q   hsr_axis_sim/tests/test_runtime_contract_enums.py   hsr_axis_sim/tests/test_runtime_contexts.py   hsr_axis_sim/tests/test_runtime_semantic_gates.py   hsr_axis_sim/tests/test_runtime_trace_serialization.py   hsr_axis_sim/tests/test_runtime_research_artifacts.py
+
+python -m pytest -q
+
+python -m hsr_axis_sim.regression.runner   --manifest hsr_axis_sim/data/regression_manifest.json   --format text
+
+python -m hsr_axis_sim.regression.runner   --manifest hsr_axis_sim/data/regression_manifest.json   --only trace_evidence   --format text
+
+git diff --check
+```
+
+Also report:
+
+```bash
+sha256sum   docs/runtime/research/HSR_RUNTIME_FRAMEWORK_BASELINE_V1_0.md   docs/runtime/research/HSR_RUNTIME_FORMULA_REGISTRY_V1_0.json   docs/runtime/research/HSR_RUNTIME_DEFENSE_TOUGHNESS_PRECISION_MODEL_V1_0.json
+```
+
+If one monolithic pytest invocation exceeds the execution window, run all 47
+existing test files plus the new files in non-overlapping groups and report the
+exact group composition and summed total. Do not omit any test file.
+
+Final report format
+===================
+
+Update:
+
+```text
+hsr_axis_sim/LUMEN_RESULT.md
+```
+
+The report must include:
+
+1. Task ID and title.
+2. Status: PASS, PARTIAL, BLOCKED, or FAIL.
+3. Implementation summary.
+4. Exact files added and modified.
+5. Exact tests added.
+6. Exact commands executed.
+7. Exact pass/fail counts and timings.
+8. Research artifact SHA-256 values.
+9. Confirmation that unresolved registry contains exactly 12 items.
+10. Confirmation that no numeric action priority or FIFO/LIFO default was added.
+11. Confirmation that existing `sim`, search, regression, data, fixtures,
+    README, pyproject, and 002Q-FIX files were unchanged.
+12. Unresolved issues.
+13. Confirmation that exclusions were respected.
+14. Suggested next milestone only:
+    `HSR-RUNTIME-ARCH-002 — Event Envelope Adapter Bridge`.
+15. Do not start ARCH-002.
+
+Stop after HSR-RUNTIME-ARCH-001.

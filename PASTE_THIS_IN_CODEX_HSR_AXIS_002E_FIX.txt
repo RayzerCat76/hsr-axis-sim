@@ -1,0 +1,93 @@
+Task ID: HSR-AXIS-002E-FIX
+Task name: Full-Suite Regression Test Repair
+
+Codex Reasoning: LOW
+Recommended model: GPT-5.6 Luna
+Fallback model: GPT-5.6 Terra if Luna is unavailable
+
+Context:
+HSR-AXIS-002E added the new locked regression group `trace_evidence`. The implementation, manifest runner, and evidence-only runner work, but independent review found one stale pre-002E test expectation.
+
+Independent review result:
+
+- compileall: PASS
+- locked manifest regression: PASS 20/20
+- trace-evidence-only regression: PASS 2/2
+- full pytest: FAIL — 322 passed, 1 failed
+
+Failing test:
+
+hsr_axis_sim/tests/test_manual_video_trace_action_sequence_only.py
+::test_existing_regression_manifest_includes_real_trace_as_action_sequence_only
+
+Cause:
+The test asserts the complete old group-count dictionary and therefore rejects the newly added valid entry:
+
+`trace_evidence: 2`
+
+Goal:
+Make the smallest correct test-maintenance fix so the full suite passes without weakening the 002E evidence lock and without changing combat or production behavior.
+
+Required work:
+
+1. Update the stale test in:
+
+   hsr_axis_sim/tests/test_manual_video_trace_action_sequence_only.py
+
+2. Preferred test design:
+   - The action-sequence-only test should assert only the behavior it owns:
+     - `counts_by_group()["action_sequence_traces"] == 1`;
+     - the locked action-sequence entry exists;
+     - its required checks remain `lint` and `action_sequence`.
+   - Do not make this unrelated test assert the entire manifest group dictionary.
+
+3. Confirm that dedicated 002E tests still lock:
+   - `trace_evidence == 2`;
+   - one accepted `semantic_map` entry;
+   - one accepted `frame_anchors` entry;
+   - both explicit source-trace paths;
+   - evidence-only runner behavior and report output.
+
+4. Do not remove or rename `trace_evidence`.
+5. Do not reduce the locked evidence count.
+6. Do not modify the accepted semantic-map, frame-anchor, or source-trace fixtures.
+7. Do not change combat mechanics, search behavior, character logic, damage, timeline, AV, buffs, RNG, or replay execution.
+8. Do not begin HSR-AXIS-002F in this task.
+
+Required commands:
+
+```bash
+python -m compileall -q hsr_axis_sim
+python -m pytest -q
+python -m hsr_axis_sim.regression.runner \
+  --manifest hsr_axis_sim/data/regression_manifest.json \
+  --format text
+python -m hsr_axis_sim.regression.runner \
+  --manifest hsr_axis_sim/data/regression_manifest.json \
+  --only trace_evidence \
+  --format text
+```
+
+Expected final state:
+
+- Full pytest: PASS, zero failures.
+- Locked manifest regression: PASS 20/20.
+- Trace-evidence-only regression: PASS 2/2.
+- Existing group counts remain:
+  - replays=12
+  - manual=1
+  - scenarios=2
+  - action_sequence_traces=1
+  - trace_evidence=2
+
+Update `hsr_axis_sim/LUMEN_RESULT.md` with:
+
+1. the exact file(s) changed;
+2. the stale-test root cause;
+3. exact full pytest result;
+4. locked manifest result;
+5. trace-evidence-only result;
+6. explicit statement that no production or combat behavior changed;
+7. next recommended task only after all gates pass.
+
+Do not claim the fix is complete if full pytest is unavailable or still failing. In that case, report BLOCKED and preserve the current implementation.

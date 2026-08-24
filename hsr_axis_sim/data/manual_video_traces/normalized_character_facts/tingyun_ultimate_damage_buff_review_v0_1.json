@@ -1,0 +1,196 @@
+{
+  "review_id": "tingyun_ultimate_damage_buff_fact_completion_v0_1",
+  "version": "0.1",
+  "status": "non_executable_evidence_review",
+  "facts": [
+    {
+      "fact_id": "tingyun.ultimate.damage_buff.target_scope",
+      "field_name": "damage_buff_target_scope",
+      "normalized_value": "selected_single_ally",
+      "value_type": "target_scope",
+      "unit": null,
+      "verification_status": "corroborated",
+      "version_applicability": "Stable v1.0 core mechanic treated as applicable to the recorded 3.4 trace.",
+      "provenance": [
+        {
+          "source_id": "gachabase_tingyun",
+          "locator": "Character 1202 release data > Ultimate target/effect description",
+          "release_status": "release_structured_data",
+          "corroboration_status": "supports_exact_field",
+          "evidence_summary": "The accepted source-registry record identifies the Ultimate as affecting one selected ally."
+        },
+        {
+          "source_id": "hoyolab_tingyun_v1",
+          "locator": "Version 1.0 guide > Ultimate description",
+          "release_status": "release_community_reference",
+          "corroboration_status": "supports_exact_field",
+          "evidence_summary": "The accepted v1.0 guide record independently identifies one ally."
+        }
+      ],
+      "unresolved_notes": "The accepted video does not identify which ally was selected.",
+      "trace_link": {"step": 1, "actor": "tingyun", "action": "ultimate"},
+      "simulator_binding_allowed": false
+    },
+    {
+      "fact_id": "tingyun.ultimate.damage_buff.duration_turns",
+      "field_name": "damage_buff_duration_turns",
+      "normalized_value": 2,
+      "value_type": "integer",
+      "unit": "turn",
+      "verification_status": "corroborated",
+      "version_applicability": "Stable v1.0 core mechanic treated as applicable to the recorded 3.4 trace.",
+      "provenance": [
+        {
+          "source_id": "gachabase_tingyun",
+          "locator": "Character 1202 release data > Ultimate effect description > duration",
+          "release_status": "release_structured_data",
+          "corroboration_status": "supports_exact_field",
+          "evidence_summary": "The accepted structured-source summary records a two-turn DMG buff."
+        },
+        {
+          "source_id": "hoyolab_tingyun_v1",
+          "locator": "Version 1.0 guide > Ultimate description > duration",
+          "release_status": "release_community_reference",
+          "corroboration_status": "supports_exact_field",
+          "evidence_summary": "The accepted v1.0 guide summary independently records two turns."
+        }
+      ],
+      "unresolved_notes": "The source summaries do not define the same-current-turn decrement edge.",
+      "trace_link": {"step": 1, "actor": "tingyun", "action": "ultimate"},
+      "simulator_binding_allowed": false
+    },
+    {
+      "fact_id": "tingyun.ultimate.damage_buff.magnitude_by_trace_level",
+      "field_name": "damage_increase_percent_by_trace_level",
+      "normalized_value": null,
+      "value_type": "trace_level_table",
+      "unit": "percent",
+      "verification_status": "missing",
+      "version_applicability": "A release/live trace-level table is required; no table is preserved in accepted local provenance.",
+      "provenance": [
+        {
+          "source_id": "gachabase_tingyun",
+          "locator": "Accepted source-registry summary only; exact Ultimate level-scaling field path was not preserved",
+          "release_status": "release_structured_data",
+          "corroboration_status": "supports_context_only",
+          "evidence_summary": "The accepted record establishes that the DMG buff is level-dependent but does not preserve its level table."
+        },
+        {
+          "source_id": "hoyolab_tingyun_v1",
+          "locator": "Accepted source-registry summary only; exact per-level magnitude locator was not preserved",
+          "release_status": "release_community_reference",
+          "corroboration_status": "supports_context_only",
+          "evidence_summary": "The accepted guide record confirms a level-dependent buff but not a normalized per-level table."
+        }
+      ],
+      "unresolved_notes": "Do not infer level 1-12 magnitudes or assume a real-video trace level.",
+      "trace_link": {"step": 1, "actor": "tingyun", "action": "ultimate"},
+      "simulator_binding_allowed": false
+    },
+    {
+      "fact_id": "tingyun.ultimate.damage_buff.application_order",
+      "field_name": "damage_buff_relative_to_target_energy_restore",
+      "normalized_value": null,
+      "value_type": "effect_order",
+      "unit": null,
+      "verification_status": "unresolved",
+      "version_applicability": "Release descriptions in accepted local provenance do not distinguish effect order.",
+      "provenance": [
+        {
+          "source_id": "gachabase_tingyun",
+          "locator": "Accepted source-registry Ultimate summary",
+          "release_status": "release_structured_data",
+          "corroboration_status": "does_not_distinguish",
+          "evidence_summary": "The accepted summary lists Energy restoration and the DMG buff but preserves no execution-order field."
+        },
+        {
+          "source_id": "hoyolab_tingyun_v1",
+          "locator": "Accepted source-registry Ultimate summary",
+          "release_status": "release_community_reference",
+          "corroboration_status": "does_not_distinguish",
+          "evidence_summary": "The accepted guide summary does not establish whether buff application precedes Energy restoration."
+        }
+      ],
+      "unresolved_notes": "A later binding must not choose effect order without a release-data locator or interaction test.",
+      "trace_link": {"step": 1, "actor": "tingyun", "action": "ultimate"},
+      "simulator_binding_allowed": false
+    },
+    {
+      "fact_id": "tingyun.ultimate.damage_buff.release_scope",
+      "field_name": "release_and_version_scope",
+      "normalized_value": "v1.0_release_core_applicable_to_3.4_with_current_structured_page_version_ambiguity",
+      "value_type": "version_qualifier",
+      "unit": null,
+      "verification_status": "corroborated",
+      "version_applicability": "The v1.0 guide predates 3.4; the registered current structured page postdates 3.4.",
+      "provenance": [
+        {
+          "source_id": "gachabase_tingyun",
+          "locator": "Registered source metadata > game_version and qualification_notes",
+          "release_status": "release_structured_data",
+          "corroboration_status": "supports_exact_field",
+          "evidence_summary": "The registered structured source is release data but its current snapshot postdates the trace."
+        },
+        {
+          "source_id": "hoyolab_tingyun_v1",
+          "locator": "Registered source metadata > game_version 1.0",
+          "release_status": "release_community_reference",
+          "corroboration_status": "supports_exact_field",
+          "evidence_summary": "The registered community guide is release-era v1.0 and predates the 3.4 trace."
+        }
+      ],
+      "unresolved_notes": "No accepted byte-identical 3.4 field snapshot is available.",
+      "trace_link": {"step": 1, "actor": "tingyun", "action": "ultimate"},
+      "simulator_binding_allowed": false
+    },
+    {
+      "fact_id": "tingyun.ultimate.damage_buff.real_video_trace_level",
+      "field_name": "observed_real_video_trace_level",
+      "normalized_value": null,
+      "value_type": "trace_level",
+      "unit": null,
+      "verification_status": "missing",
+      "version_applicability": "Recorded 3.4 trace only.",
+      "provenance": [
+        {
+          "source_id": "local_evidence_report",
+          "locator": "Step 1 accepted evidence > known and unknown fields",
+          "release_status": "accepted_manual_evidence",
+          "corroboration_status": "supports_exact_field",
+          "evidence_summary": "The accepted video evidence records the action but no Tingyun trace level."
+        }
+      ],
+      "unresolved_notes": "No real-video magnitude may be selected from a level table even after that table is sourced.",
+      "trace_link": {"step": 1, "actor": "tingyun", "action": "ultimate"},
+      "simulator_binding_allowed": false
+    }
+  ],
+  "duration_semantics": {
+    "verified_duration_turns": 2,
+    "engine_duration_type_reviewed": "target_normal_turns",
+    "duration_starts": "Immediately when the AddBuff effect applies and stores remaining_turns=2.",
+    "cast_interrupt_decrements": false,
+    "current_target_normal_turn_decrements_at_end_if_already_applied": true,
+    "extra_turn_decrements": false,
+    "non_ending_action_decrements": false,
+    "expiration_boundary": "The buff is removed at the end of the second target normal turn counted after application; if applied during the target's already-active normal turn, that current turn end is count one.",
+    "engine_representation_status": "representable_with_source_unverified_same_turn_edge",
+    "verified_game_equivalence": false,
+    "assessment_notes": "The engine represents a two-target-normal-turn counter without interrupt, extra-turn, or non-ending-action decrements. Accepted sources do not verify whether the game counts an already-active target turn, so equivalence at that edge remains a source question rather than a demonstrated engine defect."
+  },
+  "declared_readiness_status": "blocked_by_both",
+  "blockers": [
+    "No accepted release/live per-trace-level DMG-increase magnitude table with field locator.",
+    "No accepted source distinguishes damage-buff application order from target Energy restoration.",
+    "The same-current-turn duration edge is deterministic in the engine but not verified against release behavior."
+  ],
+  "recommended_research_actions": [
+    "Capture a version-qualified release-data level table for the Ultimate DMG-increase field.",
+    "Capture a release-data effect sequence or controlled interaction test for buff-versus-Energy order.",
+    "Verify whether an Ultimate cast during the target's active normal turn consumes one duration count at that turn end."
+  ],
+  "research_limitations": [
+    "Direct re-retrieval of the two registered external pages was unavailable in this environment; only accepted local source-registry records were used.",
+    "No magnitude or effect order was inferred from memory, animation, or the real video."
+  ]
+}

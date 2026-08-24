@@ -1,0 +1,152 @@
+Task ID: HSR-AXIS-002C
+Task name: Real Trace Semantic Placeholder Map MVP
+
+Codex Reasoning: High
+ChatGPT Model: GPT-5.5 Thinking
+Reason: This task begins connecting a real video trace to combat semantics. Incorrect assumptions here could corrupt future replay validation and AI search, so be conservative and explicit.
+
+Context:
+We have accepted HSR-AXIS-002B. The real Bilibili trace is now locked as an action-sequence-only regression item. It intentionally does not include SP, energy, HP, toughness, damage, target, or RNG values.
+
+Existing real trace:
+- File: hsr_axis_sim/data/manual_video_traces/intake/real_video_trace_001_botu_dilemma_floor12_side1_action_sequence_only.json
+- Video: 【3.4博徒困境】全网首发！0+1风套那刻夏逆属性2金0t砂金！
+- Bilibili: https://www.bilibili.com/video/BV1CXtVzaEQB?vd_source=ac236634092c9f9a4f4b0169249ce344
+- Team: 那刻夏 / 停云 / 佩拉 / 记忆主
+- Prebattle: 佩拉秘技开怪
+- Steps:
+  1. tingyun ultimate
+  2. pela skill
+  3. remembrance_trailblazer skill
+  4. tingyun skill
+  5. pela ultimate
+  6. naxia ultimate
+  7. naxia basic_plus_extra_skill
+  8. mem advance_naxia
+  9. naxia skill_plus_extra_skill
+
+Goal:
+Create a non-executable semantic placeholder mapping layer for this real trace.
+
+This task must NOT implement real character kits yet.
+This task must NOT change combat mechanics.
+This task must NOT attempt to simulate Naxia, Tingyun, Pela, Remembrance Trailblazer, or Mem.
+This task must NOT invent numeric state.
+This task must NOT claim exact action-advance amounts, SP changes, energy changes, damage, toughness, enemy targets, buff values, or RNG.
+
+Purpose:
+The semantic map should answer:
+- What does each observed action label probably mean in human terms?
+- Is it a normal action, ultimate/interrupt, prebattle technique, composite action, summon/mem action, or placeholder?
+- What simulator binding exists today, if any?
+- What remains unknown before this can become an executable replay or real character kit?
+
+Required new data file:
+Create:
+
+hsr_axis_sim/data/manual_video_traces/semantic_maps/real_video_trace_001_botu_dilemma_semantics_v0_1.json
+
+Suggested structure:
+
+{
+  "semantic_map_id": "real_video_trace_001_botu_dilemma_semantics_v0_1",
+  "source_trace": "real_video_trace_001_botu_dilemma_floor12_side1_action_sequence_only",
+  "status": "placeholder_semantics_only",
+  "version": "0.1",
+  "policy": {
+    "executable": false,
+    "numeric_claims_allowed": false,
+    "unknowns_allowed": true,
+    "do_not_use_for_damage_or_av_validation": true
+  },
+  "prebattle": [
+    {
+      "actor": "pela",
+      "action": "technique",
+      "semantic_label": "佩拉秘技开怪",
+      "category": "prebattle_technique",
+      "simulator_binding": "placeholder_only",
+      "known": ["Pela technique was used to engage."],
+      "unknown": ["Exact debuff state and target scope for this trace are not validated."]
+    }
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "actor": "tingyun",
+      "action": "ultimate",
+      "semantic_label": "停云终结技",
+      "category": "ultimate_interrupt_or_pre_action",
+      "simulator_binding": "placeholder_only",
+      "known": ["Tingyun ultimate is observed as the first recorded action."],
+      "unknown": ["Target, energy value, buff value, and exact resulting state are not validated."]
+    }
+  ]
+}
+
+You may adjust the exact schema, but keep it explicit, conservative, and JSON-compatible.
+
+Required semantic categories:
+Support at least these categories:
+- prebattle_technique
+- normal_skill
+- ultimate_interrupt
+- summon_or_companion_action
+- composite_action_placeholder
+- action_advance_placeholder
+- unknown_or_unbound
+
+Required tooling:
+Add a lightweight validator/linter for the semantic map.
+Possible module:
+
+hsr_axis_sim/tools/trace_semantics.py
+
+It should be able to:
+1. Load the source action-sequence-only trace.
+2. Load the semantic map.
+3. Check that `source_trace` matches the source trace name.
+4. Check that every prebattle action in the trace has a semantic mapping.
+5. Check that every step actor/action pair in the trace has exactly one semantic mapping.
+6. Check that the semantic map does not contain numeric claims when `numeric_claims_allowed` is false.
+7. Check that each mapping has:
+   - actor
+   - action
+   - semantic_label
+   - category
+   - simulator_binding
+   - known list
+   - unknown list
+8. Return clear pass/fail output.
+
+CLI requirement:
+Add a CLI such as:
+
+python -m hsr_axis_sim.tools.trace_semantics \
+  --trace hsr_axis_sim/data/manual_video_traces/intake/real_video_trace_001_botu_dilemma_floor12_side1_action_sequence_only.json \
+  --semantic-map hsr_axis_sim/data/manual_video_traces/semantic_maps/real_video_trace_001_botu_dilemma_semantics_v0_1.json
+
+The CLI should print a PASS message when the semantic map is valid.
+
+Tests:
+Add tests for:
+- the valid Botu semantic map passes;
+- a map missing a step mapping fails;
+- a map with a mismatched `source_trace` fails;
+- a map that includes numeric claims while `numeric_claims_allowed=false` fails;
+- the CLI returns 0 for the valid fixture and nonzero for invalid fixtures.
+
+Regression:
+Do not add this to the locked regression manifest unless the implementation is clean and the tests prove the new semantic-map check is stable. If you do add it to the manifest, use a separate group name such as `trace_semantics` and keep it clearly separate from numeric replays and action-sequence traces.
+
+Deliverable:
+Update `hsr_axis_sim/LUMEN_RESULT.md` with:
+1. Files changed.
+2. Commands run.
+3. Test results.
+4. Explicit list of things NOT implemented.
+5. Any semantic assumptions made.
+6. Next recommended task.
+
+Important:
+This task is a semantic bridge only. It must preserve the trust boundary: action sequence is observed; numeric combat state is not observed.

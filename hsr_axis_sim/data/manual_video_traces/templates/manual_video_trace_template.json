@@ -1,0 +1,66 @@
+{
+  "name": "replace_with_trace_name",
+  "trace_type": "manual_video_trace",
+  "source": {
+    "platform": "manual_fixture_or_video_platform",
+    "url": "",
+    "video_title": "Replace with video title or synthetic fixture title",
+    "uploader": "",
+    "recorded_by": "Replace with recorder",
+    "recorded_at": "YYYY-MM-DD",
+    "notes": "JSON has no comments; put transcription notes here."
+  },
+  "assumptions": [
+    "Record assumptions such as build approximations, RNG observations, or manually estimated AV values."
+  ],
+  "builds": {
+    "unit_id": {
+      "character": "Character name",
+      "level": 80,
+      "speed": 100,
+      "crit_rate": 0,
+      "crit_dmg": 0.5,
+      "notes": "Human-readable build notes."
+    }
+  },
+  "enemy_setup": {
+    "notes": "Describe enemy wave, weaknesses, HP, toughness, and any manual approximations."
+  },
+  "transcription": {
+    "step_source": "manual",
+    "fields_recorded": [
+      "actor",
+      "skill_id",
+      "target_ids",
+      "forced_rng",
+      "expected_hp",
+      "expected_energy",
+      "expected_skill_points",
+      "expected_current_av"
+    ],
+    "notes": "Each step should record observed values needed for deterministic replay."
+  },
+  "tolerance": 0.001,
+  "data_sources": {
+    "characters_dir": "path/to/normalized/characters",
+    "team": "path/to/team.json"
+  },
+  "steps": [
+    {
+      "step": 1,
+      "expected_actor": "unit_id",
+      "skill_id": "skill_id",
+      "target_ids": ["target_unit_id"],
+      "forced_rng": {},
+      "expect": {
+        "skill_points": 0,
+        "units": {
+          "unit_id": {
+            "energy": 0,
+            "current_av": 0
+          }
+        }
+      }
+    }
+  ]
+}

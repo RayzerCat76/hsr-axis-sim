@@ -1,0 +1,182 @@
+Task ID: HSR-AXIS-001D
+Reasoning: HIGH
+
+You are continuing the same permanent Python project for a Honkai: Star Rail inspired action-axis simulator.
+
+Current accepted status:
+- 001A action-value core passed.
+- 001A-FIX passed.
+- 001B replay validator MVP passed.
+- 001C multi-step Bronya-like + Seele-like replay passed.
+
+This task is ONLY for buff/debuff duration tracking and turn-boundary semantics.
+
+Do NOT implement Huroka import.
+Do NOT scrape websites.
+Do NOT implement real character kits.
+Do NOT implement full HSR damage formula.
+Do NOT implement AI search.
+Do NOT redesign the whole simulator.
+
+Goal:
+Add a minimal but rigorous buff/debuff system that can be checked by replay validation and that correctly distinguishes:
+1. normal turns,
+2. extra turns,
+3. immediate action,
+4. actions that do not end the current turn,
+5. buff duration expiration at turn boundaries.
+
+Required implementation work:
+
+1. Packaging hardening
+- Add `hsr_axis_sim/__init__.py` at the package root.
+- Keep existing imports working.
+- Tests should run with:
+  - `python -m pytest -q`
+
+2. Buff/debuff data model
+Create or update modules as needed, preferably:
+
+hsr_axis_sim/sim/buffs.py
+
+Add a dataclass or Pydantic model such as:
+
+Buff:
+  id: str
+  name: str
+  target_id: str
+  source_id: str | None
+  kind: "buff" | "debuff"
+  duration_type: str
+  remaining_turns: int | None
+  stacks: int = 1
+  max_stacks: int = 1
+  data: dict = field(default_factory=dict)
+
+The current task does not need to make buffs affect damage. It only needs to store, refresh, stack, tick, expire, and validate them.
+
+3. Unit state
+- Add `buffs` and `debuffs` collections to `Unit`, or one unified status collection if cleaner.
+- Make it easy to query a unit's active buffs by id.
+
+4. New effects
+Add effect primitives:
+
+- AddBuff
+- AddDebuff
+- RemoveBuff
+- RemoveDebuff
+
+Recommended fields for AddBuff/AddDebuff:
+
+id
+name
+target_ids
+source_id optional, default to action.actor_id
+duration_type
+remaining_turns
+stacks
+max_stacks
+data optional
+refresh_policy optional, default "refresh"
+
+Refresh/stack policy for this task:
+- If a buff/debuff with the same id already exists on the target:
+  - Increase stacks up to max_stacks.
+  - Refresh remaining_turns if refresh_policy == "refresh".
+- Keep this simple and deterministic.
+
+5. Duration semantics
+Implement these duration types for this task:
+
+A. `target_normal_turns`
+- Decrements only when the buff/debuff holder completes a normal turn.
+- Does NOT decrement during extra turns.
+- Does NOT decrement when an action has `DoesNotEndTurn` and the turn remains open.
+- Expires when remaining_turns reaches 0 after the tick.
+
+B. `current_turn`
+- Exists until the active turn context actually ends.
+- Must survive actions with `DoesNotEndTurn`.
+- Expires when the active turn finally ends.
+- This is for temporary effects like "during this turn".
+
+Do not add more duration types unless needed for tests.
+
+6. TurnContext / Timeline integration
+- TurnContext should clearly expose whether the current turn is an extra turn.
+- Timeline.next_turn should set that correctly.
+- Timeline.end_turn should be responsible for the appropriate duration ticks/expiration.
+- Extra turns must not tick `target_normal_turns` durations.
+- Normal turns must tick the acting unit's `target_normal_turns` buffs/debuffs at end of turn.
+
+7. Replay validator support
+Extend replay expectation checks to support buff/debuff checks.
+
+Example replay expectation shape:
+
+"units": {
+  "seele": {
+    "buffs": {
+      "damage_boost": {
+        "remaining_turns": 1,
+        "stacks": 1,
+        "source_id": "bronya"
+      }
+    },
+    "debuffs": {}
+  }
+}
+
+Rules:
+- If an expected buff id is listed, the validator must check it exists.
+- It should check supported fields: remaining_turns, stacks, source_id, kind, duration_type.
+- If expected buffs/debuffs is `{}`, it should verify the collection is empty.
+- Unsupported buff expectation fields should produce a mismatch, not crash.
+
+8. Golden replay
+Add a new MVP replay file:
+
+hsr_axis_sim/data/golden_replays/buff_duration_mvp.json
+
+It should prove at minimum:
+- A Bronya-like support applies a 1-target-normal-turn buff to Seele-like DPS and immediately actions her.
+- Seele uses an action during the immediate action.
+- The buff is present during Seele's immediate action and expires only when Seele's normal turn ends according to your defined semantics.
+
+If needed, make the replay generic. Do not claim it is exact real Bronya or exact real Seele.
+
+9. Tests
+Add pytest tests for:
+
+- AddBuff stores buff with correct target/source/duration/stacks.
+- Reapplying same buff refreshes duration and stacks up to max_stacks.
+- RemoveBuff removes the buff.
+- AddDebuff/RemoveDebuff works similarly.
+- `target_normal_turns` duration ticks after the holder's normal turn.
+- `target_normal_turns` duration does not tick on extra turns.
+- `DoesNotEndTurn` prevents current-turn expiration until the turn actually ends.
+- `current_turn` buff expires at actual turn end.
+- Replay validator can check expected buffs/debuffs.
+- `buff_duration_mvp.json` passes validation.
+- Existing 001A/001B/001C tests still pass.
+
+10. Documentation and result file
+Update README with a short section on buff duration semantics.
+
+Update `hsr_axis_sim/LUMEN_RESULT.md` with:
+- files changed,
+- exact tests run,
+- exact test result,
+- known assumptions,
+- what remains intentionally unimplemented,
+- whether 001E is safe to begin.
+
+Acceptance criteria:
+- `python -m pytest -q` passes.
+- Existing golden replays still pass.
+- New buff duration replay passes via CLI:
+
+python -m hsr_axis_sim.sim.replay hsr_axis_sim/data/golden_replays/buff_duration_mvp.json
+
+- No external data import or scraping is added.

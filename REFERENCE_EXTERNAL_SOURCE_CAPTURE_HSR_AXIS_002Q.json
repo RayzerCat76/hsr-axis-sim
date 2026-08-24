@@ -1,0 +1,110 @@
+{
+  "schema_version": "hsr_axis_external_mechanics_capture_v0_1",
+  "topic": "tingyun_ultimate_damage_buff_duration_boundary",
+  "captured_at_utc": "2026-07-12",
+  "facts": {
+    "duration_count": {
+      "value": 2,
+      "unit": "target_turn",
+      "status": "source_cross_checked"
+    },
+    "settlement_boundary": {
+      "value": "target_turn_entry",
+      "status": "accepted_project_domain_correction_pending_independent_frame_verification",
+      "provided_by": "Ray"
+    },
+    "effect_active_when_counter_reaches_zero_at_entry": {
+      "value": null,
+      "status": "unresolved"
+    },
+    "extra_action_consumes_duration": {
+      "value": null,
+      "status": "unresolved_not_infer_from_normal_turn_entry"
+    },
+    "extra_turn_consumes_duration": {
+      "value": null,
+      "status": "unresolved_not_infer_from_normal_turn_entry"
+    },
+    "ultimate_interrupt_consumes_duration": {
+      "value": false,
+      "status": "derived_from_not_being_target_normal_turn_entry_for_audit_only"
+    }
+  },
+  "sources": [
+    {
+      "source_id": "starrailres_4_3_skill_120203",
+      "source_type": "fixed_commit_structured_game_data",
+      "repository": "Mar-7th/StarRailRes",
+      "commit": "7b349e39ee0f6f3bf814567995829b99c95e7a93",
+      "path": "index_new/en/character_skills.json",
+      "locator": "skill id 120203, desc and params rows 1-15",
+      "supports": [
+        "duration_count_2",
+        "magnitude_table_15_levels"
+      ],
+      "does_not_support": [
+        "turn_entry_settlement",
+        "zero_boundary_effect_activity"
+      ]
+    },
+    {
+      "source_id": "kqm_srl_tingyun_snapshot",
+      "source_type": "fixed_commit_independent_structured_snapshot",
+      "repository": "KQM-git/SRL",
+      "commit": "de0e5c09c8dbba9577367ad86e991fe91c4f0e36",
+      "path": "src/data/characters/Tingyun.json",
+      "locator": "Ultimate Amidst the Rejoicing Clouds, params rows 1-15",
+      "supports": [
+        "duration_count_2",
+        "magnitude_table_15_levels"
+      ],
+      "does_not_support": [
+        "turn_entry_settlement",
+        "zero_boundary_effect_activity"
+      ]
+    },
+    {
+      "source_id": "bilibili_candidate_bv1yz4y1t79s",
+      "source_type": "bilibili_candidate_video",
+      "bvid": "BV1yz4y1t79s",
+      "url": "https://www.bilibili.com/video/BV1yz4y1t79s",
+      "title": "【崩坏星穹铁道】景元深度测评：光锥伤害对比+停云布洛妮娅对景元的提升幅度计算+配队思路+体力规划思路",
+      "discovery_evidence": "rip-tyang/trend-archive fixed commit fdd47d8aa2e4e91ba42cb0008423528d9cb92ab8, archive/Bilibili/2023-05-17/README.md",
+      "verification_status": "candidate_identified_page_or_frames_not_retrieved",
+      "timestamp": null,
+      "supports": [],
+      "may_contain": [
+        "Tingyun practical interaction with Jing Yuan"
+      ],
+      "must_not_be_used_as_proof_until": [
+        "exact timestamp captured",
+        "frame sequence inspected",
+        "observable buff boundary described"
+      ]
+    },
+    {
+      "source_id": "darkglade_sim_tingyun_and_power_lifecycle",
+      "source_type": "independent_community_simulator_implementation",
+      "repository": "Darkglade1/Star-Rail-Battle-Simulator",
+      "commit": "0aba14ab96fe268d5d65ec51fab24c231bb93a96",
+      "paths": [
+        "src/main/java/art/ameliah/hsr/characters/harmony/tingyun/Tingyun.java",
+        "src/main/java/art/ameliah/hsr/powers/AbstractPower.java"
+      ],
+      "locator": "Tingyun useUltimate adds a two-turn damage bonus; generic power sets justApplied for own-turn application and skips the next end-turn decrement once",
+      "supports": [
+        "a_same_turn_application_guard_is_needed_in_an_end_turn_countdown_engine"
+      ],
+      "does_not_support": [
+        "release_game_turn_entry_truth",
+        "exact_visual_counter_timing"
+      ]
+    }
+  ],
+  "research_limitations": [
+    "Bilibili search/index access did not yield a retrievable transcript or frame sequence for the candidate video.",
+    "No exact Bilibili timestamp is claimed in this package.",
+    "The user correction is recorded as accepted project domain input, not misrepresented as independently frame-verified evidence.",
+    "The community simulator is implementation corroboration only, not authoritative release-game evidence."
+  ]
+}

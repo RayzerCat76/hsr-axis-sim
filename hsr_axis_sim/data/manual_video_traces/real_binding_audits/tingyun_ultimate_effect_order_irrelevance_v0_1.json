@@ -1,0 +1,4707 @@
+{
+  "review_id": "tingyun_ultimate_effect_order_irrelevance_review_v0_1",
+  "version": "0.1",
+  "warning": "NON-EXECUTABLE CURRENT-CONTRACT PROOF. Release-game effect order and duration semantics remain unknown; this report does not authorize a Tingyun DMG buff.",
+  "conclusion": "proven_irrelevant_under_current_simulator_contract",
+  "pinned_sources": [
+    {
+      "source_id": "action",
+      "path": "sim/action.py",
+      "sha256": "ad6994e79d8c8833304df4d4cc67ea84c07db988f4b9365840e0707dd5100f34",
+      "locators": [
+        "Action.execute: reset counters, emit action_started, apply ordered effects, append action, emit action_finished, optional turn end"
+      ]
+    },
+    {
+      "source_id": "buffs",
+      "path": "sim/buffs.py",
+      "sha256": "7095d592ee4466396bcd2224d740aa780271e7f539cd9751949ee41c1f5837b5",
+      "locators": [
+        "Buff dataclass: complete buff/debuff metadata inventory"
+      ]
+    },
+    {
+      "source_id": "effects",
+      "path": "sim/effects.py",
+      "sha256": "3adb44ababa1725933c82a105706b388239d895a98f159db5c4691a12dfa9618",
+      "locators": [
+        "AddBuff.apply and _add_status: deterministic create/refresh with no event emission",
+        "GainEnergy.apply: max-Energy clamp assignment with no event emission"
+      ]
+    },
+    {
+      "source_id": "enemy_ai",
+      "path": "sim/enemy_ai.py",
+      "sha256": "98d735e7cb03ae108106f5e09d52908bc81da4815e19cea2725ef44ae7d9dd9e",
+      "locators": [
+        "EnemyAIPlan and EnemyPatternStep dataclasses: AI plan and cursor observables"
+      ]
+    },
+    {
+      "source_id": "events",
+      "path": "sim/events.py",
+      "sha256": "79e9a95d0788a1b87980f9de1fa58c48feccd34f4730a67798d6feb832f93525",
+      "locators": [
+        "Trigger: complete current trigger contract",
+        "dispatch_event: pending-event append followed by sorted trigger dispatch"
+      ]
+    },
+    {
+      "source_id": "regression_manifest",
+      "path": "data/regression_manifest.json",
+      "sha256": "acfb663d7dbd93f3b0bdba9838a8b2a0712df144da14aae513830c406f142a02",
+      "locators": [
+        "locked group counts: 12, 1, 2, 1, 2"
+      ]
+    },
+    {
+      "source_id": "reviewed_registry",
+      "path": "real_bindings/registry_v0_2.json",
+      "sha256": "0cd0c9f9d4594654aaae91fa834988a4a373674d8e6397e757165d4f76fd11b8",
+      "locators": [
+        "exactly two reviewed partial bindings",
+        "registry_version 0.2"
+      ]
+    },
+    {
+      "source_id": "semantic_readiness_input",
+      "path": "data/manual_video_traces/normalized_character_facts/tingyun_ultimate_damage_buff_semantic_readiness_v0_1.json",
+      "sha256": "29ece44c9bc051590c308f7b6774ce192a47e11ec5176cf5adf645336c3025f1",
+      "locators": [
+        "accepted video target and trace level missing",
+        "effect_order unresolved",
+        "same_current_turn_duration unresolved"
+      ]
+    },
+    {
+      "source_id": "semantic_readiness_report",
+      "path": "data/manual_video_traces/real_binding_audits/tingyun_ultimate_damage_buff_semantic_readiness_v0_1.json",
+      "sha256": "d401cb85ff580d563ff44e415c1bd379957caa6e5a7a6f0353e68aef6e802a21",
+      "locators": [
+        "accepted-video readiness blocked_by_unknown_target_and_trace_level",
+        "generic readiness blocked_by_both_semantics"
+      ]
+    },
+    {
+      "source_id": "state",
+      "path": "sim/state.py",
+      "sha256": "7d91095f082e60da27730b713fed3b08e47d0f3c422c26ae18a507c63a8b236a",
+      "locators": [
+        "BattleState dataclass: complete state field inventory",
+        "BattleState.emit_event: dispatch boundary"
+      ]
+    },
+    {
+      "source_id": "targets",
+      "path": "sim/targets.py",
+      "sha256": "42384f5b561b99df5f16828784538a5e692ba75d75e0fdcf374c8045642361dc",
+      "locators": [
+        "resolve_target_ids: action_targets resolution"
+      ]
+    },
+    {
+      "source_id": "tingyun_partial_binding",
+      "path": "real_bindings/tingyun_ultimate_v0_1.py",
+      "sha256": "d852cb0fee019a08e57d33f39f5d88c8774cbe018ea9a600ad6d334afa8007f5",
+      "locators": [
+        "WARNING: no damage buff is implemented",
+        "execute_partial_binding: accepted Energy-only interrupt shell remains unchanged"
+      ]
+    },
+    {
+      "source_id": "turn_context",
+      "path": "sim/turn_context.py",
+      "sha256": "a670688d83bf986c5b5edeb094124454d1e69c58c2953c2e11f79d133f68aeaa",
+      "locators": [
+        "TurnContext dataclass: complete interrupt/action result context"
+      ]
+    },
+    {
+      "source_id": "unit",
+      "path": "sim/unit.py",
+      "sha256": "f4e100a12d1ae160fc58f9ef874fe188851d7f29284acef4c51273792f41eb62",
+      "locators": [
+        "Unit dataclass: complete unit field inventory"
+      ]
+    }
+  ],
+  "implementation_locators": [
+    "Action.execute emits action_finished only after every effect has applied.",
+    "Action.execute emits action_started before iterating effects.",
+    "AddBuff.apply changes only the target buff collection and emits no event.",
+    "Current trigger dispatch occurs only when BattleState.emit_event is called.",
+    "GainEnergy.apply changes only target Energy and emits no event.",
+    "The synthetic action ends_turn=false, preserving interrupt context without Timeline.end_turn."
+  ],
+  "observation_contract": {
+    "snapshot_fields": [
+      "action_result",
+      "state",
+      "turn_context"
+    ],
+    "state_fields": [
+      "enemy_ai_cursors",
+      "enemy_ai_plans",
+      "event_dispatch_count",
+      "event_dispatch_limit",
+      "extra_turn_stack",
+      "global_av",
+      "logs",
+      "max_skill_points",
+      "pending_events",
+      "skill_points",
+      "trigger_fire_counts",
+      "triggers",
+      "units"
+    ],
+    "unit_fields": [
+      "all_res",
+      "atk",
+      "base_speed",
+      "break_effect",
+      "buffs",
+      "crit_dmg",
+      "crit_rate",
+      "current_av",
+      "current_toughness",
+      "debuffs",
+      "defense",
+      "dmg_bonus",
+      "element",
+      "energy",
+      "fire_res",
+      "hp",
+      "ice_res",
+      "id",
+      "imaginary_res",
+      "is_alive",
+      "is_broken",
+      "level",
+      "lightning_res",
+      "max_energy",
+      "max_hp",
+      "max_toughness",
+      "name",
+      "physical_res",
+      "quantum_res",
+      "speed",
+      "team",
+      "weaknesses",
+      "wind_res"
+    ],
+    "buff_fields": [
+      "data",
+      "duration_type",
+      "id",
+      "kind",
+      "max_stacks",
+      "name",
+      "remaining_turns",
+      "source_id",
+      "stacks",
+      "target_id"
+    ],
+    "event_fields": [
+      "data",
+      "type"
+    ],
+    "trigger_fields": [
+      "condition",
+      "effects",
+      "enabled",
+      "event_type",
+      "id",
+      "max_triggers_per_action",
+      "owner_id"
+    ],
+    "turn_context_fields": [
+      "actions_taken",
+      "actor_id",
+      "forced_rng",
+      "is_extra_turn",
+      "is_interrupt",
+      "should_end_turn"
+    ],
+    "action_result_fields": [
+      "return_type",
+      "returned_same_context"
+    ],
+    "excluded_fields": []
+  },
+  "comparison_results": [
+    {
+      "case_id": "at_cap_existing_probe_refresh",
+      "target_energy_before": 100,
+      "target_max_energy": 100,
+      "existing_probe_buff": true,
+      "equal": true,
+      "order_a_snapshot_sha256": "5f8fbdbd967ca8182604bf7652be03f41def839e3463c348eeb15a624f594ee3",
+      "order_b_snapshot_sha256": "5f8fbdbd967ca8182604bf7652be03f41def839e3463c348eeb15a624f594ee3",
+      "order_a_snapshot": {
+        "state": {
+          "units": [
+            {
+              "all_res": 0.1,
+              "atk": 600,
+              "base_speed": 88,
+              "break_effect": 0.07,
+              "buffs": {
+                "unrelated_enemy_buff": {
+                  "data": {
+                    "marker": "enemy-buff"
+                  },
+                  "duration_type": "current_turn",
+                  "id": "unrelated_enemy_buff",
+                  "kind": "buff",
+                  "max_stacks": 1,
+                  "name": "Unrelated Enemy Buff",
+                  "remaining_turns": null,
+                  "source_id": "enemy",
+                  "stacks": 1,
+                  "target_id": "enemy"
+                }
+              },
+              "crit_dmg": 0.55,
+              "crit_rate": 0.05,
+              "current_av": 74.25,
+              "current_toughness": 73,
+              "debuffs": {
+                "synthetic_finished_marker": {
+                  "data": {
+                    "synthetic_probe": true
+                  },
+                  "duration_type": "target_normal_turns",
+                  "id": "synthetic_finished_marker",
+                  "kind": "debuff",
+                  "max_stacks": 1,
+                  "name": "Synthetic Finished Marker",
+                  "remaining_turns": 1,
+                  "source_id": "observer",
+                  "stacks": 1,
+                  "target_id": "enemy"
+                }
+              },
+              "defense": 500,
+              "dmg_bonus": 0.04,
+              "element": "fire",
+              "energy": 19,
+              "fire_res": 0,
+              "hp": 1234,
+              "ice_res": 0,
+              "id": "enemy",
+              "imaginary_res": 0,
+              "is_alive": true,
+              "is_broken": false,
+              "level": 77,
+              "lightning_res": 0,
+              "max_energy": 90,
+              "max_hp": 1500,
+              "max_toughness": 120,
+              "name": "Synthetic Enemy",
+              "physical_res": 0,
+              "quantum_res": 0,
+              "speed": 89,
+              "team": "enemy",
+              "weaknesses": [
+                "lightning",
+                "wind"
+              ],
+              "wind_res": 0
+            },
+            {
+              "all_res": 0.03,
+              "atk": 333,
+              "base_speed": 97,
+              "break_effect": 0.31,
+              "buffs": {},
+              "crit_dmg": 0.59,
+              "crit_rate": 0.09,
+              "current_av": 63.5,
+              "current_toughness": 0,
+              "debuffs": {},
+              "defense": 444,
+              "dmg_bonus": 0.08,
+              "element": "ice",
+              "energy": 18,
+              "fire_res": 0,
+              "hp": 501,
+              "ice_res": 0,
+              "id": "observer",
+              "imaginary_res": 0,
+              "is_alive": true,
+              "is_broken": false,
+              "level": 78,
+              "lightning_res": 0,
+              "max_energy": 120,
+              "max_hp": 800,
+              "max_toughness": 0,
+              "name": "Observer Ally",
+              "physical_res": 0,
+              "quantum_res": 0,
+              "speed": 99,
+              "team": "ally",
+              "weaknesses": [
+                "lightning"
+              ],
+              "wind_res": 0
+            },
+            {
+              "all_res": 0.02,
+              "atk": 555,
+              "base_speed": 101,
+              "break_effect": 0.19,
+              "buffs": {
+                "synthetic_tingyun_order_probe": {
+                  "data": {
+                    "dmg_bonus_ratio": 0.5,
+                    "synthetic_probe": true
+                  },
+                  "duration_type": "target_normal_turns",
+                  "id": "synthetic_tingyun_order_probe",
+                  "kind": "buff",
+                  "max_stacks": 2,
+                  "name": "Synthetic Tingyun Order Probe",
+                  "remaining_turns": 2,
+                  "source_id": "tingyun",
+                  "stacks": 2,
+                  "target_id": "target"
+                },
+                "unrelated_target_buff": {
+                  "data": {
+                    "marker": "target-buff",
+                    "value": 7
+                  },
+                  "duration_type": "target_normal_turns",
+                  "id": "unrelated_target_buff",
+                  "kind": "buff",
+                  "max_stacks": 4,
+                  "name": "Unrelated Target Buff",
+                  "remaining_turns": 3,
+                  "source_id": "observer",
+                  "stacks": 2,
+                  "target_id": "target"
+                }
+              },
+              "crit_dmg": 0.88,
+              "crit_rate": 0.33,
+              "current_av": 22.75,
+              "current_toughness": 0,
+              "debuffs": {
+                "unrelated_target_debuff": {
+                  "data": {
+                    "marker": "target-debuff"
+                  },
+                  "duration_type": "target_normal_turns",
+                  "id": "unrelated_target_debuff",
+                  "kind": "debuff",
+                  "max_stacks": 1,
+                  "name": "Unrelated Target Debuff",
+                  "remaining_turns": 1,
+                  "source_id": "enemy",
+                  "stacks": 1,
+                  "target_id": "target"
+                }
+              },
+              "defense": 222,
+              "dmg_bonus": 0.27,
+              "element": "wind",
+              "energy": 100,
+              "fire_res": 0,
+              "hp": 654,
+              "ice_res": 0,
+              "id": "target",
+              "imaginary_res": 0,
+              "is_alive": true,
+              "is_broken": false,
+              "level": 79,
+              "lightning_res": 0,
+              "max_energy": 100,
+              "max_hp": 900,
+              "max_toughness": 0,
+              "name": "Selected Ally",
+              "physical_res": 0,
+              "quantum_res": 0,
+              "speed": 103,
+              "team": "ally",
+              "weaknesses": [
+                "fire",
+                "ice"
+              ],
+              "wind_res": 0
+            },
+            {
+              "all_res": 0.01,
+              "atk": 432,
+              "base_speed": 112,
+              "break_effect": 0.24,
+              "buffs": {},
+              "crit_dmg": 0.71,
+              "crit_rate": 0.17,
+              "current_av": 41.25,
+              "current_toughness": 0,
+              "debuffs": {},
+              "defense": 321,
+              "dmg_bonus": 0.12,
+              "element": "lightning",
+              "energy": 130,
+              "fire_res": 0,
+              "hp": 777,
+              "ice_res": 0,
+              "id": "tingyun",
+              "imaginary_res": 0,
+              "is_alive": true,
+              "is_broken": false,
+              "level": 80,
+              "lightning_res": 0,
+              "max_energy": 130,
+              "max_hp": 1000,
+              "max_toughness": 0,
+              "name": "Tingyun",
+              "physical_res": 0,
+              "quantum_res": 0,
+              "speed": 113,
+              "team": "ally",
+              "weaknesses": [
+                "ice"
+              ],
+              "wind_res": 0
+            }
+          ],
+          "global_av": 37.5,
+          "skill_points": 3,
+          "max_skill_points": 7,
+          "extra_turn_stack": [
+            "observer",
+            "target"
+          ],
+          "logs": [
+            "preexisting:log",
+            "trigger:order_probe_action_started",
+            "trigger:order_probe_action_finished"
+          ],
+          "triggers": [
+            {
+              "id": "order_probe_action_finished",
+              "owner_id": "observer",
+              "event_type": "action_finished",
+              "condition": {
+                "type": "always"
+              },
+              "effects": [
+                {
+                  "effect_type": "AddDebuff",
+                  "fields": {
+                    "data": {
+                      "synthetic_probe": true
+                    },
+                    "duration_type": "target_normal_turns",
+                    "id": "synthetic_finished_marker",
+                    "max_stacks": 1,
+                    "name": "Synthetic Finished Marker",
+                    "refresh_policy": "refresh",
+                    "remaining_turns": 1,
+                    "source_id": null,
+                    "stacks": 1,
+                    "target_ids": [
+                      "enemy"
+                    ],
+                    "target_ref": null
+                  }
+                }
+              ],
+              "max_triggers_per_action": 1,
+              "enabled": true
+            },
+            {
+              "id": "order_probe_action_started",
+              "owner_id": "observer",
+              "event_type": "action_started",
+              "condition": {
+                "type": "always"
+              },
+              "effects": [
+                {
+                  "effect_type": "GainEnergy",
+                  "fields": {
+                    "amount": 7,
+                    "target_ids": [
+                      "observer"
+                    ],
+                    "target_ref": null
+                  }
+                }
+              ],
+              "max_triggers_per_action": 1,
+              "enabled": true
+            }
+          ],
+          "pending_events": [
+            {
+              "data": {
+                "marker": "before-action",
+                "nested": {
+                  "enabled": true,
+                  "sequence": 3
+                }
+              },
+              "type": "preexisting_event"
+            },
+            {
+              "data": {
+                "action_id": "synthetic_tingyun_order_probe_action",
+                "actor_id": "tingyun"
+              },
+              "type": "action_started"
+            },
+            {
+              "data": {
+                "action_id": "synthetic_tingyun_order_probe_action",
+                "actor_id": "tingyun"
+              },
+              "type": "action_finished"
+            }
+          ],
+          "trigger_fire_counts": {
+            "order_probe_action_finished": 1,
+            "order_probe_action_started": 1
+          },
+          "event_dispatch_count": 2,
+          "event_dispatch_limit": 100,
+          "enemy_ai_plans": {
+            "enemy": {
+              "pattern": [
+                {
+                  "skill_id": "enemy_probe_skill",
+                  "target_ids": null,
+                  "target_strategy": "first_legal"
+                }
+              ],
+              "repeat": true
+            }
+          },
+          "enemy_ai_cursors": {
+            "enemy": 2
+          }
+        },
+        "turn_context": {
+          "actions_taken": [
+            "prior_interrupt_action",
+            "synthetic_tingyun_order_probe_action"
+          ],
+          "actor_id": "tingyun",
+          "forced_rng": {
+            "marker": 17,
+            "nested": {
+              "choice": "fixed"
+            }
+          },
+          "is_extra_turn": false,
+          "is_interrupt": true,
+          "should_end_turn": false
+        },
+        "action_result": {
+          "return_type": "TurnContext",
+          "returned_same_context": true
+        }
+      },
+      "order_b_snapshot": {
+        "state": {
+          "units": [
+            {
+              "all_res": 0.1,
+              "atk": 600,
+              "base_speed": 88,
+              "break_effect": 0.07,
+              "buffs": {
+                "unrelated_enemy_buff": {
+                  "data": {
+                    "marker": "enemy-buff"
+                  },
+                  "duration_type": "current_turn",
+                  "id": "unrelated_enemy_buff",
+                  "kind": "buff",
+                  "max_stacks": 1,
+                  "name": "Unrelated Enemy Buff",
+                  "remaining_turns": null,
+                  "source_id": "enemy",
+                  "stacks": 1,
+                  "target_id": "enemy"
+                }
+              },
+              "crit_dmg": 0.55,
+              "crit_rate": 0.05,
+              "current_av": 74.25,
+              "current_toughness": 73,
+              "debuffs": {
+                "synthetic_finished_marker": {
+                  "data": {
+                    "synthetic_probe": true
+                  },
+                  "duration_type": "target_normal_turns",
+                  "id": "synthetic_finished_marker",
+                  "kind": "debuff",
+                  "max_stacks": 1,
+                  "name": "Synthetic Finished Marker",
+                  "remaining_turns": 1,
+                  "source_id": "observer",
+                  "stacks": 1,
+                  "target_id": "enemy"
+                }
+              },
+              "defense": 500,
+              "dmg_bonus": 0.04,
+              "element": "fire",
+              "energy": 19,
+              "fire_res": 0,
+              "hp": 1234,
+              "ice_res": 0,
+              "id": "enemy",
+              "imaginary_res": 0,
+              "is_alive": true,
+              "is_broken": false,
+              "level": 77,
+              "lightning_res": 0,
+              "max_energy": 90,
+              "max_hp": 1500,
+              "max_toughness": 120,
+              "name": "Synthetic Enemy",
+              "physical_res": 0,
+              "quantum_res": 0,
+              "speed": 89,
+              "team": "enemy",
+              "weaknesses": [
+                "lightning",
+                "wind"
+              ],
+              "wind_res": 0
+            },
+            {
+              "all_res": 0.03,
+              "atk": 333,
+              "base_speed": 97,
+              "break_effect": 0.31,
+              "buffs": {},
+              "crit_dmg": 0.59,
+              "crit_rate": 0.09,
+              "current_av": 63.5,
+              "current_toughness": 0,
+              "debuffs": {},
+              "defense": 444,
+              "dmg_bonus": 0.08,
+              "element": "ice",
+              "energy": 18,
+              "fire_res": 0,
+              "hp": 501,
+              "ice_res": 0,
+              "id": "observer",
+              "imaginary_res": 0,
+              "is_alive": true,
+              "is_broken": false,
+              "level": 78,
+              "lightning_res": 0,
+              "max_energy": 120,
+              "max_hp": 800,
+              "max_toughness": 0,
+              "name": "Observer Ally",
+              "physical_res": 0,
+              "quantum_res": 0,
+              "speed": 99,
+              "team": "ally",
+              "weaknesses": [
+                "lightning"
+              ],
+              "wind_res": 0
+            },
+            {
+              "all_res": 0.02,
+              "atk": 555,
+              "base_speed": 101,
+              "break_effect": 0.19,
+              "buffs": {
+                "synthetic_tingyun_order_probe": {
+                  "data": {
+                    "dmg_bonus_ratio": 0.5,
+                    "synthetic_probe": true
+                  },
+                  "duration_type": "target_normal_turns",
+                  "id": "synthetic_tingyun_order_probe",
+                  "kind": "buff",
+                  "max_stacks": 2,
+                  "name": "Synthetic Tingyun Order Probe",
+                  "remaining_turns": 2,
+                  "source_id": "tingyun",
+                  "stacks": 2,
+                  "target_id": "target"
+                },
+                "unrelated_target_buff": {
+                  "data": {
+                    "marker": "target-buff",
+                    "value": 7
+                  },
+                  "duration_type": "target_normal_turns",
+                  "id": "unrelated_target_buff",
+                  "kind": "buff",
+                  "max_stacks": 4,
+                  "name": "Unrelated Target Buff",
+                  "remaining_turns": 3,
+                  "source_id": "observer",
+                  "stacks": 2,
+                  "target_id": "target"
+                }
+              },
+              "crit_dmg": 0.88,
+              "crit_rate": 0.33,
+              "current_av": 22.75,
+              "current_toughness": 0,
+              "debuffs": {
+                "unrelated_target_debuff": {
+                  "data": {
+                    "marker": "target-debuff"
+                  },
+                  "duration_type": "target_normal_turns",
+                  "id": "unrelated_target_debuff",
+                  "kind": "debuff",
+                  "max_stacks": 1,
+                  "name": "Unrelated Target Debuff",
+                  "remaining_turns": 1,
+                  "source_id": "enemy",
+                  "stacks": 1,
+                  "target_id": "target"
+                }
+              },
+              "defense": 222,
+              "dmg_bonus": 0.27,
+              "element": "wind",
+              "energy": 100,
+              "fire_res": 0,
+              "hp": 654,
+              "ice_res": 0,
+              "id": "target",
+              "imaginary_res": 0,
+              "is_alive": true,
+              "is_broken": false,
+              "level": 79,
+              "lightning_res": 0,
+              "max_energy": 100,
+              "max_hp": 900,
+              "max_toughness": 0,
+              "name": "Selected Ally",
+              "physical_res": 0,
+              "quantum_res": 0,
+              "speed": 103,
+              "team": "ally",
+              "weaknesses": [
+                "fire",
+                "ice"
+              ],
+              "wind_res": 0
+            },
+            {
+              "all_res": 0.01,
+              "atk": 432,
+              "base_speed": 112,
+              "break_effect": 0.24,
+              "buffs": {},
+              "crit_dmg": 0.71,
+              "crit_rate": 0.17,
+              "current_av": 41.25,
+              "current_toughness": 0,
+              "debuffs": {},
+              "defense": 321,
+              "dmg_bonus": 0.12,
+              "element": "lightning",
+              "energy": 130,
+              "fire_res": 0,
+              "hp": 777,
+              "ice_res": 0,
+              "id": "tingyun",
+              "imaginary_res": 0,
+              "is_alive": true,
+              "is_broken": false,
+              "level": 80,
+              "lightning_res": 0,
+              "max_energy": 130,
+              "max_hp": 1000,
+              "max_toughness": 0,
+              "name": "Tingyun",
+              "physical_res": 0,
+              "quantum_res": 0,
+              "speed": 113,
+              "team": "ally",
+              "weaknesses": [
+                "ice"
+              ],
+              "wind_res": 0
+            }
+          ],
+          "global_av": 37.5,
+          "skill_points": 3,
+          "max_skill_points": 7,
+          "extra_turn_stack": [
+            "observer",
+            "target"
+          ],
+          "logs": [
+            "preexisting:log",
+            "trigger:order_probe_action_started",
+            "trigger:order_probe_action_finished"
+          ],
+          "triggers": [
+            {
+              "id": "order_probe_action_finished",
+              "owner_id": "observer",
+              "event_type": "action_finished",
+              "condition": {
+                "type": "always"
+              },
+              "effects": [
+                {
+                  "effect_type": "AddDebuff",
+                  "fields": {
+                    "data": {
+                      "synthetic_probe": true
+                    },
+                    "duration_type": "target_normal_turns",
+                    "id": "synthetic_finished_marker",
+                    "max_stacks": 1,
+                    "name": "Synthetic Finished Marker",
+                    "refresh_policy": "refresh",
+                    "remaining_turns": 1,
+                    "source_id": null,
+                    "stacks": 1,
+                    "target_ids": [
+                      "enemy"
+                    ],
+                    "target_ref": null
+                  }
+                }
+              ],
+              "max_triggers_per_action": 1,
+              "enabled": true
+            },
+            {
+              "id": "order_probe_action_started",
+              "owner_id": "observer",
+              "event_type": "action_started",
+              "condition": {
+                "type": "always"
+              },
+              "effects": [
+                {
+                  "effect_type": "GainEnergy",
+                  "fields": {
+                    "amount": 7,
+                    "target_ids": [
+                      "observer"
+                    ],
+                    "target_ref": null
+                  }
+                }
+              ],
+              "max_triggers_per_action": 1,
+              "enabled": true
+            }
+          ],
+          "pending_events": [
+            {
+              "data": {
+                "marker": "before-action",
+                "nested": {
+                  "enabled": true,
+                  "sequence": 3
+                }
+              },
+              "type": "preexisting_event"
+            },
+            {
+              "data": {
+                "action_id": "synthetic_tingyun_order_probe_action",
+                "actor_id": "tingyun"
+              },
+              "type": "action_started"
+            },
+            {
+              "data": {
+                "action_id": "synthetic_tingyun_order_probe_action",
+                "actor_id": "tingyun"
+              },
+              "type": "action_finished"
+            }
+          ],
+          "trigger_fire_counts": {
+            "order_probe_action_finished": 1,
+            "order_probe_action_started": 1
+          },
+          "event_dispatch_count": 2,
+          "event_dispatch_limit": 100,
+          "enemy_ai_plans": {
+            "enemy": {
+              "pattern": [
+                {
+                  "skill_id": "enemy_probe_skill",
+                  "target_ids": null,
+                  "target_strategy": "first_legal"
+                }
+              ],
+              "repeat": true
+            }
+          },
+          "enemy_ai_cursors": {
+            "enemy": 2
+          }
+        },
+        "turn_context": {
+          "actions_taken": [
+            "prior_interrupt_action",
+            "synthetic_tingyun_order_probe_action"
+          ],
+          "actor_id": "tingyun",
+          "forced_rng": {
+            "marker": 17,
+            "nested": {
+              "choice": "fixed"
+            }
+          },
+          "is_extra_turn": false,
+          "is_interrupt": true,
+          "should_end_turn": false
+        },
+        "action_result": {
+          "return_type": "TurnContext",
+          "returned_same_context": true
+        }
+      }
+    },
+    {
+      "case_id": "at_cap_no_existing_probe",
+      "target_energy_before": 100,
+      "target_max_energy": 100,
+      "existing_probe_buff": false,
+      "equal": true,
+      "order_a_snapshot_sha256": "9304b4a5e2ca012a54fe3b07eb69a8123c3970e0a44a52ce6dacdbdea0d2e409",
+      "order_b_snapshot_sha256": "9304b4a5e2ca012a54fe3b07eb69a8123c3970e0a44a52ce6dacdbdea0d2e409",
+      "order_a_snapshot": {
+        "state": {
+          "units": [
+            {
+              "all_res": 0.1,
+              "atk": 600,
+              "base_speed": 88,
+              "break_effect": 0.07,
+              "buffs": {
+                "unrelated_enemy_buff": {
+                  "data": {
+                    "marker": "enemy-buff"
+                  },
+                  "duration_type": "current_turn",
+                  "id": "unrelated_enemy_buff",
+                  "kind": "buff",
+                  "max_stacks": 1,
+                  "name": "Unrelated Enemy Buff",
+                  "remaining_turns": null,
+                  "source_id": "enemy",
+                  "stacks": 1,
+                  "target_id": "enemy"
+                }
+              },
+              "crit_dmg": 0.55,
+              "crit_rate": 0.05,
+              "current_av": 74.25,
+              "current_toughness": 73,
+              "debuffs": {
+                "synthetic_finished_marker": {
+                  "data": {
+                    "synthetic_probe": true
+                  },
+                  "duration_type": "target_normal_turns",
+                  "id": "synthetic_finished_marker",
+                  "kind": "debuff",
+                  "max_stacks": 1,
+                  "name": "Synthetic Finished Marker",
+                  "remaining_turns": 1,
+                  "source_id": "observer",
+                  "stacks": 1,
+                  "target_id": "enemy"
+                }
+              },
+              "defense": 500,
+              "dmg_bonus": 0.04,
+              "element": "fire",
+              "energy": 19,
+              "fire_res": 0,
+              "hp": 1234,
+              "ice_res": 0,
+              "id": "enemy",
+              "imaginary_res": 0,
+              "is_alive": true,
+              "is_broken": false,
+              "level": 77,
+              "lightning_res": 0,
+              "max_energy": 90,
+              "max_hp": 1500,
+              "max_toughness": 120,
+              "name": "Synthetic Enemy",
+              "physical_res": 0,
+              "quantum_res": 0,
+              "speed": 89,
+              "team": "enemy",
+              "weaknesses": [
+                "lightning",
+                "wind"
+              ],
+              "wind_res": 0
+            },
+            {
+              "all_res": 0.03,
+              "atk": 333,
+              "base_speed": 97,
+              "break_effect": 0.31,
+              "buffs": {},
+              "crit_dmg": 0.59,
+              "crit_rate": 0.09,
+              "current_av": 63.5,
+              "current_toughness": 0,
+              "debuffs": {},
+              "defense": 444,
+              "dmg_bonus": 0.08,
+              "element": "ice",
+              "energy": 18,
+              "fire_res": 0,
+              "hp": 501,
+              "ice_res": 0,
+              "id": "observer",
+              "imaginary_res": 0,
+              "is_alive": true,
+              "is_broken": false,
+              "level": 78,
+              "lightning_res": 0,
+              "max_energy": 120,
+              "max_hp": 800,
+              "max_toughness": 0,
+              "name": "Observer Ally",
+              "physical_res": 0,
+              "quantum_res": 0,
+              "speed": 99,
+              "team": "ally",
+              "weaknesses": [
+                "lightning"
+              ],
+              "wind_res": 0
+            },
+            {
+              "all_res": 0.02,
+              "atk": 555,
+              "base_speed": 101,
+              "break_effect": 0.19,
+              "buffs": {
+                "synthetic_tingyun_order_probe": {
+                  "data": {
+                    "dmg_bonus_ratio": 0.5,
+                    "synthetic_probe": true
+                  },
+                  "duration_type": "target_normal_turns",
+                  "id": "synthetic_tingyun_order_probe",
+                  "kind": "buff",
+                  "max_stacks": 2,
+                  "name": "Synthetic Tingyun Order Probe",
+                  "remaining_turns": 2,
+                  "source_id": "tingyun",
+                  "stacks": 1,
+                  "target_id": "target"
+                },
+                "unrelated_target_buff": {
+                  "data": {
+                    "marker": "target-buff",
+                    "value": 7
+                  },
+                  "duration_type": "target_normal_turns",
+                  "id": "unrelated_target_buff",
+                  "kind": "buff",
+                  "max_stacks": 4,
+                  "name": "Unrelated Target Buff",
+                  "remaining_turns": 3,
+                  "source_id": "observer",
+                  "stacks": 2,
+                  "target_id": "target"
+                }
+              },
+              "crit_dmg": 0.88,
+              "crit_rate": 0.33,
+              "current_av": 22.75,
+              "current_toughness": 0,
+              "debuffs": {
+                "unrelated_target_debuff": {
+                  "data": {
+                    "marker": "target-debuff"
+                  },
+                  "duration_type": "target_normal_turns",
+                  "id": "unrelated_target_debuff",
+                  "kind": "debuff",
+                  "max_stacks": 1,
+                  "name": "Unrelated Target Debuff",
+                  "remaining_turns": 1,
+                  "source_id": "enemy",
+                  "stacks": 1,
+                  "target_id": "target"
+                }
+              },
+              "defense": 222,
+              "dmg_bonus": 0.27,
+              "element": "wind",
+              "energy": 100,
+              "fire_res": 0,
+              "hp": 654,
+              "ice_res": 0,
+              "id": "target",
+              "imaginary_res": 0,
+              "is_alive": true,
+              "is_broken": false,
+              "level": 79,
+              "lightning_res": 0,
+              "max_energy": 100,
+              "max_hp": 900,
+              "max_toughness": 0,
+              "name": "Selected Ally",
+              "physical_res": 0,
+              "quantum_res": 0,
+              "speed": 103,
+              "team": "ally",
+              "weaknesses": [
+                "fire",
+                "ice"
+              ],
+              "wind_res": 0
+            },
+            {
+              "all_res": 0.01,
+              "atk": 432,
+              "base_speed": 112,
+              "break_effect": 0.24,
+              "buffs": {},
+              "crit_dmg": 0.71,
+              "crit_rate": 0.17,
+              "current_av": 41.25,
+              "current_toughness": 0,
+              "debuffs": {},
+              "defense": 321,
+              "dmg_bonus": 0.12,
+              "element": "lightning",
+              "energy": 130,
+              "fire_res": 0,
+              "hp": 777,
+              "ice_res": 0,
+              "id": "tingyun",
+              "imaginary_res": 0,
+              "is_alive": true,
+              "is_broken": false,
+              "level": 80,
+              "lightning_res": 0,
+              "max_energy": 130,
+              "max_hp": 1000,
+              "max_toughness": 0,
+              "name": "Tingyun",
+              "physical_res": 0,
+              "quantum_res": 0,
+              "speed": 113,
+              "team": "ally",
+              "weaknesses": [
+                "ice"
+              ],
+              "wind_res": 0
+            }
+          ],
+          "global_av": 37.5,
+          "skill_points": 3,
+          "max_skill_points": 7,
+          "extra_turn_stack": [
+            "observer",
+            "target"
+          ],
+          "logs": [
+            "preexisting:log",
+            "trigger:order_probe_action_started",
+            "trigger:order_probe_action_finished"
+          ],
+          "triggers": [
+            {
+              "id": "order_probe_action_finished",
+              "owner_id": "observer",
+              "event_type": "action_finished",
+              "condition": {
+                "type": "always"
+              },
+              "effects": [
+                {
+                  "effect_type": "AddDebuff",
+                  "fields": {
+                    "data": {
+                      "synthetic_probe": true
+                    },
+                    "duration_type": "target_normal_turns",
+                    "id": "synthetic_finished_marker",
+                    "max_stacks": 1,
+                    "name": "Synthetic Finished Marker",
+                    "refresh_policy": "refresh",
+                    "remaining_turns": 1,
+                    "source_id": null,
+                    "stacks": 1,
+                    "target_ids": [
+                      "enemy"
+                    ],
+                    "target_ref": null
+                  }
+                }
+              ],
+              "max_triggers_per_action": 1,
+              "enabled": true
+            },
+            {
+              "id": "order_probe_action_started",
+              "owner_id": "observer",
+              "event_type": "action_started",
+              "condition": {
+                "type": "always"
+              },
+              "effects": [
+                {
+                  "effect_type": "GainEnergy",
+                  "fields": {
+                    "amount": 7,
+                    "target_ids": [
+                      "observer"
+                    ],
+                    "target_ref": null
+                  }
+                }
+              ],
+              "max_triggers_per_action": 1,
+              "enabled": true
+            }
+          ],
+          "pending_events": [
+            {
+              "data": {
+                "marker": "before-action",
+                "nested": {
+                  "enabled": true,
+                  "sequence": 3
+                }
+              },
+              "type": "preexisting_event"
+            },
+            {
+              "data": {
+                "action_id": "synthetic_tingyun_order_probe_action",
+                "actor_id": "tingyun"
+              },
+              "type": "action_started"
+            },
+            {
+              "data": {
+                "action_id": "synthetic_tingyun_order_probe_action",
+                "actor_id": "tingyun"
+              },
+              "type": "action_finished"
+            }
+          ],
+          "trigger_fire_counts": {
+            "order_probe_action_finished": 1,
+            "order_probe_action_started": 1
+          },
+          "event_dispatch_count": 2,
+          "event_dispatch_limit": 100,
+          "enemy_ai_plans": {
+            "enemy": {
+              "pattern": [
+                {
+                  "skill_id": "enemy_probe_skill",
+                  "target_ids": null,
+                  "target_strategy": "first_legal"
+                }
+              ],
+              "repeat": true
+            }
+          },
+          "enemy_ai_cursors": {
+            "enemy": 2
+          }
+        },
+        "turn_context": {
+          "actions_taken": [
+            "prior_interrupt_action",
+            "synthetic_tingyun_order_probe_action"
+          ],
+          "actor_id": "tingyun",
+          "forced_rng": {
+            "marker": 17,
+            "nested": {
+              "choice": "fixed"
+            }
+          },
+          "is_extra_turn": false,
+          "is_interrupt": true,
+          "should_end_turn": false
+        },
+        "action_result": {
+          "return_type": "TurnContext",
+          "returned_same_context": true
+        }
+      },
+      "order_b_snapshot": {
+        "state": {
+          "units": [
+            {
+              "all_res": 0.1,
+              "atk": 600,
+              "base_speed": 88,
+              "break_effect": 0.07,
+              "buffs": {
+                "unrelated_enemy_buff": {
+                  "data": {
+                    "marker": "enemy-buff"
+                  },
+                  "duration_type": "current_turn",
+                  "id": "unrelated_enemy_buff",
+                  "kind": "buff",
+                  "max_stacks": 1,
+                  "name": "Unrelated Enemy Buff",
+                  "remaining_turns": null,
+                  "source_id": "enemy",
+                  "stacks": 1,
+                  "target_id": "enemy"
+                }
+              },
+              "crit_dmg": 0.55,
+              "crit_rate": 0.05,
+              "current_av": 74.25,
+              "current_toughness": 73,
+              "debuffs": {
+                "synthetic_finished_marker": {
+                  "data": {
+                    "synthetic_probe": true
+                  },
+                  "duration_type": "target_normal_turns",
+                  "id": "synthetic_finished_marker",
+                  "kind": "debuff",
+                  "max_stacks": 1,
+                  "name": "Synthetic Finished Marker",
+                  "remaining_turns": 1,
+                  "source_id": "observer",
+                  "stacks": 1,
+                  "target_id": "enemy"
+                }
+              },
+              "defense": 500,
+              "dmg_bonus": 0.04,
+              "element": "fire",
+              "energy": 19,
+              "fire_res": 0,
+              "hp": 1234,
+              "ice_res": 0,
+              "id": "enemy",
+              "imaginary_res": 0,
+              "is_alive": true,
+              "is_broken": false,
+              "level": 77,
+              "lightning_res": 0,
+              "max_energy": 90,
+              "max_hp": 1500,
+              "max_toughness": 120,
+              "name": "Synthetic Enemy",
+              "physical_res": 0,
+              "quantum_res": 0,
+              "speed": 89,
+              "team": "enemy",
+              "weaknesses": [
+                "lightning",
+                "wind"
+              ],
+              "wind_res": 0
+            },
+            {
+              "all_res": 0.03,
+              "atk": 333,
+              "base_speed": 97,
+              "break_effect": 0.31,
+              "buffs": {},
+              "crit_dmg": 0.59,
+              "crit_rate": 0.09,
+              "current_av": 63.5,
+              "current_toughness": 0,
+              "debuffs": {},
+              "defense": 444,
+              "dmg_bonus": 0.08,
+              "element": "ice",
+              "energy": 18,
+              "fire_res": 0,
+              "hp": 501,
+              "ice_res": 0,
+              "id": "observer",
+              "imaginary_res": 0,
+              "is_alive": true,
+              "is_broken": false,
+              "level": 78,
+              "lightning_res": 0,
+              "max_energy": 120,
+              "max_hp": 800,
+              "max_toughness": 0,
+              "name": "Observer Ally",
+              "physical_res": 0,
+              "quantum_res": 0,
+              "speed": 99,
+              "team": "ally",
+              "weaknesses": [
+                "lightning"
+              ],
+              "wind_res": 0
+            },
+            {
+              "all_res": 0.02,
+              "atk": 555,
+              "base_speed": 101,
+              "break_effect": 0.19,
+              "buffs": {
+                "synthetic_tingyun_order_probe": {
+                  "data": {
+                    "dmg_bonus_ratio": 0.5,
+                    "synthetic_probe": true
+                  },
+                  "duration_type": "target_normal_turns",
+                  "id": "synthetic_tingyun_order_probe",
+                  "kind": "buff",
+                  "max_stacks": 2,
+                  "name": "Synthetic Tingyun Order Probe",
+                  "remaining_turns": 2,
+                  "source_id": "tingyun",
+                  "stacks": 1,
+                  "target_id": "target"
+                },
+                "unrelated_target_buff": {
+                  "data": {
+                    "marker": "target-buff",
+                    "value": 7
+                  },
+                  "duration_type": "target_normal_turns",
+                  "id": "unrelated_target_buff",
+                  "kind": "buff",
+                  "max_stacks": 4,
+                  "name": "Unrelated Target Buff",
+                  "remaining_turns": 3,
+                  "source_id": "observer",
+                  "stacks": 2,
+                  "target_id": "target"
+                }
+              },
+              "crit_dmg": 0.88,
+              "crit_rate": 0.33,
+              "current_av": 22.75,
+              "current_toughness": 0,
+              "debuffs": {
+                "unrelated_target_debuff": {
+                  "data": {
+                    "marker": "target-debuff"
+                  },
+                  "duration_type": "target_normal_turns",
+                  "id": "unrelated_target_debuff",
+                  "kind": "debuff",
+                  "max_stacks": 1,
+                  "name": "Unrelated Target Debuff",
+                  "remaining_turns": 1,
+                  "source_id": "enemy",
+                  "stacks": 1,
+                  "target_id": "target"
+                }
+              },
+              "defense": 222,
+              "dmg_bonus": 0.27,
+              "element": "wind",
+              "energy": 100,
+              "fire_res": 0,
+              "hp": 654,
+              "ice_res": 0,
+              "id": "target",
+              "imaginary_res": 0,
+              "is_alive": true,
+              "is_broken": false,
+              "level": 79,
+              "lightning_res": 0,
+              "max_energy": 100,
+              "max_hp": 900,
+              "max_toughness": 0,
+              "name": "Selected Ally",
+              "physical_res": 0,
+              "quantum_res": 0,
+              "speed": 103,
+              "team": "ally",
+              "weaknesses": [
+                "fire",
+                "ice"
+              ],
+              "wind_res": 0
+            },
+            {
+              "all_res": 0.01,
+              "atk": 432,
+              "base_speed": 112,
+              "break_effect": 0.24,
+              "buffs": {},
+              "crit_dmg": 0.71,
+              "crit_rate": 0.17,
+              "current_av": 41.25,
+              "current_toughness": 0,
+              "debuffs": {},
+              "defense": 321,
+              "dmg_bonus": 0.12,
+              "element": "lightning",
+              "energy": 130,
+              "fire_res": 0,
+              "hp": 777,
+              "ice_res": 0,
+              "id": "tingyun",
+              "imaginary_res": 0,
+              "is_alive": true,
+              "is_broken": false,
+              "level": 80,
+              "lightning_res": 0,
+              "max_energy": 130,
+              "max_hp": 1000,
+              "max_toughness": 0,
+              "name": "Tingyun",
+              "physical_res": 0,
+              "quantum_res": 0,
+              "speed": 113,
+              "team": "ally",
+              "weaknesses": [
+                "ice"
+              ],
+              "wind_res": 0
+            }
+          ],
+          "global_av": 37.5,
+          "skill_points": 3,
+          "max_skill_points": 7,
+          "extra_turn_stack": [
+            "observer",
+            "target"
+          ],
+          "logs": [
+            "preexisting:log",
+            "trigger:order_probe_action_started",
+            "trigger:order_probe_action_finished"
+          ],
+          "triggers": [
+            {
+              "id": "order_probe_action_finished",
+              "owner_id": "observer",
+              "event_type": "action_finished",
+              "condition": {
+                "type": "always"
+              },
+              "effects": [
+                {
+                  "effect_type": "AddDebuff",
+                  "fields": {
+                    "data": {
+                      "synthetic_probe": true
+                    },
+                    "duration_type": "target_normal_turns",
+                    "id": "synthetic_finished_marker",
+                    "max_stacks": 1,
+                    "name": "Synthetic Finished Marker",
+                    "refresh_policy": "refresh",
+                    "remaining_turns": 1,
+                    "source_id": null,
+                    "stacks": 1,
+                    "target_ids": [
+                      "enemy"
+                    ],
+                    "target_ref": null
+                  }
+                }
+              ],
+              "max_triggers_per_action": 1,
+              "enabled": true
+            },
+            {
+              "id": "order_probe_action_started",
+              "owner_id": "observer",
+              "event_type": "action_started",
+              "condition": {
+                "type": "always"
+              },
+              "effects": [
+                {
+                  "effect_type": "GainEnergy",
+                  "fields": {
+                    "amount": 7,
+                    "target_ids": [
+                      "observer"
+                    ],
+                    "target_ref": null
+                  }
+                }
+              ],
+              "max_triggers_per_action": 1,
+              "enabled": true
+            }
+          ],
+          "pending_events": [
+            {
+              "data": {
+                "marker": "before-action",
+                "nested": {
+                  "enabled": true,
+                  "sequence": 3
+                }
+              },
+              "type": "preexisting_event"
+            },
+            {
+              "data": {
+                "action_id": "synthetic_tingyun_order_probe_action",
+                "actor_id": "tingyun"
+              },
+              "type": "action_started"
+            },
+            {
+              "data": {
+                "action_id": "synthetic_tingyun_order_probe_action",
+                "actor_id": "tingyun"
+              },
+              "type": "action_finished"
+            }
+          ],
+          "trigger_fire_counts": {
+            "order_probe_action_finished": 1,
+            "order_probe_action_started": 1
+          },
+          "event_dispatch_count": 2,
+          "event_dispatch_limit": 100,
+          "enemy_ai_plans": {
+            "enemy": {
+              "pattern": [
+                {
+                  "skill_id": "enemy_probe_skill",
+                  "target_ids": null,
+                  "target_strategy": "first_legal"
+                }
+              ],
+              "repeat": true
+            }
+          },
+          "enemy_ai_cursors": {
+            "enemy": 2
+          }
+        },
+        "turn_context": {
+          "actions_taken": [
+            "prior_interrupt_action",
+            "synthetic_tingyun_order_probe_action"
+          ],
+          "actor_id": "tingyun",
+          "forced_rng": {
+            "marker": 17,
+            "nested": {
+              "choice": "fixed"
+            }
+          },
+          "is_extra_turn": false,
+          "is_interrupt": true,
+          "should_end_turn": false
+        },
+        "action_result": {
+          "return_type": "TurnContext",
+          "returned_same_context": true
+        }
+      }
+    },
+    {
+      "case_id": "below_cap_existing_probe_refresh",
+      "target_energy_before": 10,
+      "target_max_energy": 100,
+      "existing_probe_buff": true,
+      "equal": true,
+      "order_a_snapshot_sha256": "6c5ce18d29c86199e7b70c4ed39f8c2af5a1e6972b9d27218fddb8107de9befb",
+      "order_b_snapshot_sha256": "6c5ce18d29c86199e7b70c4ed39f8c2af5a1e6972b9d27218fddb8107de9befb",
+      "order_a_snapshot": {
+        "state": {
+          "units": [
+            {
+              "all_res": 0.1,
+              "atk": 600,
+              "base_speed": 88,
+              "break_effect": 0.07,
+              "buffs": {
+                "unrelated_enemy_buff": {
+                  "data": {
+                    "marker": "enemy-buff"
+                  },
+                  "duration_type": "current_turn",
+                  "id": "unrelated_enemy_buff",
+                  "kind": "buff",
+                  "max_stacks": 1,
+                  "name": "Unrelated Enemy Buff",
+                  "remaining_turns": null,
+                  "source_id": "enemy",
+                  "stacks": 1,
+                  "target_id": "enemy"
+                }
+              },
+              "crit_dmg": 0.55,
+              "crit_rate": 0.05,
+              "current_av": 74.25,
+              "current_toughness": 73,
+              "debuffs": {
+                "synthetic_finished_marker": {
+                  "data": {
+                    "synthetic_probe": true
+                  },
+                  "duration_type": "target_normal_turns",
+                  "id": "synthetic_finished_marker",
+                  "kind": "debuff",
+                  "max_stacks": 1,
+                  "name": "Synthetic Finished Marker",
+                  "remaining_turns": 1,
+                  "source_id": "observer",
+                  "stacks": 1,
+                  "target_id": "enemy"
+                }
+              },
+              "defense": 500,
+              "dmg_bonus": 0.04,
+              "element": "fire",
+              "energy": 19,
+              "fire_res": 0,
+              "hp": 1234,
+              "ice_res": 0,
+              "id": "enemy",
+              "imaginary_res": 0,
+              "is_alive": true,
+              "is_broken": false,
+              "level": 77,
+              "lightning_res": 0,
+              "max_energy": 90,
+              "max_hp": 1500,
+              "max_toughness": 120,
+              "name": "Synthetic Enemy",
+              "physical_res": 0,
+              "quantum_res": 0,
+              "speed": 89,
+              "team": "enemy",
+              "weaknesses": [
+                "lightning",
+                "wind"
+              ],
+              "wind_res": 0
+            },
+            {
+              "all_res": 0.03,
+              "atk": 333,
+              "base_speed": 97,
+              "break_effect": 0.31,
+              "buffs": {},
+              "crit_dmg": 0.59,
+              "crit_rate": 0.09,
+              "current_av": 63.5,
+              "current_toughness": 0,
+              "debuffs": {},
+              "defense": 444,
+              "dmg_bonus": 0.08,
+              "element": "ice",
+              "energy": 18,
+              "fire_res": 0,
+              "hp": 501,
+              "ice_res": 0,
+              "id": "observer",
+              "imaginary_res": 0,
+              "is_alive": true,
+              "is_broken": false,
+              "level": 78,
+              "lightning_res": 0,
+              "max_energy": 120,
+              "max_hp": 800,
+              "max_toughness": 0,
+              "name": "Observer Ally",
+              "physical_res": 0,
+              "quantum_res": 0,
+              "speed": 99,
+              "team": "ally",
+              "weaknesses": [
+                "lightning"
+              ],
+              "wind_res": 0
+            },
+            {
+              "all_res": 0.02,
+              "atk": 555,
+              "base_speed": 101,
+              "break_effect": 0.19,
+              "buffs": {
+                "synthetic_tingyun_order_probe": {
+                  "data": {
+                    "dmg_bonus_ratio": 0.5,
+                    "synthetic_probe": true
+                  },
+                  "duration_type": "target_normal_turns",
+                  "id": "synthetic_tingyun_order_probe",
+                  "kind": "buff",
+                  "max_stacks": 2,
+                  "name": "Synthetic Tingyun Order Probe",
+                  "remaining_turns": 2,
+                  "source_id": "tingyun",
+                  "stacks": 2,
+                  "target_id": "target"
+                },
+                "unrelated_target_buff": {
+                  "data": {
+                    "marker": "target-buff",
+                    "value": 7
+                  },
+                  "duration_type": "target_normal_turns",
+                  "id": "unrelated_target_buff",
+                  "kind": "buff",
+                  "max_stacks": 4,
+                  "name": "Unrelated Target Buff",
+                  "remaining_turns": 3,
+                  "source_id": "observer",
+                  "stacks": 2,
+                  "target_id": "target"
+                }
+              },
+              "crit_dmg": 0.88,
+              "crit_rate": 0.33,
+              "current_av": 22.75,
+              "current_toughness": 0,
+              "debuffs": {
+                "unrelated_target_debuff": {
+                  "data": {
+                    "marker": "target-debuff"
+                  },
+                  "duration_type": "target_normal_turns",
+                  "id": "unrelated_target_debuff",
+                  "kind": "debuff",
+                  "max_stacks": 1,
+                  "name": "Unrelated Target Debuff",
+                  "remaining_turns": 1,
+                  "source_id": "enemy",
+                  "stacks": 1,
+                  "target_id": "target"
+                }
+              },
+              "defense": 222,
+              "dmg_bonus": 0.27,
+              "element": "wind",
+              "energy": 60,
+              "fire_res": 0,
+              "hp": 654,
+              "ice_res": 0,
+              "id": "target",
+              "imaginary_res": 0,
+              "is_alive": true,
+              "is_broken": false,
+              "level": 79,
+              "lightning_res": 0,
+              "max_energy": 100,
+              "max_hp": 900,
+              "max_toughness": 0,
+              "name": "Selected Ally",
+              "physical_res": 0,
+              "quantum_res": 0,
+              "speed": 103,
+              "team": "ally",
+              "weaknesses": [
+                "fire",
+                "ice"
+              ],
+              "wind_res": 0
+            },
+            {
+              "all_res": 0.01,
+              "atk": 432,
+              "base_speed": 112,
+              "break_effect": 0.24,
+              "buffs": {},
+              "crit_dmg": 0.71,
+              "crit_rate": 0.17,
+              "current_av": 41.25,
+              "current_toughness": 0,
+              "debuffs": {},
+              "defense": 321,
+              "dmg_bonus": 0.12,
+              "element": "lightning",
+              "energy": 130,
+              "fire_res": 0,
+              "hp": 777,
+              "ice_res": 0,
+              "id": "tingyun",
+              "imaginary_res": 0,
+              "is_alive": true,
+              "is_broken": false,
+              "level": 80,
+              "lightning_res": 0,
+              "max_energy": 130,
+              "max_hp": 1000,
+              "max_toughness": 0,
+              "name": "Tingyun",
+              "physical_res": 0,
+              "quantum_res": 0,
+              "speed": 113,
+              "team": "ally",
+              "weaknesses": [
+                "ice"
+              ],
+              "wind_res": 0
+            }
+          ],
+          "global_av": 37.5,
+          "skill_points": 3,
+          "max_skill_points": 7,
+          "extra_turn_stack": [
+            "observer",
+            "target"
+          ],
+          "logs": [
+            "preexisting:log",
+            "trigger:order_probe_action_started",
+            "trigger:order_probe_action_finished"
+          ],
+          "triggers": [
+            {
+              "id": "order_probe_action_finished",
+              "owner_id": "observer",
+              "event_type": "action_finished",
+              "condition": {
+                "type": "always"
+              },
+              "effects": [
+                {
+                  "effect_type": "AddDebuff",
+                  "fields": {
+                    "data": {
+                      "synthetic_probe": true
+                    },
+                    "duration_type": "target_normal_turns",
+                    "id": "synthetic_finished_marker",
+                    "max_stacks": 1,
+                    "name": "Synthetic Finished Marker",
+                    "refresh_policy": "refresh",
+                    "remaining_turns": 1,
+                    "source_id": null,
+                    "stacks": 1,
+                    "target_ids": [
+                      "enemy"
+                    ],
+                    "target_ref": null
+                  }
+                }
+              ],
+              "max_triggers_per_action": 1,
+              "enabled": true
+            },
+            {
+              "id": "order_probe_action_started",
+              "owner_id": "observer",
+              "event_type": "action_started",
+              "condition": {
+                "type": "always"
+              },
+              "effects": [
+                {
+                  "effect_type": "GainEnergy",
+                  "fields": {
+                    "amount": 7,
+                    "target_ids": [
+                      "observer"
+                    ],
+                    "target_ref": null
+                  }
+                }
+              ],
+              "max_triggers_per_action": 1,
+              "enabled": true
+            }
+          ],
+          "pending_events": [
+            {
+              "data": {
+                "marker": "before-action",
+                "nested": {
+                  "enabled": true,
+                  "sequence": 3
+                }
+              },
+              "type": "preexisting_event"
+            },
+            {
+              "data": {
+                "action_id": "synthetic_tingyun_order_probe_action",
+                "actor_id": "tingyun"
+              },
+              "type": "action_started"
+            },
+            {
+              "data": {
+                "action_id": "synthetic_tingyun_order_probe_action",
+                "actor_id": "tingyun"
+              },
+              "type": "action_finished"
+            }
+          ],
+          "trigger_fire_counts": {
+            "order_probe_action_finished": 1,
+            "order_probe_action_started": 1
+          },
+          "event_dispatch_count": 2,
+          "event_dispatch_limit": 100,
+          "enemy_ai_plans": {
+            "enemy": {
+              "pattern": [
+                {
+                  "skill_id": "enemy_probe_skill",
+                  "target_ids": null,
+                  "target_strategy": "first_legal"
+                }
+              ],
+              "repeat": true
+            }
+          },
+          "enemy_ai_cursors": {
+            "enemy": 2
+          }
+        },
+        "turn_context": {
+          "actions_taken": [
+            "prior_interrupt_action",
+            "synthetic_tingyun_order_probe_action"
+          ],
+          "actor_id": "tingyun",
+          "forced_rng": {
+            "marker": 17,
+            "nested": {
+              "choice": "fixed"
+            }
+          },
+          "is_extra_turn": false,
+          "is_interrupt": true,
+          "should_end_turn": false
+        },
+        "action_result": {
+          "return_type": "TurnContext",
+          "returned_same_context": true
+        }
+      },
+      "order_b_snapshot": {
+        "state": {
+          "units": [
+            {
+              "all_res": 0.1,
+              "atk": 600,
+              "base_speed": 88,
+              "break_effect": 0.07,
+              "buffs": {
+                "unrelated_enemy_buff": {
+                  "data": {
+                    "marker": "enemy-buff"
+                  },
+                  "duration_type": "current_turn",
+                  "id": "unrelated_enemy_buff",
+                  "kind": "buff",
+                  "max_stacks": 1,
+                  "name": "Unrelated Enemy Buff",
+                  "remaining_turns": null,
+                  "source_id": "enemy",
+                  "stacks": 1,
+                  "target_id": "enemy"
+                }
+              },
+              "crit_dmg": 0.55,
+              "crit_rate": 0.05,
+              "current_av": 74.25,
+              "current_toughness": 73,
+              "debuffs": {
+                "synthetic_finished_marker": {
+                  "data": {
+                    "synthetic_probe": true
+                  },
+                  "duration_type": "target_normal_turns",
+                  "id": "synthetic_finished_marker",
+                  "kind": "debuff",
+                  "max_stacks": 1,
+                  "name": "Synthetic Finished Marker",
+                  "remaining_turns": 1,
+                  "source_id": "observer",
+                  "stacks": 1,
+                  "target_id": "enemy"
+                }
+              },
+              "defense": 500,
+              "dmg_bonus": 0.04,
+              "element": "fire",
+              "energy": 19,
+              "fire_res": 0,
+              "hp": 1234,
+              "ice_res": 0,
+              "id": "enemy",
+              "imaginary_res": 0,
+              "is_alive": true,
+              "is_broken": false,
+              "level": 77,
+              "lightning_res": 0,
+              "max_energy": 90,
+              "max_hp": 1500,
+              "max_toughness": 120,
+              "name": "Synthetic Enemy",
+              "physical_res": 0,
+              "quantum_res": 0,
+              "speed": 89,
+              "team": "enemy",
+              "weaknesses": [
+                "lightning",
+                "wind"
+              ],
+              "wind_res": 0
+            },
+            {
+              "all_res": 0.03,
+              "atk": 333,
+              "base_speed": 97,
+              "break_effect": 0.31,
+              "buffs": {},
+              "crit_dmg": 0.59,
+              "crit_rate": 0.09,
+              "current_av": 63.5,
+              "current_toughness": 0,
+              "debuffs": {},
+              "defense": 444,
+              "dmg_bonus": 0.08,
+              "element": "ice",
+              "energy": 18,
+              "fire_res": 0,
+              "hp": 501,
+              "ice_res": 0,
+              "id": "observer",
+              "imaginary_res": 0,
+              "is_alive": true,
+              "is_broken": false,
+              "level": 78,
+              "lightning_res": 0,
+              "max_energy": 120,
+              "max_hp": 800,
+              "max_toughness": 0,
+              "name": "Observer Ally",
+              "physical_res": 0,
+              "quantum_res": 0,
+              "speed": 99,
+              "team": "ally",
+              "weaknesses": [
+                "lightning"
+              ],
+              "wind_res": 0
+            },
+            {
+              "all_res": 0.02,
+              "atk": 555,
+              "base_speed": 101,
+              "break_effect": 0.19,
+              "buffs": {
+                "synthetic_tingyun_order_probe": {
+                  "data": {
+                    "dmg_bonus_ratio": 0.5,
+                    "synthetic_probe": true
+                  },
+                  "duration_type": "target_normal_turns",
+                  "id": "synthetic_tingyun_order_probe",
+                  "kind": "buff",
+                  "max_stacks": 2,
+                  "name": "Synthetic Tingyun Order Probe",
+                  "remaining_turns": 2,
+                  "source_id": "tingyun",
+                  "stacks": 2,
+                  "target_id": "target"
+                },
+                "unrelated_target_buff": {
+                  "data": {
+                    "marker": "target-buff",
+                    "value": 7
+                  },
+                  "duration_type": "target_normal_turns",
+                  "id": "unrelated_target_buff",
+                  "kind": "buff",
+                  "max_stacks": 4,
+                  "name": "Unrelated Target Buff",
+                  "remaining_turns": 3,
+                  "source_id": "observer",
+                  "stacks": 2,
+                  "target_id": "target"
+                }
+              },
+              "crit_dmg": 0.88,
+              "crit_rate": 0.33,
+              "current_av": 22.75,
+              "current_toughness": 0,
+              "debuffs": {
+                "unrelated_target_debuff": {
+                  "data": {
+                    "marker": "target-debuff"
+                  },
+                  "duration_type": "target_normal_turns",
+                  "id": "unrelated_target_debuff",
+                  "kind": "debuff",
+                  "max_stacks": 1,
+                  "name": "Unrelated Target Debuff",
+                  "remaining_turns": 1,
+                  "source_id": "enemy",
+                  "stacks": 1,
+                  "target_id": "target"
+                }
+              },
+              "defense": 222,
+              "dmg_bonus": 0.27,
+              "element": "wind",
+              "energy": 60,
+              "fire_res": 0,
+              "hp": 654,
+              "ice_res": 0,
+              "id": "target",
+              "imaginary_res": 0,
+              "is_alive": true,
+              "is_broken": false,
+              "level": 79,
+              "lightning_res": 0,
+              "max_energy": 100,
+              "max_hp": 900,
+              "max_toughness": 0,
+              "name": "Selected Ally",
+              "physical_res": 0,
+              "quantum_res": 0,
+              "speed": 103,
+              "team": "ally",
+              "weaknesses": [
+                "fire",
+                "ice"
+              ],
+              "wind_res": 0
+            },
+            {
+              "all_res": 0.01,
+              "atk": 432,
+              "base_speed": 112,
+              "break_effect": 0.24,
+              "buffs": {},
+              "crit_dmg": 0.71,
+              "crit_rate": 0.17,
+              "current_av": 41.25,
+              "current_toughness": 0,
+              "debuffs": {},
+              "defense": 321,
+              "dmg_bonus": 0.12,
+              "element": "lightning",
+              "energy": 130,
+              "fire_res": 0,
+              "hp": 777,
+              "ice_res": 0,
+              "id": "tingyun",
+              "imaginary_res": 0,
+              "is_alive": true,
+              "is_broken": false,
+              "level": 80,
+              "lightning_res": 0,
+              "max_energy": 130,
+              "max_hp": 1000,
+              "max_toughness": 0,
+              "name": "Tingyun",
+              "physical_res": 0,
+              "quantum_res": 0,
+              "speed": 113,
+              "team": "ally",
+              "weaknesses": [
+                "ice"
+              ],
+              "wind_res": 0
+            }
+          ],
+          "global_av": 37.5,
+          "skill_points": 3,
+          "max_skill_points": 7,
+          "extra_turn_stack": [
+            "observer",
+            "target"
+          ],
+          "logs": [
+            "preexisting:log",
+            "trigger:order_probe_action_started",
+            "trigger:order_probe_action_finished"
+          ],
+          "triggers": [
+            {
+              "id": "order_probe_action_finished",
+              "owner_id": "observer",
+              "event_type": "action_finished",
+              "condition": {
+                "type": "always"
+              },
+              "effects": [
+                {
+                  "effect_type": "AddDebuff",
+                  "fields": {
+                    "data": {
+                      "synthetic_probe": true
+                    },
+                    "duration_type": "target_normal_turns",
+                    "id": "synthetic_finished_marker",
+                    "max_stacks": 1,
+                    "name": "Synthetic Finished Marker",
+                    "refresh_policy": "refresh",
+                    "remaining_turns": 1,
+                    "source_id": null,
+                    "stacks": 1,
+                    "target_ids": [
+                      "enemy"
+                    ],
+                    "target_ref": null
+                  }
+                }
+              ],
+              "max_triggers_per_action": 1,
+              "enabled": true
+            },
+            {
+              "id": "order_probe_action_started",
+              "owner_id": "observer",
+              "event_type": "action_started",
+              "condition": {
+                "type": "always"
+              },
+              "effects": [
+                {
+                  "effect_type": "GainEnergy",
+                  "fields": {
+                    "amount": 7,
+                    "target_ids": [
+                      "observer"
+                    ],
+                    "target_ref": null
+                  }
+                }
+              ],
+              "max_triggers_per_action": 1,
+              "enabled": true
+            }
+          ],
+          "pending_events": [
+            {
+              "data": {
+                "marker": "before-action",
+                "nested": {
+                  "enabled": true,
+                  "sequence": 3
+                }
+              },
+              "type": "preexisting_event"
+            },
+            {
+              "data": {
+                "action_id": "synthetic_tingyun_order_probe_action",
+                "actor_id": "tingyun"
+              },
+              "type": "action_started"
+            },
+            {
+              "data": {
+                "action_id": "synthetic_tingyun_order_probe_action",
+                "actor_id": "tingyun"
+              },
+              "type": "action_finished"
+            }
+          ],
+          "trigger_fire_counts": {
+            "order_probe_action_finished": 1,
+            "order_probe_action_started": 1
+          },
+          "event_dispatch_count": 2,
+          "event_dispatch_limit": 100,
+          "enemy_ai_plans": {
+            "enemy": {
+              "pattern": [
+                {
+                  "skill_id": "enemy_probe_skill",
+                  "target_ids": null,
+                  "target_strategy": "first_legal"
+                }
+              ],
+              "repeat": true
+            }
+          },
+          "enemy_ai_cursors": {
+            "enemy": 2
+          }
+        },
+        "turn_context": {
+          "actions_taken": [
+            "prior_interrupt_action",
+            "synthetic_tingyun_order_probe_action"
+          ],
+          "actor_id": "tingyun",
+          "forced_rng": {
+            "marker": 17,
+            "nested": {
+              "choice": "fixed"
+            }
+          },
+          "is_extra_turn": false,
+          "is_interrupt": true,
+          "should_end_turn": false
+        },
+        "action_result": {
+          "return_type": "TurnContext",
+          "returned_same_context": true
+        }
+      }
+    },
+    {
+      "case_id": "below_cap_no_existing_probe",
+      "target_energy_before": 10,
+      "target_max_energy": 100,
+      "existing_probe_buff": false,
+      "equal": true,
+      "order_a_snapshot_sha256": "dfacf38c6e95e66f4061d5531ed5f21c7306c5ef67e9e6c73c16ec0044dc104e",
+      "order_b_snapshot_sha256": "dfacf38c6e95e66f4061d5531ed5f21c7306c5ef67e9e6c73c16ec0044dc104e",
+      "order_a_snapshot": {
+        "state": {
+          "units": [
+            {
+              "all_res": 0.1,
+              "atk": 600,
+              "base_speed": 88,
+              "break_effect": 0.07,
+              "buffs": {
+                "unrelated_enemy_buff": {
+                  "data": {
+                    "marker": "enemy-buff"
+                  },
+                  "duration_type": "current_turn",
+                  "id": "unrelated_enemy_buff",
+                  "kind": "buff",
+                  "max_stacks": 1,
+                  "name": "Unrelated Enemy Buff",
+                  "remaining_turns": null,
+                  "source_id": "enemy",
+                  "stacks": 1,
+                  "target_id": "enemy"
+                }
+              },
+              "crit_dmg": 0.55,
+              "crit_rate": 0.05,
+              "current_av": 74.25,
+              "current_toughness": 73,
+              "debuffs": {
+                "synthetic_finished_marker": {
+                  "data": {
+                    "synthetic_probe": true
+                  },
+                  "duration_type": "target_normal_turns",
+                  "id": "synthetic_finished_marker",
+                  "kind": "debuff",
+                  "max_stacks": 1,
+                  "name": "Synthetic Finished Marker",
+                  "remaining_turns": 1,
+                  "source_id": "observer",
+                  "stacks": 1,
+                  "target_id": "enemy"
+                }
+              },
+              "defense": 500,
+              "dmg_bonus": 0.04,
+              "element": "fire",
+              "energy": 19,
+              "fire_res": 0,
+              "hp": 1234,
+              "ice_res": 0,
+              "id": "enemy",
+              "imaginary_res": 0,
+              "is_alive": true,
+              "is_broken": false,
+              "level": 77,
+              "lightning_res": 0,
+              "max_energy": 90,
+              "max_hp": 1500,
+              "max_toughness": 120,
+              "name": "Synthetic Enemy",
+              "physical_res": 0,
+              "quantum_res": 0,
+              "speed": 89,
+              "team": "enemy",
+              "weaknesses": [
+                "lightning",
+                "wind"
+              ],
+              "wind_res": 0
+            },
+            {
+              "all_res": 0.03,
+              "atk": 333,
+              "base_speed": 97,
+              "break_effect": 0.31,
+              "buffs": {},
+              "crit_dmg": 0.59,
+              "crit_rate": 0.09,
+              "current_av": 63.5,
+              "current_toughness": 0,
+              "debuffs": {},
+              "defense": 444,
+              "dmg_bonus": 0.08,
+              "element": "ice",
+              "energy": 18,
+              "fire_res": 0,
+              "hp": 501,
+              "ice_res": 0,
+              "id": "observer",
+              "imaginary_res": 0,
+              "is_alive": true,
+              "is_broken": false,
+              "level": 78,
+              "lightning_res": 0,
+              "max_energy": 120,
+              "max_hp": 800,
+              "max_toughness": 0,
+              "name": "Observer Ally",
+              "physical_res": 0,
+              "quantum_res": 0,
+              "speed": 99,
+              "team": "ally",
+              "weaknesses": [
+                "lightning"
+              ],
+              "wind_res": 0
+            },
+            {
+              "all_res": 0.02,
+              "atk": 555,
+              "base_speed": 101,
+              "break_effect": 0.19,
+              "buffs": {
+                "synthetic_tingyun_order_probe": {
+                  "data": {
+                    "dmg_bonus_ratio": 0.5,
+                    "synthetic_probe": true
+                  },
+                  "duration_type": "target_normal_turns",
+                  "id": "synthetic_tingyun_order_probe",
+                  "kind": "buff",
+                  "max_stacks": 2,
+                  "name": "Synthetic Tingyun Order Probe",
+                  "remaining_turns": 2,
+                  "source_id": "tingyun",
+                  "stacks": 1,
+                  "target_id": "target"
+                },
+                "unrelated_target_buff": {
+                  "data": {
+                    "marker": "target-buff",
+                    "value": 7
+                  },
+                  "duration_type": "target_normal_turns",
+                  "id": "unrelated_target_buff",
+                  "kind": "buff",
+                  "max_stacks": 4,
+                  "name": "Unrelated Target Buff",
+                  "remaining_turns": 3,
+                  "source_id": "observer",
+                  "stacks": 2,
+                  "target_id": "target"
+                }
+              },
+              "crit_dmg": 0.88,
+              "crit_rate": 0.33,
+              "current_av": 22.75,
+              "current_toughness": 0,
+              "debuffs": {
+                "unrelated_target_debuff": {
+                  "data": {
+                    "marker": "target-debuff"
+                  },
+                  "duration_type": "target_normal_turns",
+                  "id": "unrelated_target_debuff",
+                  "kind": "debuff",
+                  "max_stacks": 1,
+                  "name": "Unrelated Target Debuff",
+                  "remaining_turns": 1,
+                  "source_id": "enemy",
+                  "stacks": 1,
+                  "target_id": "target"
+                }
+              },
+              "defense": 222,
+              "dmg_bonus": 0.27,
+              "element": "wind",
+              "energy": 60,
+              "fire_res": 0,
+              "hp": 654,
+              "ice_res": 0,
+              "id": "target",
+              "imaginary_res": 0,
+              "is_alive": true,
+              "is_broken": false,
+              "level": 79,
+              "lightning_res": 0,
+              "max_energy": 100,
+              "max_hp": 900,
+              "max_toughness": 0,
+              "name": "Selected Ally",
+              "physical_res": 0,
+              "quantum_res": 0,
+              "speed": 103,
+              "team": "ally",
+              "weaknesses": [
+                "fire",
+                "ice"
+              ],
+              "wind_res": 0
+            },
+            {
+              "all_res": 0.01,
+              "atk": 432,
+              "base_speed": 112,
+              "break_effect": 0.24,
+              "buffs": {},
+              "crit_dmg": 0.71,
+              "crit_rate": 0.17,
+              "current_av": 41.25,
+              "current_toughness": 0,
+              "debuffs": {},
+              "defense": 321,
+              "dmg_bonus": 0.12,
+              "element": "lightning",
+              "energy": 130,
+              "fire_res": 0,
+              "hp": 777,
+              "ice_res": 0,
+              "id": "tingyun",
+              "imaginary_res": 0,
+              "is_alive": true,
+              "is_broken": false,
+              "level": 80,
+              "lightning_res": 0,
+              "max_energy": 130,
+              "max_hp": 1000,
+              "max_toughness": 0,
+              "name": "Tingyun",
+              "physical_res": 0,
+              "quantum_res": 0,
+              "speed": 113,
+              "team": "ally",
+              "weaknesses": [
+                "ice"
+              ],
+              "wind_res": 0
+            }
+          ],
+          "global_av": 37.5,
+          "skill_points": 3,
+          "max_skill_points": 7,
+          "extra_turn_stack": [
+            "observer",
+            "target"
+          ],
+          "logs": [
+            "preexisting:log",
+            "trigger:order_probe_action_started",
+            "trigger:order_probe_action_finished"
+          ],
+          "triggers": [
+            {
+              "id": "order_probe_action_finished",
+              "owner_id": "observer",
+              "event_type": "action_finished",
+              "condition": {
+                "type": "always"
+              },
+              "effects": [
+                {
+                  "effect_type": "AddDebuff",
+                  "fields": {
+                    "data": {
+                      "synthetic_probe": true
+                    },
+                    "duration_type": "target_normal_turns",
+                    "id": "synthetic_finished_marker",
+                    "max_stacks": 1,
+                    "name": "Synthetic Finished Marker",
+                    "refresh_policy": "refresh",
+                    "remaining_turns": 1,
+                    "source_id": null,
+                    "stacks": 1,
+                    "target_ids": [
+                      "enemy"
+                    ],
+                    "target_ref": null
+                  }
+                }
+              ],
+              "max_triggers_per_action": 1,
+              "enabled": true
+            },
+            {
+              "id": "order_probe_action_started",
+              "owner_id": "observer",
+              "event_type": "action_started",
+              "condition": {
+                "type": "always"
+              },
+              "effects": [
+                {
+                  "effect_type": "GainEnergy",
+                  "fields": {
+                    "amount": 7,
+                    "target_ids": [
+                      "observer"
+                    ],
+                    "target_ref": null
+                  }
+                }
+              ],
+              "max_triggers_per_action": 1,
+              "enabled": true
+            }
+          ],
+          "pending_events": [
+            {
+              "data": {
+                "marker": "before-action",
+                "nested": {
+                  "enabled": true,
+                  "sequence": 3
+                }
+              },
+              "type": "preexisting_event"
+            },
+            {
+              "data": {
+                "action_id": "synthetic_tingyun_order_probe_action",
+                "actor_id": "tingyun"
+              },
+              "type": "action_started"
+            },
+            {
+              "data": {
+                "action_id": "synthetic_tingyun_order_probe_action",
+                "actor_id": "tingyun"
+              },
+              "type": "action_finished"
+            }
+          ],
+          "trigger_fire_counts": {
+            "order_probe_action_finished": 1,
+            "order_probe_action_started": 1
+          },
+          "event_dispatch_count": 2,
+          "event_dispatch_limit": 100,
+          "enemy_ai_plans": {
+            "enemy": {
+              "pattern": [
+                {
+                  "skill_id": "enemy_probe_skill",
+                  "target_ids": null,
+                  "target_strategy": "first_legal"
+                }
+              ],
+              "repeat": true
+            }
+          },
+          "enemy_ai_cursors": {
+            "enemy": 2
+          }
+        },
+        "turn_context": {
+          "actions_taken": [
+            "prior_interrupt_action",
+            "synthetic_tingyun_order_probe_action"
+          ],
+          "actor_id": "tingyun",
+          "forced_rng": {
+            "marker": 17,
+            "nested": {
+              "choice": "fixed"
+            }
+          },
+          "is_extra_turn": false,
+          "is_interrupt": true,
+          "should_end_turn": false
+        },
+        "action_result": {
+          "return_type": "TurnContext",
+          "returned_same_context": true
+        }
+      },
+      "order_b_snapshot": {
+        "state": {
+          "units": [
+            {
+              "all_res": 0.1,
+              "atk": 600,
+              "base_speed": 88,
+              "break_effect": 0.07,
+              "buffs": {
+                "unrelated_enemy_buff": {
+                  "data": {
+                    "marker": "enemy-buff"
+                  },
+                  "duration_type": "current_turn",
+                  "id": "unrelated_enemy_buff",
+                  "kind": "buff",
+                  "max_stacks": 1,
+                  "name": "Unrelated Enemy Buff",
+                  "remaining_turns": null,
+                  "source_id": "enemy",
+                  "stacks": 1,
+                  "target_id": "enemy"
+                }
+              },
+              "crit_dmg": 0.55,
+              "crit_rate": 0.05,
+              "current_av": 74.25,
+              "current_toughness": 73,
+              "debuffs": {
+                "synthetic_finished_marker": {
+                  "data": {
+                    "synthetic_probe": true
+                  },
+                  "duration_type": "target_normal_turns",
+                  "id": "synthetic_finished_marker",
+                  "kind": "debuff",
+                  "max_stacks": 1,
+                  "name": "Synthetic Finished Marker",
+                  "remaining_turns": 1,
+                  "source_id": "observer",
+                  "stacks": 1,
+                  "target_id": "enemy"
+                }
+              },
+              "defense": 500,
+              "dmg_bonus": 0.04,
+              "element": "fire",
+              "energy": 19,
+              "fire_res": 0,
+              "hp": 1234,
+              "ice_res": 0,
+              "id": "enemy",
+              "imaginary_res": 0,
+              "is_alive": true,
+              "is_broken": false,
+              "level": 77,
+              "lightning_res": 0,
+              "max_energy": 90,
+              "max_hp": 1500,
+              "max_toughness": 120,
+              "name": "Synthetic Enemy",
+              "physical_res": 0,
+              "quantum_res": 0,
+              "speed": 89,
+              "team": "enemy",
+              "weaknesses": [
+                "lightning",
+                "wind"
+              ],
+              "wind_res": 0
+            },
+            {
+              "all_res": 0.03,
+              "atk": 333,
+              "base_speed": 97,
+              "break_effect": 0.31,
+              "buffs": {},
+              "crit_dmg": 0.59,
+              "crit_rate": 0.09,
+              "current_av": 63.5,
+              "current_toughness": 0,
+              "debuffs": {},
+              "defense": 444,
+              "dmg_bonus": 0.08,
+              "element": "ice",
+              "energy": 18,
+              "fire_res": 0,
+              "hp": 501,
+              "ice_res": 0,
+              "id": "observer",
+              "imaginary_res": 0,
+              "is_alive": true,
+              "is_broken": false,
+              "level": 78,
+              "lightning_res": 0,
+              "max_energy": 120,
+              "max_hp": 800,
+              "max_toughness": 0,
+              "name": "Observer Ally",
+              "physical_res": 0,
+              "quantum_res": 0,
+              "speed": 99,
+              "team": "ally",
+              "weaknesses": [
+                "lightning"
+              ],
+              "wind_res": 0
+            },
+            {
+              "all_res": 0.02,
+              "atk": 555,
+              "base_speed": 101,
+              "break_effect": 0.19,
+              "buffs": {
+                "synthetic_tingyun_order_probe": {
+                  "data": {
+                    "dmg_bonus_ratio": 0.5,
+                    "synthetic_probe": true
+                  },
+                  "duration_type": "target_normal_turns",
+                  "id": "synthetic_tingyun_order_probe",
+                  "kind": "buff",
+                  "max_stacks": 2,
+                  "name": "Synthetic Tingyun Order Probe",
+                  "remaining_turns": 2,
+                  "source_id": "tingyun",
+                  "stacks": 1,
+                  "target_id": "target"
+                },
+                "unrelated_target_buff": {
+                  "data": {
+                    "marker": "target-buff",
+                    "value": 7
+                  },
+                  "duration_type": "target_normal_turns",
+                  "id": "unrelated_target_buff",
+                  "kind": "buff",
+                  "max_stacks": 4,
+                  "name": "Unrelated Target Buff",
+                  "remaining_turns": 3,
+                  "source_id": "observer",
+                  "stacks": 2,
+                  "target_id": "target"
+                }
+              },
+              "crit_dmg": 0.88,
+              "crit_rate": 0.33,
+              "current_av": 22.75,
+              "current_toughness": 0,
+              "debuffs": {
+                "unrelated_target_debuff": {
+                  "data": {
+                    "marker": "target-debuff"
+                  },
+                  "duration_type": "target_normal_turns",
+                  "id": "unrelated_target_debuff",
+                  "kind": "debuff",
+                  "max_stacks": 1,
+                  "name": "Unrelated Target Debuff",
+                  "remaining_turns": 1,
+                  "source_id": "enemy",
+                  "stacks": 1,
+                  "target_id": "target"
+                }
+              },
+              "defense": 222,
+              "dmg_bonus": 0.27,
+              "element": "wind",
+              "energy": 60,
+              "fire_res": 0,
+              "hp": 654,
+              "ice_res": 0,
+              "id": "target",
+              "imaginary_res": 0,
+              "is_alive": true,
+              "is_broken": false,
+              "level": 79,
+              "lightning_res": 0,
+              "max_energy": 100,
+              "max_hp": 900,
+              "max_toughness": 0,
+              "name": "Selected Ally",
+              "physical_res": 0,
+              "quantum_res": 0,
+              "speed": 103,
+              "team": "ally",
+              "weaknesses": [
+                "fire",
+                "ice"
+              ],
+              "wind_res": 0
+            },
+            {
+              "all_res": 0.01,
+              "atk": 432,
+              "base_speed": 112,
+              "break_effect": 0.24,
+              "buffs": {},
+              "crit_dmg": 0.71,
+              "crit_rate": 0.17,
+              "current_av": 41.25,
+              "current_toughness": 0,
+              "debuffs": {},
+              "defense": 321,
+              "dmg_bonus": 0.12,
+              "element": "lightning",
+              "energy": 130,
+              "fire_res": 0,
+              "hp": 777,
+              "ice_res": 0,
+              "id": "tingyun",
+              "imaginary_res": 0,
+              "is_alive": true,
+              "is_broken": false,
+              "level": 80,
+              "lightning_res": 0,
+              "max_energy": 130,
+              "max_hp": 1000,
+              "max_toughness": 0,
+              "name": "Tingyun",
+              "physical_res": 0,
+              "quantum_res": 0,
+              "speed": 113,
+              "team": "ally",
+              "weaknesses": [
+                "ice"
+              ],
+              "wind_res": 0
+            }
+          ],
+          "global_av": 37.5,
+          "skill_points": 3,
+          "max_skill_points": 7,
+          "extra_turn_stack": [
+            "observer",
+            "target"
+          ],
+          "logs": [
+            "preexisting:log",
+            "trigger:order_probe_action_started",
+            "trigger:order_probe_action_finished"
+          ],
+          "triggers": [
+            {
+              "id": "order_probe_action_finished",
+              "owner_id": "observer",
+              "event_type": "action_finished",
+              "condition": {
+                "type": "always"
+              },
+              "effects": [
+                {
+                  "effect_type": "AddDebuff",
+                  "fields": {
+                    "data": {
+                      "synthetic_probe": true
+                    },
+                    "duration_type": "target_normal_turns",
+                    "id": "synthetic_finished_marker",
+                    "max_stacks": 1,
+                    "name": "Synthetic Finished Marker",
+                    "refresh_policy": "refresh",
+                    "remaining_turns": 1,
+                    "source_id": null,
+                    "stacks": 1,
+                    "target_ids": [
+                      "enemy"
+                    ],
+                    "target_ref": null
+                  }
+                }
+              ],
+              "max_triggers_per_action": 1,
+              "enabled": true
+            },
+            {
+              "id": "order_probe_action_started",
+              "owner_id": "observer",
+              "event_type": "action_started",
+              "condition": {
+                "type": "always"
+              },
+              "effects": [
+                {
+                  "effect_type": "GainEnergy",
+                  "fields": {
+                    "amount": 7,
+                    "target_ids": [
+                      "observer"
+                    ],
+                    "target_ref": null
+                  }
+                }
+              ],
+              "max_triggers_per_action": 1,
+              "enabled": true
+            }
+          ],
+          "pending_events": [
+            {
+              "data": {
+                "marker": "before-action",
+                "nested": {
+                  "enabled": true,
+                  "sequence": 3
+                }
+              },
+              "type": "preexisting_event"
+            },
+            {
+              "data": {
+                "action_id": "synthetic_tingyun_order_probe_action",
+                "actor_id": "tingyun"
+              },
+              "type": "action_started"
+            },
+            {
+              "data": {
+                "action_id": "synthetic_tingyun_order_probe_action",
+                "actor_id": "tingyun"
+              },
+              "type": "action_finished"
+            }
+          ],
+          "trigger_fire_counts": {
+            "order_probe_action_finished": 1,
+            "order_probe_action_started": 1
+          },
+          "event_dispatch_count": 2,
+          "event_dispatch_limit": 100,
+          "enemy_ai_plans": {
+            "enemy": {
+              "pattern": [
+                {
+                  "skill_id": "enemy_probe_skill",
+                  "target_ids": null,
+                  "target_strategy": "first_legal"
+                }
+              ],
+              "repeat": true
+            }
+          },
+          "enemy_ai_cursors": {
+            "enemy": 2
+          }
+        },
+        "turn_context": {
+          "actions_taken": [
+            "prior_interrupt_action",
+            "synthetic_tingyun_order_probe_action"
+          ],
+          "actor_id": "tingyun",
+          "forced_rng": {
+            "marker": 17,
+            "nested": {
+              "choice": "fixed"
+            }
+          },
+          "is_extra_turn": false,
+          "is_interrupt": true,
+          "should_end_turn": false
+        },
+        "action_result": {
+          "return_type": "TurnContext",
+          "returned_same_context": true
+        }
+      }
+    },
+    {
+      "case_id": "near_cap_existing_probe_refresh",
+      "target_energy_before": 80,
+      "target_max_energy": 100,
+      "existing_probe_buff": true,
+      "equal": true,
+      "order_a_snapshot_sha256": "5f8fbdbd967ca8182604bf7652be03f41def839e3463c348eeb15a624f594ee3",
+      "order_b_snapshot_sha256": "5f8fbdbd967ca8182604bf7652be03f41def839e3463c348eeb15a624f594ee3",
+      "order_a_snapshot": {
+        "state": {
+          "units": [
+            {
+              "all_res": 0.1,
+              "atk": 600,
+              "base_speed": 88,
+              "break_effect": 0.07,
+              "buffs": {
+                "unrelated_enemy_buff": {
+                  "data": {
+                    "marker": "enemy-buff"
+                  },
+                  "duration_type": "current_turn",
+                  "id": "unrelated_enemy_buff",
+                  "kind": "buff",
+                  "max_stacks": 1,
+                  "name": "Unrelated Enemy Buff",
+                  "remaining_turns": null,
+                  "source_id": "enemy",
+                  "stacks": 1,
+                  "target_id": "enemy"
+                }
+              },
+              "crit_dmg": 0.55,
+              "crit_rate": 0.05,
+              "current_av": 74.25,
+              "current_toughness": 73,
+              "debuffs": {
+                "synthetic_finished_marker": {
+                  "data": {
+                    "synthetic_probe": true
+                  },
+                  "duration_type": "target_normal_turns",
+                  "id": "synthetic_finished_marker",
+                  "kind": "debuff",
+                  "max_stacks": 1,
+                  "name": "Synthetic Finished Marker",
+                  "remaining_turns": 1,
+                  "source_id": "observer",
+                  "stacks": 1,
+                  "target_id": "enemy"
+                }
+              },
+              "defense": 500,
+              "dmg_bonus": 0.04,
+              "element": "fire",
+              "energy": 19,
+              "fire_res": 0,
+              "hp": 1234,
+              "ice_res": 0,
+              "id": "enemy",
+              "imaginary_res": 0,
+              "is_alive": true,
+              "is_broken": false,
+              "level": 77,
+              "lightning_res": 0,
+              "max_energy": 90,
+              "max_hp": 1500,
+              "max_toughness": 120,
+              "name": "Synthetic Enemy",
+              "physical_res": 0,
+              "quantum_res": 0,
+              "speed": 89,
+              "team": "enemy",
+              "weaknesses": [
+                "lightning",
+                "wind"
+              ],
+              "wind_res": 0
+            },
+            {
+              "all_res": 0.03,
+              "atk": 333,
+              "base_speed": 97,
+              "break_effect": 0.31,
+              "buffs": {},
+              "crit_dmg": 0.59,
+              "crit_rate": 0.09,
+              "current_av": 63.5,
+              "current_toughness": 0,
+              "debuffs": {},
+              "defense": 444,
+              "dmg_bonus": 0.08,
+              "element": "ice",
+              "energy": 18,
+              "fire_res": 0,
+              "hp": 501,
+              "ice_res": 0,
+              "id": "observer",
+              "imaginary_res": 0,
+              "is_alive": true,
+              "is_broken": false,
+              "level": 78,
+              "lightning_res": 0,
+              "max_energy": 120,
+              "max_hp": 800,
+              "max_toughness": 0,
+              "name": "Observer Ally",
+              "physical_res": 0,
+              "quantum_res": 0,
+              "speed": 99,
+              "team": "ally",
+              "weaknesses": [
+                "lightning"
+              ],
+              "wind_res": 0
+            },
+            {
+              "all_res": 0.02,
+              "atk": 555,
+              "base_speed": 101,
+              "break_effect": 0.19,
+              "buffs": {
+                "synthetic_tingyun_order_probe": {
+                  "data": {
+                    "dmg_bonus_ratio": 0.5,
+                    "synthetic_probe": true
+                  },
+                  "duration_type": "target_normal_turns",
+                  "id": "synthetic_tingyun_order_probe",
+                  "kind": "buff",
+                  "max_stacks": 2,
+                  "name": "Synthetic Tingyun Order Probe",
+                  "remaining_turns": 2,
+                  "source_id": "tingyun",
+                  "stacks": 2,
+                  "target_id": "target"
+                },
+                "unrelated_target_buff": {
+                  "data": {
+                    "marker": "target-buff",
+                    "value": 7
+                  },
+                  "duration_type": "target_normal_turns",
+                  "id": "unrelated_target_buff",
+                  "kind": "buff",
+                  "max_stacks": 4,
+                  "name": "Unrelated Target Buff",
+                  "remaining_turns": 3,
+                  "source_id": "observer",
+                  "stacks": 2,
+                  "target_id": "target"
+                }
+              },
+              "crit_dmg": 0.88,
+              "crit_rate": 0.33,
+              "current_av": 22.75,
+              "current_toughness": 0,
+              "debuffs": {
+                "unrelated_target_debuff": {
+                  "data": {
+                    "marker": "target-debuff"
+                  },
+                  "duration_type": "target_normal_turns",
+                  "id": "unrelated_target_debuff",
+                  "kind": "debuff",
+                  "max_stacks": 1,
+                  "name": "Unrelated Target Debuff",
+                  "remaining_turns": 1,
+                  "source_id": "enemy",
+                  "stacks": 1,
+                  "target_id": "target"
+                }
+              },
+              "defense": 222,
+              "dmg_bonus": 0.27,
+              "element": "wind",
+              "energy": 100,
+              "fire_res": 0,
+              "hp": 654,
+              "ice_res": 0,
+              "id": "target",
+              "imaginary_res": 0,
+              "is_alive": true,
+              "is_broken": false,
+              "level": 79,
+              "lightning_res": 0,
+              "max_energy": 100,
+              "max_hp": 900,
+              "max_toughness": 0,
+              "name": "Selected Ally",
+              "physical_res": 0,
+              "quantum_res": 0,
+              "speed": 103,
+              "team": "ally",
+              "weaknesses": [
+                "fire",
+                "ice"
+              ],
+              "wind_res": 0
+            },
+            {
+              "all_res": 0.01,
+              "atk": 432,
+              "base_speed": 112,
+              "break_effect": 0.24,
+              "buffs": {},
+              "crit_dmg": 0.71,
+              "crit_rate": 0.17,
+              "current_av": 41.25,
+              "current_toughness": 0,
+              "debuffs": {},
+              "defense": 321,
+              "dmg_bonus": 0.12,
+              "element": "lightning",
+              "energy": 130,
+              "fire_res": 0,
+              "hp": 777,
+              "ice_res": 0,
+              "id": "tingyun",
+              "imaginary_res": 0,
+              "is_alive": true,
+              "is_broken": false,
+              "level": 80,
+              "lightning_res": 0,
+              "max_energy": 130,
+              "max_hp": 1000,
+              "max_toughness": 0,
+              "name": "Tingyun",
+              "physical_res": 0,
+              "quantum_res": 0,
+              "speed": 113,
+              "team": "ally",
+              "weaknesses": [
+                "ice"
+              ],
+              "wind_res": 0
+            }
+          ],
+          "global_av": 37.5,
+          "skill_points": 3,
+          "max_skill_points": 7,
+          "extra_turn_stack": [
+            "observer",
+            "target"
+          ],
+          "logs": [
+            "preexisting:log",
+            "trigger:order_probe_action_started",
+            "trigger:order_probe_action_finished"
+          ],
+          "triggers": [
+            {
+              "id": "order_probe_action_finished",
+              "owner_id": "observer",
+              "event_type": "action_finished",
+              "condition": {
+                "type": "always"
+              },
+              "effects": [
+                {
+                  "effect_type": "AddDebuff",
+                  "fields": {
+                    "data": {
+                      "synthetic_probe": true
+                    },
+                    "duration_type": "target_normal_turns",
+                    "id": "synthetic_finished_marker",
+                    "max_stacks": 1,
+                    "name": "Synthetic Finished Marker",
+                    "refresh_policy": "refresh",
+                    "remaining_turns": 1,
+                    "source_id": null,
+                    "stacks": 1,
+                    "target_ids": [
+                      "enemy"
+                    ],
+                    "target_ref": null
+                  }
+                }
+              ],
+              "max_triggers_per_action": 1,
+              "enabled": true
+            },
+            {
+              "id": "order_probe_action_started",
+              "owner_id": "observer",
+              "event_type": "action_started",
+              "condition": {
+                "type": "always"
+              },
+              "effects": [
+                {
+                  "effect_type": "GainEnergy",
+                  "fields": {
+                    "amount": 7,
+                    "target_ids": [
+                      "observer"
+                    ],
+                    "target_ref": null
+                  }
+                }
+              ],
+              "max_triggers_per_action": 1,
+              "enabled": true
+            }
+          ],
+          "pending_events": [
+            {
+              "data": {
+                "marker": "before-action",
+                "nested": {
+                  "enabled": true,
+                  "sequence": 3
+                }
+              },
+              "type": "preexisting_event"
+            },
+            {
+              "data": {
+                "action_id": "synthetic_tingyun_order_probe_action",
+                "actor_id": "tingyun"
+              },
+              "type": "action_started"
+            },
+            {
+              "data": {
+                "action_id": "synthetic_tingyun_order_probe_action",
+                "actor_id": "tingyun"
+              },
+              "type": "action_finished"
+            }
+          ],
+          "trigger_fire_counts": {
+            "order_probe_action_finished": 1,
+            "order_probe_action_started": 1
+          },
+          "event_dispatch_count": 2,
+          "event_dispatch_limit": 100,
+          "enemy_ai_plans": {
+            "enemy": {
+              "pattern": [
+                {
+                  "skill_id": "enemy_probe_skill",
+                  "target_ids": null,
+                  "target_strategy": "first_legal"
+                }
+              ],
+              "repeat": true
+            }
+          },
+          "enemy_ai_cursors": {
+            "enemy": 2
+          }
+        },
+        "turn_context": {
+          "actions_taken": [
+            "prior_interrupt_action",
+            "synthetic_tingyun_order_probe_action"
+          ],
+          "actor_id": "tingyun",
+          "forced_rng": {
+            "marker": 17,
+            "nested": {
+              "choice": "fixed"
+            }
+          },
+          "is_extra_turn": false,
+          "is_interrupt": true,
+          "should_end_turn": false
+        },
+        "action_result": {
+          "return_type": "TurnContext",
+          "returned_same_context": true
+        }
+      },
+      "order_b_snapshot": {
+        "state": {
+          "units": [
+            {
+              "all_res": 0.1,
+              "atk": 600,
+              "base_speed": 88,
+              "break_effect": 0.07,
+              "buffs": {
+                "unrelated_enemy_buff": {
+                  "data": {
+                    "marker": "enemy-buff"
+                  },
+                  "duration_type": "current_turn",
+                  "id": "unrelated_enemy_buff",
+                  "kind": "buff",
+                  "max_stacks": 1,
+                  "name": "Unrelated Enemy Buff",
+                  "remaining_turns": null,
+                  "source_id": "enemy",
+                  "stacks": 1,
+                  "target_id": "enemy"
+                }
+              },
+              "crit_dmg": 0.55,
+              "crit_rate": 0.05,
+              "current_av": 74.25,
+              "current_toughness": 73,
+              "debuffs": {
+                "synthetic_finished_marker": {
+                  "data": {
+                    "synthetic_probe": true
+                  },
+                  "duration_type": "target_normal_turns",
+                  "id": "synthetic_finished_marker",
+                  "kind": "debuff",
+                  "max_stacks": 1,
+                  "name": "Synthetic Finished Marker",
+                  "remaining_turns": 1,
+                  "source_id": "observer",
+                  "stacks": 1,
+                  "target_id": "enemy"
+                }
+              },
+              "defense": 500,
+              "dmg_bonus": 0.04,
+              "element": "fire",
+              "energy": 19,
+              "fire_res": 0,
+              "hp": 1234,
+              "ice_res": 0,
+              "id": "enemy",
+              "imaginary_res": 0,
+              "is_alive": true,
+              "is_broken": false,
+              "level": 77,
+              "lightning_res": 0,
+              "max_energy": 90,
+              "max_hp": 1500,
+              "max_toughness": 120,
+              "name": "Synthetic Enemy",
+              "physical_res": 0,
+              "quantum_res": 0,
+              "speed": 89,
+              "team": "enemy",
+              "weaknesses": [
+                "lightning",
+                "wind"
+              ],
+              "wind_res": 0
+            },
+            {
+              "all_res": 0.03,
+              "atk": 333,
+              "base_speed": 97,
+              "break_effect": 0.31,
+              "buffs": {},
+              "crit_dmg": 0.59,
+              "crit_rate": 0.09,
+              "current_av": 63.5,
+              "current_toughness": 0,
+              "debuffs": {},
+              "defense": 444,
+              "dmg_bonus": 0.08,
+              "element": "ice",
+              "energy": 18,
+              "fire_res": 0,
+              "hp": 501,
+              "ice_res": 0,
+              "id": "observer",
+              "imaginary_res": 0,
+              "is_alive": true,
+              "is_broken": false,
+              "level": 78,
+              "lightning_res": 0,
+              "max_energy": 120,
+              "max_hp": 800,
+              "max_toughness": 0,
+              "name": "Observer Ally",
+              "physical_res": 0,
+              "quantum_res": 0,
+              "speed": 99,
+              "team": "ally",
+              "weaknesses": [
+                "lightning"
+              ],
+              "wind_res": 0
+            },
+            {
+              "all_res": 0.02,
+              "atk": 555,
+              "base_speed": 101,
+              "break_effect": 0.19,
+              "buffs": {
+                "synthetic_tingyun_order_probe": {
+                  "data": {
+                    "dmg_bonus_ratio": 0.5,
+                    "synthetic_probe": true
+                  },
+                  "duration_type": "target_normal_turns",
+                  "id": "synthetic_tingyun_order_probe",
+                  "kind": "buff",
+                  "max_stacks": 2,
+                  "name": "Synthetic Tingyun Order Probe",
+                  "remaining_turns": 2,
+                  "source_id": "tingyun",
+                  "stacks": 2,
+                  "target_id": "target"
+                },
+                "unrelated_target_buff": {
+                  "data": {
+                    "marker": "target-buff",
+                    "value": 7
+                  },
+                  "duration_type": "target_normal_turns",
+                  "id": "unrelated_target_buff",
+                  "kind": "buff",
+                  "max_stacks": 4,
+                  "name": "Unrelated Target Buff",
+                  "remaining_turns": 3,
+                  "source_id": "observer",
+                  "stacks": 2,
+                  "target_id": "target"
+                }
+              },
+              "crit_dmg": 0.88,
+              "crit_rate": 0.33,
+              "current_av": 22.75,
+              "current_toughness": 0,
+              "debuffs": {
+                "unrelated_target_debuff": {
+                  "data": {
+                    "marker": "target-debuff"
+                  },
+                  "duration_type": "target_normal_turns",
+                  "id": "unrelated_target_debuff",
+                  "kind": "debuff",
+                  "max_stacks": 1,
+                  "name": "Unrelated Target Debuff",
+                  "remaining_turns": 1,
+                  "source_id": "enemy",
+                  "stacks": 1,
+                  "target_id": "target"
+                }
+              },
+              "defense": 222,
+              "dmg_bonus": 0.27,
+              "element": "wind",
+              "energy": 100,
+              "fire_res": 0,
+              "hp": 654,
+              "ice_res": 0,
+              "id": "target",
+              "imaginary_res": 0,
+              "is_alive": true,
+              "is_broken": false,
+              "level": 79,
+              "lightning_res": 0,
+              "max_energy": 100,
+              "max_hp": 900,
+              "max_toughness": 0,
+              "name": "Selected Ally",
+              "physical_res": 0,
+              "quantum_res": 0,
+              "speed": 103,
+              "team": "ally",
+              "weaknesses": [
+                "fire",
+                "ice"
+              ],
+              "wind_res": 0
+            },
+            {
+              "all_res": 0.01,
+              "atk": 432,
+              "base_speed": 112,
+              "break_effect": 0.24,
+              "buffs": {},
+              "crit_dmg": 0.71,
+              "crit_rate": 0.17,
+              "current_av": 41.25,
+              "current_toughness": 0,
+              "debuffs": {},
+              "defense": 321,
+              "dmg_bonus": 0.12,
+              "element": "lightning",
+              "energy": 130,
+              "fire_res": 0,
+              "hp": 777,
+              "ice_res": 0,
+              "id": "tingyun",
+              "imaginary_res": 0,
+              "is_alive": true,
+              "is_broken": false,
+              "level": 80,
+              "lightning_res": 0,
+              "max_energy": 130,
+              "max_hp": 1000,
+              "max_toughness": 0,
+              "name": "Tingyun",
+              "physical_res": 0,
+              "quantum_res": 0,
+              "speed": 113,
+              "team": "ally",
+              "weaknesses": [
+                "ice"
+              ],
+              "wind_res": 0
+            }
+          ],
+          "global_av": 37.5,
+          "skill_points": 3,
+          "max_skill_points": 7,
+          "extra_turn_stack": [
+            "observer",
+            "target"
+          ],
+          "logs": [
+            "preexisting:log",
+            "trigger:order_probe_action_started",
+            "trigger:order_probe_action_finished"
+          ],
+          "triggers": [
+            {
+              "id": "order_probe_action_finished",
+              "owner_id": "observer",
+              "event_type": "action_finished",
+              "condition": {
+                "type": "always"
+              },
+              "effects": [
+                {
+                  "effect_type": "AddDebuff",
+                  "fields": {
+                    "data": {
+                      "synthetic_probe": true
+                    },
+                    "duration_type": "target_normal_turns",
+                    "id": "synthetic_finished_marker",
+                    "max_stacks": 1,
+                    "name": "Synthetic Finished Marker",
+                    "refresh_policy": "refresh",
+                    "remaining_turns": 1,
+                    "source_id": null,
+                    "stacks": 1,
+                    "target_ids": [
+                      "enemy"
+                    ],
+                    "target_ref": null
+                  }
+                }
+              ],
+              "max_triggers_per_action": 1,
+              "enabled": true
+            },
+            {
+              "id": "order_probe_action_started",
+              "owner_id": "observer",
+              "event_type": "action_started",
+              "condition": {
+                "type": "always"
+              },
+              "effects": [
+                {
+                  "effect_type": "GainEnergy",
+                  "fields": {
+                    "amount": 7,
+                    "target_ids": [
+                      "observer"
+                    ],
+                    "target_ref": null
+                  }
+                }
+              ],
+              "max_triggers_per_action": 1,
+              "enabled": true
+            }
+          ],
+          "pending_events": [
+            {
+              "data": {
+                "marker": "before-action",
+                "nested": {
+                  "enabled": true,
+                  "sequence": 3
+                }
+              },
+              "type": "preexisting_event"
+            },
+            {
+              "data": {
+                "action_id": "synthetic_tingyun_order_probe_action",
+                "actor_id": "tingyun"
+              },
+              "type": "action_started"
+            },
+            {
+              "data": {
+                "action_id": "synthetic_tingyun_order_probe_action",
+                "actor_id": "tingyun"
+              },
+              "type": "action_finished"
+            }
+          ],
+          "trigger_fire_counts": {
+            "order_probe_action_finished": 1,
+            "order_probe_action_started": 1
+          },
+          "event_dispatch_count": 2,
+          "event_dispatch_limit": 100,
+          "enemy_ai_plans": {
+            "enemy": {
+              "pattern": [
+                {
+                  "skill_id": "enemy_probe_skill",
+                  "target_ids": null,
+                  "target_strategy": "first_legal"
+                }
+              ],
+              "repeat": true
+            }
+          },
+          "enemy_ai_cursors": {
+            "enemy": 2
+          }
+        },
+        "turn_context": {
+          "actions_taken": [
+            "prior_interrupt_action",
+            "synthetic_tingyun_order_probe_action"
+          ],
+          "actor_id": "tingyun",
+          "forced_rng": {
+            "marker": 17,
+            "nested": {
+              "choice": "fixed"
+            }
+          },
+          "is_extra_turn": false,
+          "is_interrupt": true,
+          "should_end_turn": false
+        },
+        "action_result": {
+          "return_type": "TurnContext",
+          "returned_same_context": true
+        }
+      }
+    },
+    {
+      "case_id": "near_cap_no_existing_probe",
+      "target_energy_before": 80,
+      "target_max_energy": 100,
+      "existing_probe_buff": false,
+      "equal": true,
+      "order_a_snapshot_sha256": "9304b4a5e2ca012a54fe3b07eb69a8123c3970e0a44a52ce6dacdbdea0d2e409",
+      "order_b_snapshot_sha256": "9304b4a5e2ca012a54fe3b07eb69a8123c3970e0a44a52ce6dacdbdea0d2e409",
+      "order_a_snapshot": {
+        "state": {
+          "units": [
+            {
+              "all_res": 0.1,
+              "atk": 600,
+              "base_speed": 88,
+              "break_effect": 0.07,
+              "buffs": {
+                "unrelated_enemy_buff": {
+                  "data": {
+                    "marker": "enemy-buff"
+                  },
+                  "duration_type": "current_turn",
+                  "id": "unrelated_enemy_buff",
+                  "kind": "buff",
+                  "max_stacks": 1,
+                  "name": "Unrelated Enemy Buff",
+                  "remaining_turns": null,
+                  "source_id": "enemy",
+                  "stacks": 1,
+                  "target_id": "enemy"
+                }
+              },
+              "crit_dmg": 0.55,
+              "crit_rate": 0.05,
+              "current_av": 74.25,
+              "current_toughness": 73,
+              "debuffs": {
+                "synthetic_finished_marker": {
+                  "data": {
+                    "synthetic_probe": true
+                  },
+                  "duration_type": "target_normal_turns",
+                  "id": "synthetic_finished_marker",
+                  "kind": "debuff",
+                  "max_stacks": 1,
+                  "name": "Synthetic Finished Marker",
+                  "remaining_turns": 1,
+                  "source_id": "observer",
+                  "stacks": 1,
+                  "target_id": "enemy"
+                }
+              },
+              "defense": 500,
+              "dmg_bonus": 0.04,
+              "element": "fire",
+              "energy": 19,
+              "fire_res": 0,
+              "hp": 1234,
+              "ice_res": 0,
+              "id": "enemy",
+              "imaginary_res": 0,
+              "is_alive": true,
+              "is_broken": false,
+              "level": 77,
+              "lightning_res": 0,
+              "max_energy": 90,
+              "max_hp": 1500,
+              "max_toughness": 120,
+              "name": "Synthetic Enemy",
+              "physical_res": 0,
+              "quantum_res": 0,
+              "speed": 89,
+              "team": "enemy",
+              "weaknesses": [
+                "lightning",
+                "wind"
+              ],
+              "wind_res": 0
+            },
+            {
+              "all_res": 0.03,
+              "atk": 333,
+              "base_speed": 97,
+              "break_effect": 0.31,
+              "buffs": {},
+              "crit_dmg": 0.59,
+              "crit_rate": 0.09,
+              "current_av": 63.5,
+              "current_toughness": 0,
+              "debuffs": {},
+              "defense": 444,
+              "dmg_bonus": 0.08,
+              "element": "ice",
+              "energy": 18,
+              "fire_res": 0,
+              "hp": 501,
+              "ice_res": 0,
+              "id": "observer",
+              "imaginary_res": 0,
+              "is_alive": true,
+              "is_broken": false,
+              "level": 78,
+              "lightning_res": 0,
+              "max_energy": 120,
+              "max_hp": 800,
+              "max_toughness": 0,
+              "name": "Observer Ally",
+              "physical_res": 0,
+              "quantum_res": 0,
+              "speed": 99,
+              "team": "ally",
+              "weaknesses": [
+                "lightning"
+              ],
+              "wind_res": 0
+            },
+            {
+              "all_res": 0.02,
+              "atk": 555,
+              "base_speed": 101,
+              "break_effect": 0.19,
+              "buffs": {
+                "synthetic_tingyun_order_probe": {
+                  "data": {
+                    "dmg_bonus_ratio": 0.5,
+                    "synthetic_probe": true
+                  },
+                  "duration_type": "target_normal_turns",
+                  "id": "synthetic_tingyun_order_probe",
+                  "kind": "buff",
+                  "max_stacks": 2,
+                  "name": "Synthetic Tingyun Order Probe",
+                  "remaining_turns": 2,
+                  "source_id": "tingyun",
+                  "stacks": 1,
+                  "target_id": "target"
+                },
+                "unrelated_target_buff": {
+                  "data": {
+                    "marker": "target-buff",
+                    "value": 7
+                  },
+                  "duration_type": "target_normal_turns",
+                  "id": "unrelated_target_buff",
+                  "kind": "buff",
+                  "max_stacks": 4,
+                  "name": "Unrelated Target Buff",
+                  "remaining_turns": 3,
+                  "source_id": "observer",
+                  "stacks": 2,
+                  "target_id": "target"
+                }
+              },
+              "crit_dmg": 0.88,
+              "crit_rate": 0.33,
+              "current_av": 22.75,
+              "current_toughness": 0,
+              "debuffs": {
+                "unrelated_target_debuff": {
+                  "data": {
+                    "marker": "target-debuff"
+                  },
+                  "duration_type": "target_normal_turns",
+                  "id": "unrelated_target_debuff",
+                  "kind": "debuff",
+                  "max_stacks": 1,
+                  "name": "Unrelated Target Debuff",
+                  "remaining_turns": 1,
+                  "source_id": "enemy",
+                  "stacks": 1,
+                  "target_id": "target"
+                }
+              },
+              "defense": 222,
+              "dmg_bonus": 0.27,
+              "element": "wind",
+              "energy": 100,
+              "fire_res": 0,
+              "hp": 654,
+              "ice_res": 0,
+              "id": "target",
+              "imaginary_res": 0,
+              "is_alive": true,
+              "is_broken": false,
+              "level": 79,
+              "lightning_res": 0,
+              "max_energy": 100,
+              "max_hp": 900,
+              "max_toughness": 0,
+              "name": "Selected Ally",
+              "physical_res": 0,
+              "quantum_res": 0,
+              "speed": 103,
+              "team": "ally",
+              "weaknesses": [
+                "fire",
+                "ice"
+              ],
+              "wind_res": 0
+            },
+            {
+              "all_res": 0.01,
+              "atk": 432,
+              "base_speed": 112,
+              "break_effect": 0.24,
+              "buffs": {},
+              "crit_dmg": 0.71,
+              "crit_rate": 0.17,
+              "current_av": 41.25,
+              "current_toughness": 0,
+              "debuffs": {},
+              "defense": 321,
+              "dmg_bonus": 0.12,
+              "element": "lightning",
+              "energy": 130,
+              "fire_res": 0,
+              "hp": 777,
+              "ice_res": 0,
+              "id": "tingyun",
+              "imaginary_res": 0,
+              "is_alive": true,
+              "is_broken": false,
+              "level": 80,
+              "lightning_res": 0,
+              "max_energy": 130,
+              "max_hp": 1000,
+              "max_toughness": 0,
+              "name": "Tingyun",
+              "physical_res": 0,
+              "quantum_res": 0,
+              "speed": 113,
+              "team": "ally",
+              "weaknesses": [
+                "ice"
+              ],
+              "wind_res": 0
+            }
+          ],
+          "global_av": 37.5,
+          "skill_points": 3,
+          "max_skill_points": 7,
+          "extra_turn_stack": [
+            "observer",
+            "target"
+          ],
+          "logs": [
+            "preexisting:log",
+            "trigger:order_probe_action_started",
+            "trigger:order_probe_action_finished"
+          ],
+          "triggers": [
+            {
+              "id": "order_probe_action_finished",
+              "owner_id": "observer",
+              "event_type": "action_finished",
+              "condition": {
+                "type": "always"
+              },
+              "effects": [
+                {
+                  "effect_type": "AddDebuff",
+                  "fields": {
+                    "data": {
+                      "synthetic_probe": true
+                    },
+                    "duration_type": "target_normal_turns",
+                    "id": "synthetic_finished_marker",
+                    "max_stacks": 1,
+                    "name": "Synthetic Finished Marker",
+                    "refresh_policy": "refresh",
+                    "remaining_turns": 1,
+                    "source_id": null,
+                    "stacks": 1,
+                    "target_ids": [
+                      "enemy"
+                    ],
+                    "target_ref": null
+                  }
+                }
+              ],
+              "max_triggers_per_action": 1,
+              "enabled": true
+            },
+            {
+              "id": "order_probe_action_started",
+              "owner_id": "observer",
+              "event_type": "action_started",
+              "condition": {
+                "type": "always"
+              },
+              "effects": [
+                {
+                  "effect_type": "GainEnergy",
+                  "fields": {
+                    "amount": 7,
+                    "target_ids": [
+                      "observer"
+                    ],
+                    "target_ref": null
+                  }
+                }
+              ],
+              "max_triggers_per_action": 1,
+              "enabled": true
+            }
+          ],
+          "pending_events": [
+            {
+              "data": {
+                "marker": "before-action",
+                "nested": {
+                  "enabled": true,
+                  "sequence": 3
+                }
+              },
+              "type": "preexisting_event"
+            },
+            {
+              "data": {
+                "action_id": "synthetic_tingyun_order_probe_action",
+                "actor_id": "tingyun"
+              },
+              "type": "action_started"
+            },
+            {
+              "data": {
+                "action_id": "synthetic_tingyun_order_probe_action",
+                "actor_id": "tingyun"
+              },
+              "type": "action_finished"
+            }
+          ],
+          "trigger_fire_counts": {
+            "order_probe_action_finished": 1,
+            "order_probe_action_started": 1
+          },
+          "event_dispatch_count": 2,
+          "event_dispatch_limit": 100,
+          "enemy_ai_plans": {
+            "enemy": {
+              "pattern": [
+                {
+                  "skill_id": "enemy_probe_skill",
+                  "target_ids": null,
+                  "target_strategy": "first_legal"
+                }
+              ],
+              "repeat": true
+            }
+          },
+          "enemy_ai_cursors": {
+            "enemy": 2
+          }
+        },
+        "turn_context": {
+          "actions_taken": [
+            "prior_interrupt_action",
+            "synthetic_tingyun_order_probe_action"
+          ],
+          "actor_id": "tingyun",
+          "forced_rng": {
+            "marker": 17,
+            "nested": {
+              "choice": "fixed"
+            }
+          },
+          "is_extra_turn": false,
+          "is_interrupt": true,
+          "should_end_turn": false
+        },
+        "action_result": {
+          "return_type": "TurnContext",
+          "returned_same_context": true
+        }
+      },
+      "order_b_snapshot": {
+        "state": {
+          "units": [
+            {
+              "all_res": 0.1,
+              "atk": 600,
+              "base_speed": 88,
+              "break_effect": 0.07,
+              "buffs": {
+                "unrelated_enemy_buff": {
+                  "data": {
+                    "marker": "enemy-buff"
+                  },
+                  "duration_type": "current_turn",
+                  "id": "unrelated_enemy_buff",
+                  "kind": "buff",
+                  "max_stacks": 1,
+                  "name": "Unrelated Enemy Buff",
+                  "remaining_turns": null,
+                  "source_id": "enemy",
+                  "stacks": 1,
+                  "target_id": "enemy"
+                }
+              },
+              "crit_dmg": 0.55,
+              "crit_rate": 0.05,
+              "current_av": 74.25,
+              "current_toughness": 73,
+              "debuffs": {
+                "synthetic_finished_marker": {
+                  "data": {
+                    "synthetic_probe": true
+                  },
+                  "duration_type": "target_normal_turns",
+                  "id": "synthetic_finished_marker",
+                  "kind": "debuff",
+                  "max_stacks": 1,
+                  "name": "Synthetic Finished Marker",
+                  "remaining_turns": 1,
+                  "source_id": "observer",
+                  "stacks": 1,
+                  "target_id": "enemy"
+                }
+              },
+              "defense": 500,
+              "dmg_bonus": 0.04,
+              "element": "fire",
+              "energy": 19,
+              "fire_res": 0,
+              "hp": 1234,
+              "ice_res": 0,
+              "id": "enemy",
+              "imaginary_res": 0,
+              "is_alive": true,
+              "is_broken": false,
+              "level": 77,
+              "lightning_res": 0,
+              "max_energy": 90,
+              "max_hp": 1500,
+              "max_toughness": 120,
+              "name": "Synthetic Enemy",
+              "physical_res": 0,
+              "quantum_res": 0,
+              "speed": 89,
+              "team": "enemy",
+              "weaknesses": [
+                "lightning",
+                "wind"
+              ],
+              "wind_res": 0
+            },
+            {
+              "all_res": 0.03,
+              "atk": 333,
+              "base_speed": 97,
+              "break_effect": 0.31,
+              "buffs": {},
+              "crit_dmg": 0.59,
+              "crit_rate": 0.09,
+              "current_av": 63.5,
+              "current_toughness": 0,
+              "debuffs": {},
+              "defense": 444,
+              "dmg_bonus": 0.08,
+              "element": "ice",
+              "energy": 18,
+              "fire_res": 0,
+              "hp": 501,
+              "ice_res": 0,
+              "id": "observer",
+              "imaginary_res": 0,
+              "is_alive": true,
+              "is_broken": false,
+              "level": 78,
+              "lightning_res": 0,
+              "max_energy": 120,
+              "max_hp": 800,
+              "max_toughness": 0,
+              "name": "Observer Ally",
+              "physical_res": 0,
+              "quantum_res": 0,
+              "speed": 99,
+              "team": "ally",
+              "weaknesses": [
+                "lightning"
+              ],
+              "wind_res": 0
+            },
+            {
+              "all_res": 0.02,
+              "atk": 555,
+              "base_speed": 101,
+              "break_effect": 0.19,
+              "buffs": {
+                "synthetic_tingyun_order_probe": {
+                  "data": {
+                    "dmg_bonus_ratio": 0.5,
+                    "synthetic_probe": true
+                  },
+                  "duration_type": "target_normal_turns",
+                  "id": "synthetic_tingyun_order_probe",
+                  "kind": "buff",
+                  "max_stacks": 2,
+                  "name": "Synthetic Tingyun Order Probe",
+                  "remaining_turns": 2,
+                  "source_id": "tingyun",
+                  "stacks": 1,
+                  "target_id": "target"
+                },
+                "unrelated_target_buff": {
+                  "data": {
+                    "marker": "target-buff",
+                    "value": 7
+                  },
+                  "duration_type": "target_normal_turns",
+                  "id": "unrelated_target_buff",
+                  "kind": "buff",
+                  "max_stacks": 4,
+                  "name": "Unrelated Target Buff",
+                  "remaining_turns": 3,
+                  "source_id": "observer",
+                  "stacks": 2,
+                  "target_id": "target"
+                }
+              },
+              "crit_dmg": 0.88,
+              "crit_rate": 0.33,
+              "current_av": 22.75,
+              "current_toughness": 0,
+              "debuffs": {
+                "unrelated_target_debuff": {
+                  "data": {
+                    "marker": "target-debuff"
+                  },
+                  "duration_type": "target_normal_turns",
+                  "id": "unrelated_target_debuff",
+                  "kind": "debuff",
+                  "max_stacks": 1,
+                  "name": "Unrelated Target Debuff",
+                  "remaining_turns": 1,
+                  "source_id": "enemy",
+                  "stacks": 1,
+                  "target_id": "target"
+                }
+              },
+              "defense": 222,
+              "dmg_bonus": 0.27,
+              "element": "wind",
+              "energy": 100,
+              "fire_res": 0,
+              "hp": 654,
+              "ice_res": 0,
+              "id": "target",
+              "imaginary_res": 0,
+              "is_alive": true,
+              "is_broken": false,
+              "level": 79,
+              "lightning_res": 0,
+              "max_energy": 100,
+              "max_hp": 900,
+              "max_toughness": 0,
+              "name": "Selected Ally",
+              "physical_res": 0,
+              "quantum_res": 0,
+              "speed": 103,
+              "team": "ally",
+              "weaknesses": [
+                "fire",
+                "ice"
+              ],
+              "wind_res": 0
+            },
+            {
+              "all_res": 0.01,
+              "atk": 432,
+              "base_speed": 112,
+              "break_effect": 0.24,
+              "buffs": {},
+              "crit_dmg": 0.71,
+              "crit_rate": 0.17,
+              "current_av": 41.25,
+              "current_toughness": 0,
+              "debuffs": {},
+              "defense": 321,
+              "dmg_bonus": 0.12,
+              "element": "lightning",
+              "energy": 130,
+              "fire_res": 0,
+              "hp": 777,
+              "ice_res": 0,
+              "id": "tingyun",
+              "imaginary_res": 0,
+              "is_alive": true,
+              "is_broken": false,
+              "level": 80,
+              "lightning_res": 0,
+              "max_energy": 130,
+              "max_hp": 1000,
+              "max_toughness": 0,
+              "name": "Tingyun",
+              "physical_res": 0,
+              "quantum_res": 0,
+              "speed": 113,
+              "team": "ally",
+              "weaknesses": [
+                "ice"
+              ],
+              "wind_res": 0
+            }
+          ],
+          "global_av": 37.5,
+          "skill_points": 3,
+          "max_skill_points": 7,
+          "extra_turn_stack": [
+            "observer",
+            "target"
+          ],
+          "logs": [
+            "preexisting:log",
+            "trigger:order_probe_action_started",
+            "trigger:order_probe_action_finished"
+          ],
+          "triggers": [
+            {
+              "id": "order_probe_action_finished",
+              "owner_id": "observer",
+              "event_type": "action_finished",
+              "condition": {
+                "type": "always"
+              },
+              "effects": [
+                {
+                  "effect_type": "AddDebuff",
+                  "fields": {
+                    "data": {
+                      "synthetic_probe": true
+                    },
+                    "duration_type": "target_normal_turns",
+                    "id": "synthetic_finished_marker",
+                    "max_stacks": 1,
+                    "name": "Synthetic Finished Marker",
+                    "refresh_policy": "refresh",
+                    "remaining_turns": 1,
+                    "source_id": null,
+                    "stacks": 1,
+                    "target_ids": [
+                      "enemy"
+                    ],
+                    "target_ref": null
+                  }
+                }
+              ],
+              "max_triggers_per_action": 1,
+              "enabled": true
+            },
+            {
+              "id": "order_probe_action_started",
+              "owner_id": "observer",
+              "event_type": "action_started",
+              "condition": {
+                "type": "always"
+              },
+              "effects": [
+                {
+                  "effect_type": "GainEnergy",
+                  "fields": {
+                    "amount": 7,
+                    "target_ids": [
+                      "observer"
+                    ],
+                    "target_ref": null
+                  }
+                }
+              ],
+              "max_triggers_per_action": 1,
+              "enabled": true
+            }
+          ],
+          "pending_events": [
+            {
+              "data": {
+                "marker": "before-action",
+                "nested": {
+                  "enabled": true,
+                  "sequence": 3
+                }
+              },
+              "type": "preexisting_event"
+            },
+            {
+              "data": {
+                "action_id": "synthetic_tingyun_order_probe_action",
+                "actor_id": "tingyun"
+              },
+              "type": "action_started"
+            },
+            {
+              "data": {
+                "action_id": "synthetic_tingyun_order_probe_action",
+                "actor_id": "tingyun"
+              },
+              "type": "action_finished"
+            }
+          ],
+          "trigger_fire_counts": {
+            "order_probe_action_finished": 1,
+            "order_probe_action_started": 1
+          },
+          "event_dispatch_count": 2,
+          "event_dispatch_limit": 100,
+          "enemy_ai_plans": {
+            "enemy": {
+              "pattern": [
+                {
+                  "skill_id": "enemy_probe_skill",
+                  "target_ids": null,
+                  "target_strategy": "first_legal"
+                }
+              ],
+              "repeat": true
+            }
+          },
+          "enemy_ai_cursors": {
+            "enemy": 2
+          }
+        },
+        "turn_context": {
+          "actions_taken": [
+            "prior_interrupt_action",
+            "synthetic_tingyun_order_probe_action"
+          ],
+          "actor_id": "tingyun",
+          "forced_rng": {
+            "marker": 17,
+            "nested": {
+              "choice": "fixed"
+            }
+          },
+          "is_extra_turn": false,
+          "is_interrupt": true,
+          "should_end_turn": false
+        },
+        "action_result": {
+          "return_type": "TurnContext",
+          "returned_same_context": true
+        }
+      }
+    }
+  ],
+  "every_case_equal": true,
+  "derived_generic_readiness": "blocked_by_duration_semantics",
+  "accepted_video_binding_readiness": "blocked_by_unknown_target_and_trace_level",
+  "release_game_order_known": false,
+  "same_current_turn_duration_resolved": false,
+  "accepted_video_target": null,
+  "accepted_video_trace_level": null,
+  "proof_boundaries": [
+    "Invalid configurations, exceptions, and future engine changes are outside the proof.",
+    "No current primitive event exposes intermediate state between action_started and action_finished.",
+    "Release-game effect order remains unknown.",
+    "Same-current-turn duration semantics remain unresolved.",
+    "The accepted-video target and Tingyun trace level remain unknown.",
+    "The conclusion applies only to the pinned current simulator code and valid static GainEnergy/AddBuff configuration."
+  ],
+  "simulator_binding_allowed": false
+}

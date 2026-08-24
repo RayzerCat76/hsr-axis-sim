@@ -1,0 +1,87 @@
+{
+  "binding_id": "tingyun_ultimate_partial_resource_interrupt_shell_v0_1",
+  "version": "0.1",
+  "warning": "PARTIAL RESOURCE/INTERRUPT SHELL ONLY. No damage buff, damage, toughness, real-video target, or complete Ultimate semantics are implemented.",
+  "binding_scope": "partial_resource_interrupt_shell",
+  "complete_game_skill": false,
+  "complete_character_kit": false,
+  "atomic_fields_bound": [
+    "tingyun.ultimate.energy_cost",
+    "tingyun.ultimate.target_energy_restore",
+    "tingyun.ultimate.target_scope"
+  ],
+  "atomic_fields_not_bound": [
+    "damage_buff_duration_decrement_and_expiration",
+    "damage_buff_magnitude",
+    "observed_real_video_target",
+    "real_video_initial_energy_and_combat_state",
+    "tingyun.ultimate.damage_buff_duration",
+    "tingyun.ultimate.observed_target"
+  ],
+  "generic_primitives_used": [
+    "single-ally target validation",
+    "actor Energy consumption",
+    "selected-target Energy gain with max-Energy clamp",
+    "Ultimate interrupt execution"
+  ],
+  "synthetic_fixture_result": {
+    "fixture_id": "tingyun_ultimate_partial_v0_1_synthetic",
+    "actor_energy_before": 130,
+    "actor_energy_after": 0,
+    "target_energy_before": 40,
+    "target_energy_after": 90,
+    "skill_points_before": 3,
+    "skill_points_after": 3,
+    "global_av_before": 17,
+    "global_av_after": 17,
+    "unit_av_before": {
+      "tingyun": 41,
+      "ally": 62,
+      "enemy": 73
+    },
+    "unit_av_after": {
+      "tingyun": 41,
+      "ally": 62,
+      "enemy": 73
+    },
+    "hp_before": {
+      "tingyun": 1000,
+      "ally": 1200,
+      "enemy": 2000
+    },
+    "hp_after": {
+      "tingyun": 1000,
+      "ally": 1200,
+      "enemy": 2000
+    },
+    "toughness_before": {
+      "tingyun": 0,
+      "ally": 0,
+      "enemy": 60
+    },
+    "toughness_after": {
+      "tingyun": 0,
+      "ally": 0,
+      "enemy": 60
+    },
+    "buff_ids_before": {
+      "tingyun": [],
+      "ally": [],
+      "enemy": []
+    },
+    "buff_ids_after": {
+      "tingyun": [],
+      "ally": [],
+      "enemy": []
+    },
+    "is_interrupt": true,
+    "should_end_turn": false,
+    "normal_turn_ended": false
+  },
+  "real_trace_executable": false,
+  "real_trace_blockers": [
+    "The observed real-video target and initial Energy state are unknown.",
+    "Damage-buff magnitude, duration decrement, and expiration semantics are not bound.",
+    "This shell is synthetic-only and is not a complete Tingyun Ultimate or kit."
+  ]
+}

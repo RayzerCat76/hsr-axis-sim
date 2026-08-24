@@ -1,0 +1,50 @@
+{
+  "task_id": "HSR-RUNTIME-ARCH-002-FIX2",
+  "title": "Restore Missing ARCH-002 Documentation Artifacts",
+  "created": "2026-07-12",
+  "recommended_model": "GPT-5.6 Luna",
+  "codex_reasoning": "Low",
+  "submitted_package_results": {
+    "focused": {
+      "passed": 28,
+      "failed": 2,
+      "total": 30
+    },
+    "complete": {
+      "passed": 744,
+      "failed": 2,
+      "total": 746
+    },
+    "locked_regression": {
+      "passed": 20,
+      "failed": 0
+    },
+    "trace_evidence": {
+      "passed": 2,
+      "failed": 0
+    }
+  },
+  "isolated_restoration_results": {
+    "focused": {
+      "passed": 30,
+      "failed": 0
+    },
+    "affected_group": {
+      "passed": 80,
+      "failed": 0
+    },
+    "combined_complete": {
+      "passed": 746,
+      "failed": 0
+    }
+  },
+  "restored_files": {
+    "docs/runtime/LEGACY_EVENT_ADAPTER_V1.md": "4fbab876c3263c7bc0a6ef7ea9a890a9007f5da7b7974feba9448695f05ea958",
+    "docs/runtime/LEGACY_EVENT_MAPPING_V1.json": "c9a1ee54ea358cebebf205b20e55818ac5e935d80352e2fc0172d7ac659ffb39",
+    "docs/runtime/research/REFERENCE_LEGACY_EVENT_SURFACE_HSR_RUNTIME_ARCH_002.md": "6d28569b81c11c6620c6bb69984e3cf9da1162f2169fc4b1022198519abbb7fe",
+    "docs/runtime/research/REFERENCE_LEGACY_EVENT_SURFACE_HSR_RUNTIME_ARCH_002.json": "97142cfc8e8834c99f53ae9bf133e73b723e96fefe30b9c4649c92304e2d4b19"
+  },
+  "allowed_modifications": [
+    "hsr_axis_sim/LUMEN_RESULT.md"
+  ]
+}

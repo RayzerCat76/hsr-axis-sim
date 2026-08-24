@@ -1,0 +1,38 @@
+HSR-RUNTIME-ARCH-003 — Independent Starting Baseline
+====================================================
+
+Validation date: 2026-07-12
+Starting package: hsr_axis_001a_package(4).zip
+
+Latest completed task
+---------------------
+HSR-RUNTIME-ARCH-002 — Event Envelope Adapter Bridge
+
+Luman decision:
+PASS — proceed
+
+Independent confirmed results
+-----------------------------
+- compileall: PASS
+- ARCH-001/002 focused contract/adapter/research checks: 84/84 passed
+- complete pytest collection: 746/746 passed
+- locked regression: 20/20 passed
+- trace-evidence-only regression: 2/2 passed
+
+Current architecture
+--------------------
+- `hsr_axis_sim.sim` remains the active production MVP.
+- `hsr_axis_sim.runtime_contracts` contains immutable event/trace contracts.
+- `hsr_axis_sim.runtime_adapters` manually converts legacy Events into
+  immutable RuntimeEvents.
+- No production module imports the adapter.
+- Existing LIFO behavior remains unchanged.
+- `unit_defeated` remains UNKNOWN + UNRESOLVED.
+
+ARCH-003 target
+---------------
+Create a new sidecar export package that converts an explicit iterable of
+RuntimeEvents into deterministic RuntimeTraceRecord documents and bytes.
+
+No automatic observation, simulator integration, trace loading, comparison, or
+semantic inference is allowed.

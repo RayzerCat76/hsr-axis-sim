@@ -1,0 +1,206 @@
+Task ID: HSR-AXIS-002J
+Task name: First Source-Reviewed Real Action Binding MVP — Pela Skill Resource/Dispel Shell
+
+Codex Reasoning: HIGH
+Recommended model: GPT-5.6 Sol
+Fallback model: GPT-5.6 Terra only if the implementation remains a direct mapping to existing generic primitives and no semantic conflict appears.
+
+Why this combination:
+This is the first task that crosses the boundary from evidence normalization into executable simulator behavior. A false claim of completeness, accidental use of unresolved damage/toughness values, or trace-specific inference would contaminate every later real-character binding. Use Sol for the primary pass.
+
+Accepted prior gate
+===================
+
+HSR-AXIS-002I has passed independent review:
+
+- compileall: PASS
+- full pytest: 352 passed
+- locked regression: PASS 20/20
+- atomic facts: 48
+- all readiness items remain non-binding and non-executable
+
+Accepted atomic fact input:
+
+`hsr_axis_sim/data/manual_video_traces/normalized_character_facts/real_video_trace_001_atomic_facts_v0_1.json`
+
+Chosen action for this task
+===========================
+
+Implement only the source-reviewed, currently supported shell of **Pela Skill**.
+
+Use only these accepted atomic fields:
+
+- actor ID: `pela`
+- action category: `skill`
+- target scope: `single_enemy`
+- skill-point delta: `-1`
+- energy generation: `30`
+- dispel count: `1`
+
+Explicitly unresolved and prohibited in 002J:
+
+- damage multiplier or final damage;
+- trace level and build assumptions;
+- observed real-video target;
+- normalized toughness value;
+- any source-native toughness conversion;
+- debuff application not directly part of the accepted Skill facts;
+- eidolon, trace, light-cone, relic, or team interactions.
+
+Goal
+====
+
+Create the smallest reviewed executable binding that proves atomic facts can map safely to existing generic engine primitives without pretending to implement Pela's complete in-game Skill.
+
+The implementation must be named and reported as a **partial binding shell**, not a complete character skill.
+
+Mandatory pre-flight
+====================
+
+1. Inspect existing generic primitives for:
+
+- single-enemy target validation;
+- skill-point consumption;
+- actor energy gain;
+- removable buff/dispel behavior;
+- normal-turn action execution.
+
+2. Do not modify a generic primitive unless an independently reproducible engine defect is found. If a primitive lacks required semantics, add the smallest generic extension with focused tests and document it.
+
+3. Confirm the 002I atomic-fact artifact is unchanged.
+
+Required implementation
+=======================
+
+1. Add a reviewed binding model or module under a clearly separate real-binding namespace, for example:
+
+`hsr_axis_sim/real_bindings/pela_skill_v0_1.py`
+
+or an equivalent data-driven path.
+
+2. The binding must explicitly contain:
+
+- binding ID and version;
+- source atomic fact IDs used;
+- unresolved atomic fact IDs/fields;
+- `binding_scope: partial_resource_target_dispel_shell`;
+- `complete_game_skill: false`;
+- target type `single_enemy`;
+- SP cost 1;
+- actor energy gain 30;
+- dispel count 1;
+- no damage effect;
+- no toughness effect.
+
+3. Add a strict guard preventing this partial binding from being registered or labeled as a complete Pela kit.
+
+4. Add a synthetic deterministic fixture. Do not use the real video trace as an executable fixture yet.
+
+Synthetic fixture requirements:
+
+- Pela-like actor with sufficient SP context;
+- one alive enemy target carrying at least two removable buffs or positive statuses;
+- execute the partial binding once;
+- verify exactly one removable status is removed according to a deterministic ordering rule;
+- verify SP decreases by 1;
+- verify Pela energy increases by 30;
+- verify no damage occurs;
+- verify no toughness changes;
+- verify normal timeline/turn behavior remains correct.
+
+5. Define and test deterministic dispel ordering. Reuse an existing ordering rule if one already exists. Do not invent random removal.
+
+6. Add a binding audit report in Markdown and JSON containing:
+
+- atomic fields bound;
+- atomic fields deliberately not bound;
+- generic primitives used;
+- any generic extension added;
+- synthetic fixture result;
+- why the real trace remains non-executable;
+- `complete_game_skill: false` warning.
+
+Validation requirements
+=======================
+
+The validator must reject:
+
+- a binding that claims full completion;
+- damage or toughness effects in this task;
+- target scope other than single enemy;
+- SP cost other than 1;
+- energy generation other than 30;
+- dispel count other than 1;
+- dangling atomic fact IDs;
+- any atomic fact outside the accepted Pela Skill set;
+- simulator binding based on missing/null facts;
+- inferred real-video target;
+- changes to the 002I normalized artifact.
+
+Tests
+=====
+
+Add focused tests for at least:
+
+- successful binding load and validation;
+- valid synthetic execution;
+- insufficient SP rejection;
+- dead/ally/self target rejection;
+- exactly one deterministic dispel;
+- energy gain exactly 30;
+- no HP change;
+- no toughness change;
+- partial/full-completion guard;
+- prohibited damage effect rejection;
+- prohibited toughness effect rejection;
+- dangling atomic fact rejection;
+- deterministic Markdown and JSON reports;
+- committed reports byte-identical to regenerated reports;
+- CLI stdout and `--output`;
+- validated mismatch exits 1;
+- unreadable input exits 2 without traceback.
+
+Scope gates
+===========
+
+Do not:
+
+- implement Pela Basic, Ultimate, Talent, Technique, traces, eidolons, or full kit;
+- implement Tingyun, Remembrance Trailblazer, Mem, or Anaxa;
+- infer the target from the real video;
+- add damage or toughness conversion;
+- change the real action-sequence trace;
+- make the first real trace executable;
+- modify search/evaluator behavior;
+- add the partial binding to the locked regression manifest unless the task explicitly creates a separate synthetic-only regression group and tests it without changing existing counts.
+
+Deliverables
+============
+
+- partial Pela Skill binding shell;
+- synthetic fixture;
+- focused tests;
+- deterministic Markdown and JSON audit reports;
+- README for the real-binding namespace;
+- updated `hsr_axis_sim/LUMEN_RESULT.md` with:
+  - files changed;
+  - tests run;
+  - exact atomic facts bound;
+  - unresolved fields;
+  - known limitations;
+  - scope confirmation;
+  - recommended next task.
+
+Required final checks
+=====================
+
+Run:
+
+```text
+python -m compileall -q hsr_axis_sim
+python -m pytest -q
+```
+
+Also run the existing locked regression and trace-evidence-only regression. Existing manifest counts and accepted 002I artifacts must remain unchanged.
+
+Stop after 002J. Do not begin another real action binding.

@@ -1,0 +1,54 @@
+{
+  "name": "enemy_ai_mvp",
+  "tolerance": 0.001,
+  "data_sources": {
+    "characters_dir": "hsr_axis_sim/data/sample_characters",
+    "team": "hsr_axis_sim/data/sample_teams/enemy_ai_team.json"
+  },
+  "steps": [
+    {
+      "step": 1,
+      "expected_actor": "enemy_1",
+      "use_enemy_ai": true,
+      "expect": {
+        "global_av": 0,
+        "enemy_ai_cursors": {"enemy_1": 1},
+        "units": {
+          "enemy_1": {
+            "current_av": 100
+          },
+          "seele_like": {
+            "current_av": 150,
+            "hp": 2900
+          },
+          "bronya_like": {
+            "current_av": 200,
+            "hp": 1000
+          }
+        }
+      }
+    },
+    {
+      "step": 2,
+      "expected_actor": "enemy_1",
+      "use_enemy_ai": true,
+      "expect": {
+        "global_av": 100,
+        "enemy_ai_cursors": {"enemy_1": 2},
+        "units": {
+          "enemy_1": {
+            "current_av": 100
+          },
+          "seele_like": {
+            "current_av": 50,
+            "hp": 2900
+          },
+          "bronya_like": {
+            "current_av": 100,
+            "hp": 750
+          }
+        }
+      }
+    }
+  ]
+}

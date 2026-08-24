@@ -1,0 +1,90 @@
+{
+  "review_id": "tingyun_ultimate_effect_order_irrelevance_review_v0_1",
+  "version": "0.1",
+  "status": "non_executable_current_contract_proof",
+  "pinned_sources": [
+    {"source_id":"action","path":"sim/action.py","sha256":"ad6994e79d8c8833304df4d4cc67ea84c07db988f4b9365840e0707dd5100f34","locators":["Action.execute: reset counters, emit action_started, apply ordered effects, append action, emit action_finished, optional turn end"]},
+    {"source_id":"effects","path":"sim/effects.py","sha256":"3adb44ababa1725933c82a105706b388239d895a98f159db5c4691a12dfa9618","locators":["GainEnergy.apply: max-Energy clamp assignment with no event emission","AddBuff.apply and _add_status: deterministic create/refresh with no event emission"]},
+    {"source_id":"events","path":"sim/events.py","sha256":"79e9a95d0788a1b87980f9de1fa58c48feccd34f4730a67798d6feb832f93525","locators":["dispatch_event: pending-event append followed by sorted trigger dispatch","Trigger: complete current trigger contract"]},
+    {"source_id":"state","path":"sim/state.py","sha256":"7d91095f082e60da27730b713fed3b08e47d0f3c422c26ae18a507c63a8b236a","locators":["BattleState dataclass: complete state field inventory","BattleState.emit_event: dispatch boundary"]},
+    {"source_id":"turn_context","path":"sim/turn_context.py","sha256":"a670688d83bf986c5b5edeb094124454d1e69c58c2953c2e11f79d133f68aeaa","locators":["TurnContext dataclass: complete interrupt/action result context"]},
+    {"source_id":"targets","path":"sim/targets.py","sha256":"42384f5b561b99df5f16828784538a5e692ba75d75e0fdcf374c8045642361dc","locators":["resolve_target_ids: action_targets resolution"]},
+    {"source_id":"buffs","path":"sim/buffs.py","sha256":"7095d592ee4466396bcd2224d740aa780271e7f539cd9751949ee41c1f5837b5","locators":["Buff dataclass: complete buff/debuff metadata inventory"]},
+    {"source_id":"unit","path":"sim/unit.py","sha256":"f4e100a12d1ae160fc58f9ef874fe188851d7f29284acef4c51273792f41eb62","locators":["Unit dataclass: complete unit field inventory"]},
+    {"source_id":"enemy_ai","path":"sim/enemy_ai.py","sha256":"98d735e7cb03ae108106f5e09d52908bc81da4815e19cea2725ef44ae7d9dd9e","locators":["EnemyAIPlan and EnemyPatternStep dataclasses: AI plan and cursor observables"]},
+    {"source_id":"tingyun_partial_binding","path":"real_bindings/tingyun_ultimate_v0_1.py","sha256":"d852cb0fee019a08e57d33f39f5d88c8774cbe018ea9a600ad6d334afa8007f5","locators":["execute_partial_binding: accepted Energy-only interrupt shell remains unchanged","WARNING: no damage buff is implemented"]},
+    {"source_id":"semantic_readiness_input","path":"data/manual_video_traces/normalized_character_facts/tingyun_ultimate_damage_buff_semantic_readiness_v0_1.json","sha256":"29ece44c9bc051590c308f7b6774ce192a47e11ec5176cf5adf645336c3025f1","locators":["effect_order unresolved","same_current_turn_duration unresolved","accepted video target and trace level missing"]},
+    {"source_id":"semantic_readiness_report","path":"data/manual_video_traces/real_binding_audits/tingyun_ultimate_damage_buff_semantic_readiness_v0_1.json","sha256":"d401cb85ff580d563ff44e415c1bd379957caa6e5a7a6f0353e68aef6e802a21","locators":["generic readiness blocked_by_both_semantics","accepted-video readiness blocked_by_unknown_target_and_trace_level"]},
+    {"source_id":"reviewed_registry","path":"real_bindings/registry_v0_2.json","sha256":"0cd0c9f9d4594654aaae91fa834988a4a373674d8e6397e757165d4f76fd11b8","locators":["registry_version 0.2","exactly two reviewed partial bindings"]},
+    {"source_id":"regression_manifest","path":"data/regression_manifest.json","sha256":"acfb663d7dbd93f3b0bdba9838a8b2a0712df144da14aae513830c406f142a02","locators":["locked group counts: 12, 1, 2, 1, 2"]}
+  ],
+  "implementation_locators": [
+    "Action.execute emits action_started before iterating effects.",
+    "Action.execute emits action_finished only after every effect has applied.",
+    "GainEnergy.apply changes only target Energy and emits no event.",
+    "AddBuff.apply changes only the target buff collection and emits no event.",
+    "Current trigger dispatch occurs only when BattleState.emit_event is called.",
+    "The synthetic action ends_turn=false, preserving interrupt context without Timeline.end_turn."
+  ],
+  "observation_contract": {
+    "snapshot_fields": ["action_result","state","turn_context"],
+    "state_fields": ["enemy_ai_cursors","enemy_ai_plans","event_dispatch_count","event_dispatch_limit","extra_turn_stack","global_av","logs","max_skill_points","pending_events","skill_points","trigger_fire_counts","triggers","units"],
+    "unit_fields": ["all_res","atk","base_speed","break_effect","buffs","crit_dmg","crit_rate","current_av","current_toughness","debuffs","defense","dmg_bonus","element","energy","fire_res","hp","ice_res","id","imaginary_res","is_alive","is_broken","level","lightning_res","max_energy","max_hp","max_toughness","name","physical_res","quantum_res","speed","team","weaknesses","wind_res"],
+    "buff_fields": ["data","duration_type","id","kind","max_stacks","name","remaining_turns","source_id","stacks","target_id"],
+    "event_fields": ["data","type"],
+    "trigger_fields": ["condition","effects","enabled","event_type","id","max_triggers_per_action","owner_id"],
+    "turn_context_fields": ["actions_taken","actor_id","forced_rng","is_extra_turn","is_interrupt","should_end_turn"],
+    "action_result_fields": ["return_type","returned_same_context"],
+    "excluded_fields": []
+  },
+  "synthetic_fixture": {
+    "fixture_id": "synthetic_tingyun_effect_order_contract_probe_v0_1",
+    "energy_restore_amount": 50,
+    "probe_buff": {"id":"synthetic_tingyun_order_probe","name":"Synthetic Tingyun Order Probe","duration_type":"target_normal_turns","remaining_turns":2,"stacks":1,"max_stacks":2,"refresh_policy":"refresh","data":{"synthetic_probe":true,"dmg_bonus_ratio":0.5}},
+    "state": {"global_av":37.5,"skill_points":3,"max_skill_points":7,"extra_turn_stack":["observer","target"],"logs":["preexisting:log"],"event_dispatch_limit":100,"trigger_fire_counts":{"preexisting_counter":4},"event_dispatch_count":9,"enemy_ai_cursors":{"enemy":2}},
+    "units": [
+      {"id":"tingyun","name":"Tingyun","team":"ally","base_speed":112,"speed":113,"current_av":41.25,"energy":130,"max_energy":130,"hp":777,"max_hp":1000,"is_alive":true,"level":80,"atk":432,"defense":321,"crit_rate":0.17,"crit_dmg":0.71,"dmg_bonus":0.12,"break_effect":0.24,"all_res":0.01,"element":"lightning","weaknesses":["ice"],"max_toughness":0,"current_toughness":0,"is_broken":false},
+      {"id":"target","name":"Selected Ally","team":"ally","base_speed":101,"speed":103,"current_av":22.75,"energy":10,"max_energy":100,"hp":654,"max_hp":900,"is_alive":true,"level":79,"atk":555,"defense":222,"crit_rate":0.33,"crit_dmg":0.88,"dmg_bonus":0.27,"break_effect":0.19,"all_res":0.02,"element":"wind","weaknesses":["fire","ice"],"max_toughness":0,"current_toughness":0,"is_broken":false},
+      {"id":"observer","name":"Observer Ally","team":"ally","base_speed":97,"speed":99,"current_av":63.5,"energy":11,"max_energy":120,"hp":501,"max_hp":800,"is_alive":true,"level":78,"atk":333,"defense":444,"crit_rate":0.09,"crit_dmg":0.59,"dmg_bonus":0.08,"break_effect":0.31,"all_res":0.03,"element":"ice","weaknesses":["lightning"],"max_toughness":0,"current_toughness":0,"is_broken":false},
+      {"id":"enemy","name":"Synthetic Enemy","team":"enemy","base_speed":88,"speed":89,"current_av":74.25,"energy":19,"max_energy":90,"hp":1234,"max_hp":1500,"is_alive":true,"level":77,"atk":600,"defense":500,"crit_rate":0.05,"crit_dmg":0.55,"dmg_bonus":0.04,"break_effect":0.07,"all_res":0.1,"element":"fire","weaknesses":["lightning","wind"],"max_toughness":120,"current_toughness":73,"is_broken":false}
+    ],
+    "unrelated_statuses": [
+      {"owner_id":"target","collection":"buffs","id":"unrelated_target_buff","name":"Unrelated Target Buff","source_id":"observer","kind":"buff","duration_type":"target_normal_turns","remaining_turns":3,"stacks":2,"max_stacks":4,"data":{"marker":"target-buff","value":7}},
+      {"owner_id":"target","collection":"debuffs","id":"unrelated_target_debuff","name":"Unrelated Target Debuff","source_id":"enemy","kind":"debuff","duration_type":"target_normal_turns","remaining_turns":1,"stacks":1,"max_stacks":1,"data":{"marker":"target-debuff"}},
+      {"owner_id":"enemy","collection":"buffs","id":"unrelated_enemy_buff","name":"Unrelated Enemy Buff","source_id":"enemy","kind":"buff","duration_type":"current_turn","remaining_turns":null,"stacks":1,"max_stacks":1,"data":{"marker":"enemy-buff"}}
+    ],
+    "pending_events": [{"type":"preexisting_event","data":{"marker":"before-action","nested":{"sequence":3,"enabled":true}}}],
+    "triggers": [
+      {"id":"order_probe_action_started","owner_id":"observer","event_type":"action_started","condition":{"type":"always"},"effect_kind":"gain_energy","target_id":"observer","amount":7,"max_triggers_per_action":1,"enabled":true},
+      {"id":"order_probe_action_finished","owner_id":"observer","event_type":"action_finished","condition":{"type":"always"},"effect_kind":"add_debuff","target_id":"enemy","status_id":"synthetic_finished_marker","max_triggers_per_action":1,"enabled":true}
+    ],
+    "enemy_ai_plan": {"owner_id":"enemy","pattern":[{"skill_id":"enemy_probe_skill","target_strategy":"first_legal","target_ids":null}],"repeat":true},
+    "turn_context": {"actor_id":"tingyun","is_extra_turn":false,"is_interrupt":true,"should_end_turn":false,"actions_taken":["prior_interrupt_action"],"forced_rng":{"marker":17,"nested":{"choice":"fixed"}}}
+  },
+  "comparison_cases": [
+    {"case_id":"below_cap_no_existing_probe","target_energy":10,"target_max_energy":100,"existing_probe_buff":false,"expected_equal":true},
+    {"case_id":"near_cap_no_existing_probe","target_energy":80,"target_max_energy":100,"existing_probe_buff":false,"expected_equal":true},
+    {"case_id":"at_cap_no_existing_probe","target_energy":100,"target_max_energy":100,"existing_probe_buff":false,"expected_equal":true},
+    {"case_id":"below_cap_existing_probe_refresh","target_energy":10,"target_max_energy":100,"existing_probe_buff":true,"expected_equal":true},
+    {"case_id":"near_cap_existing_probe_refresh","target_energy":80,"target_max_energy":100,"existing_probe_buff":true,"expected_equal":true},
+    {"case_id":"at_cap_existing_probe_refresh","target_energy":100,"target_max_energy":100,"existing_probe_buff":true,"expected_equal":true}
+  ],
+  "conclusion": "proven_irrelevant_under_current_simulator_contract",
+  "derived_generic_readiness": "blocked_by_duration_semantics",
+  "accepted_video_binding_readiness": "blocked_by_unknown_target_and_trace_level",
+  "release_game_order_known": false,
+  "same_current_turn_duration_resolved": false,
+  "accepted_video_target": null,
+  "accepted_video_trace_level": null,
+  "registry_expected_count": 2,
+  "manifest_expected_counts": {"replays":12,"manual":1,"scenarios":2,"action_sequence_traces":1,"trace_evidence":2},
+  "proof_boundaries": [
+    "The conclusion applies only to the pinned current simulator code and valid static GainEnergy/AddBuff configuration.",
+    "Release-game effect order remains unknown.",
+    "Invalid configurations, exceptions, and future engine changes are outside the proof.",
+    "Same-current-turn duration semantics remain unresolved.",
+    "The accepted-video target and Tingyun trace level remain unknown.",
+    "No current primitive event exposes intermediate state between action_started and action_finished."
+  ],
+  "simulator_binding_allowed": false
+}

@@ -1,0 +1,427 @@
+{
+  "intake_id": "tingyun_ultimate_damage_buff_magnitude_intake_v0_1",
+  "version": "0.1",
+  "warning": "NON-EXECUTABLE MAGNITUDE EVIDENCE INTAKE. No row authorizes simulator binding or selection of a real-video trace level.",
+  "intake_status": "captured_exact_table",
+  "fact_id": "tingyun.ultimate.damage_buff.magnitude_by_trace_level",
+  "accepted_sources": [
+    {
+      "source_id": "kqm_srl_commit_de0e5c09",
+      "title": "KQM SRL Tingyun character snapshot",
+      "locator": "https://github.com/KQM-git/SRL/blob/de0e5c09c8dbba9577367ad86e991fe91c4f0e36/src/data/characters/Tingyun.json",
+      "source_type": "structured_game_database",
+      "language": "en",
+      "game_version": "Pinned community repository snapshot dated 2025-11-03; not asserted byte-identical to 3.4.",
+      "retrieval_date": "2026-07-12",
+      "exact_field_locator": "skills[name=\"Amidst the Rejoicing Clouds\"].params[*][2]",
+      "support_level": "supports_exact_field",
+      "level_mapping_basis": "The selected skill has 15 ordered params rows retained as raw indices 1-15 and mapped explicitly 1:1 to normalized trace levels 1-15.",
+      "repository": "KQM-git/SRL",
+      "commit": "de0e5c09c8dbba9577367ad86e991fe91c4f0e36",
+      "path": "src/data/characters/Tingyun.json",
+      "snapshot_qualification": "Pinned repository commit dated 2025-11-03; it corroborates rows at its snapshot level only."
+    },
+    {
+      "source_id": "mar7th_starrailres_v4_3_commit_7b349e39",
+      "title": "StarRailRes Tingyun character skills snapshot",
+      "locator": "https://github.com/Mar-7th/StarRailRes/blob/7b349e39ee0f6f3bf814567995829b99c95e7a93/index_new/en/character_skills.json",
+      "source_type": "structured_game_database",
+      "language": "en",
+      "game_version": "Version 4.3 repository snapshot; not asserted byte-identical to 3.4.",
+      "retrieval_date": "2026-07-12",
+      "exact_field_locator": "content[\"120203\"].params[*][2]",
+      "support_level": "supports_exact_field",
+      "level_mapping_basis": "The 15 ordered params rows are retained as raw indices 1-15 and mapped explicitly 1:1 to normalized trace levels 1-15 for this source-backed table.",
+      "repository": "Mar-7th/StarRailRes",
+      "commit": "7b349e39ee0f6f3bf814567995829b99c95e7a93",
+      "path": "index_new/en/character_skills.json",
+      "snapshot_qualification": "Pinned commit message states Update to version 4.3; this does not prove byte identity with 3.4."
+    }
+  ],
+  "context_sources": [
+    {
+      "source_id": "gachabase_tingyun_v4_3_context",
+      "title": "Gachabase Tingyun release page",
+      "locator": "https://hsr.gachabase.net/characters/1202/tingyun/release",
+      "source_type": "structured_game_database",
+      "language": "en",
+      "game_version": "v4.3.0 release page context",
+      "retrieval_date": "2026-07-12",
+      "exact_field_locator": "Ultimate Lv. 10 display: target DMG increase 50%, duration 2 turns, Energy restoration 50",
+      "support_level": "supports_context_only",
+      "level_mapping_basis": "Context-only Lv. 10 check; this page is not accepted as a complete 15-row table."
+    }
+  ],
+  "raw_tables": [
+    {
+      "source_id": "kqm_srl_commit_de0e5c09",
+      "unit": "ratio",
+      "rows": [
+        {
+          "raw_level_index": 1,
+          "dmg_increase_ratio": 0.2
+        },
+        {
+          "raw_level_index": 2,
+          "dmg_increase_ratio": 0.23
+        },
+        {
+          "raw_level_index": 3,
+          "dmg_increase_ratio": 0.26
+        },
+        {
+          "raw_level_index": 4,
+          "dmg_increase_ratio": 0.29
+        },
+        {
+          "raw_level_index": 5,
+          "dmg_increase_ratio": 0.32
+        },
+        {
+          "raw_level_index": 6,
+          "dmg_increase_ratio": 0.35
+        },
+        {
+          "raw_level_index": 7,
+          "dmg_increase_ratio": 0.3875
+        },
+        {
+          "raw_level_index": 8,
+          "dmg_increase_ratio": 0.425
+        },
+        {
+          "raw_level_index": 9,
+          "dmg_increase_ratio": 0.4625
+        },
+        {
+          "raw_level_index": 10,
+          "dmg_increase_ratio": 0.5
+        },
+        {
+          "raw_level_index": 11,
+          "dmg_increase_ratio": 0.53
+        },
+        {
+          "raw_level_index": 12,
+          "dmg_increase_ratio": 0.56
+        },
+        {
+          "raw_level_index": 13,
+          "dmg_increase_ratio": 0.59
+        },
+        {
+          "raw_level_index": 14,
+          "dmg_increase_ratio": 0.62
+        },
+        {
+          "raw_level_index": 15,
+          "dmg_increase_ratio": 0.65
+        }
+      ]
+    },
+    {
+      "source_id": "mar7th_starrailres_v4_3_commit_7b349e39",
+      "unit": "ratio",
+      "rows": [
+        {
+          "raw_level_index": 1,
+          "dmg_increase_ratio": 0.2
+        },
+        {
+          "raw_level_index": 2,
+          "dmg_increase_ratio": 0.23
+        },
+        {
+          "raw_level_index": 3,
+          "dmg_increase_ratio": 0.26
+        },
+        {
+          "raw_level_index": 4,
+          "dmg_increase_ratio": 0.29
+        },
+        {
+          "raw_level_index": 5,
+          "dmg_increase_ratio": 0.32
+        },
+        {
+          "raw_level_index": 6,
+          "dmg_increase_ratio": 0.35
+        },
+        {
+          "raw_level_index": 7,
+          "dmg_increase_ratio": 0.3875
+        },
+        {
+          "raw_level_index": 8,
+          "dmg_increase_ratio": 0.425
+        },
+        {
+          "raw_level_index": 9,
+          "dmg_increase_ratio": 0.4625
+        },
+        {
+          "raw_level_index": 10,
+          "dmg_increase_ratio": 0.5
+        },
+        {
+          "raw_level_index": 11,
+          "dmg_increase_ratio": 0.53
+        },
+        {
+          "raw_level_index": 12,
+          "dmg_increase_ratio": 0.56
+        },
+        {
+          "raw_level_index": 13,
+          "dmg_increase_ratio": 0.59
+        },
+        {
+          "raw_level_index": 14,
+          "dmg_increase_ratio": 0.62
+        },
+        {
+          "raw_level_index": 15,
+          "dmg_increase_ratio": 0.65
+        }
+      ]
+    }
+  ],
+  "normalized_table": [
+    {
+      "normalized_trace_level": 1,
+      "dmg_increase_percent": 20,
+      "unit": "percent",
+      "raw_source_rows": [
+        {
+          "source_id": "kqm_srl_commit_de0e5c09",
+          "raw_level_index": 1
+        },
+        {
+          "source_id": "mar7th_starrailres_v4_3_commit_7b349e39",
+          "raw_level_index": 1
+        }
+      ]
+    },
+    {
+      "normalized_trace_level": 2,
+      "dmg_increase_percent": 23,
+      "unit": "percent",
+      "raw_source_rows": [
+        {
+          "source_id": "kqm_srl_commit_de0e5c09",
+          "raw_level_index": 2
+        },
+        {
+          "source_id": "mar7th_starrailres_v4_3_commit_7b349e39",
+          "raw_level_index": 2
+        }
+      ]
+    },
+    {
+      "normalized_trace_level": 3,
+      "dmg_increase_percent": 26,
+      "unit": "percent",
+      "raw_source_rows": [
+        {
+          "source_id": "kqm_srl_commit_de0e5c09",
+          "raw_level_index": 3
+        },
+        {
+          "source_id": "mar7th_starrailres_v4_3_commit_7b349e39",
+          "raw_level_index": 3
+        }
+      ]
+    },
+    {
+      "normalized_trace_level": 4,
+      "dmg_increase_percent": 29,
+      "unit": "percent",
+      "raw_source_rows": [
+        {
+          "source_id": "kqm_srl_commit_de0e5c09",
+          "raw_level_index": 4
+        },
+        {
+          "source_id": "mar7th_starrailres_v4_3_commit_7b349e39",
+          "raw_level_index": 4
+        }
+      ]
+    },
+    {
+      "normalized_trace_level": 5,
+      "dmg_increase_percent": 32,
+      "unit": "percent",
+      "raw_source_rows": [
+        {
+          "source_id": "kqm_srl_commit_de0e5c09",
+          "raw_level_index": 5
+        },
+        {
+          "source_id": "mar7th_starrailres_v4_3_commit_7b349e39",
+          "raw_level_index": 5
+        }
+      ]
+    },
+    {
+      "normalized_trace_level": 6,
+      "dmg_increase_percent": 35,
+      "unit": "percent",
+      "raw_source_rows": [
+        {
+          "source_id": "kqm_srl_commit_de0e5c09",
+          "raw_level_index": 6
+        },
+        {
+          "source_id": "mar7th_starrailres_v4_3_commit_7b349e39",
+          "raw_level_index": 6
+        }
+      ]
+    },
+    {
+      "normalized_trace_level": 7,
+      "dmg_increase_percent": 38.75,
+      "unit": "percent",
+      "raw_source_rows": [
+        {
+          "source_id": "kqm_srl_commit_de0e5c09",
+          "raw_level_index": 7
+        },
+        {
+          "source_id": "mar7th_starrailres_v4_3_commit_7b349e39",
+          "raw_level_index": 7
+        }
+      ]
+    },
+    {
+      "normalized_trace_level": 8,
+      "dmg_increase_percent": 42.5,
+      "unit": "percent",
+      "raw_source_rows": [
+        {
+          "source_id": "kqm_srl_commit_de0e5c09",
+          "raw_level_index": 8
+        },
+        {
+          "source_id": "mar7th_starrailres_v4_3_commit_7b349e39",
+          "raw_level_index": 8
+        }
+      ]
+    },
+    {
+      "normalized_trace_level": 9,
+      "dmg_increase_percent": 46.25,
+      "unit": "percent",
+      "raw_source_rows": [
+        {
+          "source_id": "kqm_srl_commit_de0e5c09",
+          "raw_level_index": 9
+        },
+        {
+          "source_id": "mar7th_starrailres_v4_3_commit_7b349e39",
+          "raw_level_index": 9
+        }
+      ]
+    },
+    {
+      "normalized_trace_level": 10,
+      "dmg_increase_percent": 50,
+      "unit": "percent",
+      "raw_source_rows": [
+        {
+          "source_id": "kqm_srl_commit_de0e5c09",
+          "raw_level_index": 10
+        },
+        {
+          "source_id": "mar7th_starrailres_v4_3_commit_7b349e39",
+          "raw_level_index": 10
+        }
+      ]
+    },
+    {
+      "normalized_trace_level": 11,
+      "dmg_increase_percent": 53,
+      "unit": "percent",
+      "raw_source_rows": [
+        {
+          "source_id": "kqm_srl_commit_de0e5c09",
+          "raw_level_index": 11
+        },
+        {
+          "source_id": "mar7th_starrailres_v4_3_commit_7b349e39",
+          "raw_level_index": 11
+        }
+      ]
+    },
+    {
+      "normalized_trace_level": 12,
+      "dmg_increase_percent": 56,
+      "unit": "percent",
+      "raw_source_rows": [
+        {
+          "source_id": "kqm_srl_commit_de0e5c09",
+          "raw_level_index": 12
+        },
+        {
+          "source_id": "mar7th_starrailres_v4_3_commit_7b349e39",
+          "raw_level_index": 12
+        }
+      ]
+    },
+    {
+      "normalized_trace_level": 13,
+      "dmg_increase_percent": 59,
+      "unit": "percent",
+      "raw_source_rows": [
+        {
+          "source_id": "kqm_srl_commit_de0e5c09",
+          "raw_level_index": 13
+        },
+        {
+          "source_id": "mar7th_starrailres_v4_3_commit_7b349e39",
+          "raw_level_index": 13
+        }
+      ]
+    },
+    {
+      "normalized_trace_level": 14,
+      "dmg_increase_percent": 62,
+      "unit": "percent",
+      "raw_source_rows": [
+        {
+          "source_id": "kqm_srl_commit_de0e5c09",
+          "raw_level_index": 14
+        },
+        {
+          "source_id": "mar7th_starrailres_v4_3_commit_7b349e39",
+          "raw_level_index": 14
+        }
+      ]
+    },
+    {
+      "normalized_trace_level": 15,
+      "dmg_increase_percent": 65,
+      "unit": "percent",
+      "raw_source_rows": [
+        {
+          "source_id": "kqm_srl_commit_de0e5c09",
+          "raw_level_index": 15
+        },
+        {
+          "source_id": "mar7th_starrailres_v4_3_commit_7b349e39",
+          "raw_level_index": 15
+        }
+      ]
+    }
+  ],
+  "acquisition_attempts": [],
+  "blocked_reasons": [],
+  "real_video_trace_level": null,
+  "preserved_unresolved_fields": [
+    "damage_buff_application_order_relative_to_energy_restore",
+    "real_video_selected_ally",
+    "real_video_trace_level",
+    "same_current_turn_duration_behavior"
+  ],
+  "readiness_status": "blocked_by_both",
+  "simulator_binding_allowed": false
+}

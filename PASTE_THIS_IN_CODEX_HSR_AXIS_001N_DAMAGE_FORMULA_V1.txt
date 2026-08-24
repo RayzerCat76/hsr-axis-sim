@@ -1,0 +1,198 @@
+Task ID: HSR-AXIS-001N
+Task name: Damage Formula V1 / Combat Stat Pipeline MVP
+
+Codex Reasoning: HIGH
+ChatGPT Model Recommendation: GPT-5.5 Thinking
+Reason: This task touches the combat math pipeline. If damage modifiers are grouped incorrectly, every future golden replay and AI axis-search score will become untrustworthy. Use a reasoning model for design and edge-case handling, not just code completion.
+
+You are working in the existing permanent project folder for the HSR Axis Simulator.
+
+Current accepted state:
+- 001A action value core: accepted
+- 001B replay validator: accepted
+- 001C multi-step replay: accepted
+- 001D buff/debuff duration: accepted
+- 001E damage/stats/forced RNG MVP: accepted
+- 001F toughness/weakness/break MVP: accepted
+- 001G event hooks/triggers MVP: accepted
+- 001H data-driven character/skill schema MVP: accepted
+- 001I semantic target resolver MVP: accepted
+- 001J target legality MVP: accepted
+- 001K action generator/resource-gated actions MVP: accepted
+- 001L ultimate/interrupt window MVP: accepted
+- 001M enemy AI/action-pattern MVP: accepted
+
+Goal:
+Upgrade the current placeholder calculated-damage scaffold into a clearer Damage Formula V1 suitable for future video replay validation.
+
+Important scope boundaries:
+- Do NOT implement Huroka/Yatta/HoneyHunter importers.
+- Do NOT implement Beam Search or AI axis search.
+- Do NOT implement full real HSR character kits.
+- Do NOT implement break damage, super break, DoT, blast, bounce, or follow-up-specific formula yet.
+- Do NOT remove support for fixed `DealDamage(amount=...)`; old tests and golden replays must remain valid.
+- Do NOT change action value, ultimate timing, enemy AI, target legality, or replay semantics unless strictly necessary.
+
+Required design principle:
+Keep the formula data-driven and decomposed into named stages so future tasks can extend it without rewriting everything.
+
+Formula V1 requirements:
+
+1. Preserve fixed damage compatibility
+   - `DealDamage(amount=...)` must still subtract exactly that amount.
+   - Existing fixed-damage golden replays must continue to pass.
+
+2. Add a structured calculated damage pipeline
+   Introduce a formula close to:
+
+   base_damage = scaling_stat_value * multiplier + flat_damage
+   after_bonus = base_damage * (1 + damage_bonus)
+   after_crit = after_bonus * crit_multiplier
+   after_defense = after_crit * defense_multiplier
+   after_resistance = after_defense * resistance_multiplier
+   final_damage = after_resistance * (1 + vulnerability)
+
+   This is still an MVP formula, not a claim of full official HSR accuracy.
+
+3. DamageSpec should support at least:
+   - multiplier: float
+   - stat: string, default "atk"
+   - flat_damage: float, default 0
+   - can_crit: bool, default true
+   - damage_type: optional string
+   - element: optional string
+   - damage_bonus_key: optional string
+   - defense_ignore: float, default 0
+   - resistance_penetration: float, default 0
+   - vulnerability: float, default 0
+
+4. Effective attacker stats should support at least:
+   - atk
+   - defense
+   - crit_rate
+   - crit_dmg
+   - dmg_bonus
+   - element-specific dmg bonus, e.g. `quantum_dmg_bonus`, `wind_dmg_bonus`
+   - type-specific dmg bonus, e.g. `skill_dmg_bonus`, `ultimate_dmg_bonus`, `basic_dmg_bonus`, `followup_dmg_bonus`
+
+5. Effective target stats should support at least:
+   - defense
+   - damage_resistance by element, e.g. `quantum_res`, `wind_res`, or generic `all_res`
+   - vulnerability / damage taken increase
+   - defense reduction from debuffs
+
+6. Buff/debuff stat_mods should remain the interface
+   Existing buff data should still work:
+
+   ```json
+   {
+     "stat_mods": {
+       "atk_pct": 0.2,
+       "crit_dmg": 0.3,
+       "dmg_bonus": 0.5
+     }
+   }
+   ```
+
+   Add support for new stat_mod keys such as:
+   - `def_reduction`
+   - `def_ignore`
+   - `all_res_pen`
+   - `<element>_res_pen`
+   - `vulnerability`
+   - `<element>_dmg_bonus`
+   - `<damage_type>_dmg_bonus`
+
+7. Defense multiplier MVP
+   Implement a simple explicit formula. Recommended:
+
+   attacker_level defaults to 80 unless a level field already exists.
+   target_level defaults to 80 unless a level field already exists.
+
+   defense_multiplier = attacker_level_factor / (attacker_level_factor + effective_target_defense)
+
+   Where:
+   attacker_level_factor = attacker_level * 10 + 200
+
+   effective_target_defense = max(0, target_defense * (1 - def_reduction) * (1 - def_ignore))
+
+   Keep this function isolated and documented as MVP.
+
+8. Resistance multiplier MVP
+   Implement:
+
+   effective_res = target_resistance - resistance_penetration
+   resistance_multiplier = 1 - effective_res
+
+   Clamp only if you deliberately decide to; document the decision. Do not silently hide negative resistance behavior if you support it.
+
+9. Crit RNG
+   - Preserve `forced_rng.crit` behavior from 001E.
+   - If `forced_rng.crit` is absent, use existing RNG context behavior.
+   - If `can_crit` is false, crit must never apply.
+
+10. Damage events
+   - `damage_dealt` events should include enough metadata for future replay debugging:
+     - source_id
+     - target_id
+     - amount
+     - damage_type
+     - element
+     - is_crit
+     - optionally formula_parts / debug object if easy to add
+   - Do not break existing event tests.
+
+11. Replay validator
+   - Existing HP checks must still pass.
+   - Add one new golden replay using calculated damage with:
+     - attack scaling
+     - crit forced true/false
+     - at least one buff/debuff modifier
+     - a target defense/resistance modifier if your schema supports it cleanly
+   - The replay should verify enemy HP after calculated damage.
+
+12. Tests
+   Add or update tests covering:
+   - fixed amount damage remains exact
+   - calculated damage without crit
+   - calculated damage with forced crit
+   - attacker atk_pct and dmg_bonus buffs
+   - target vulnerability debuff
+   - defense reduction / defense ignore behavior
+   - elemental resistance / resistance penetration behavior
+   - can_crit=false ignores forced crit
+   - existing golden replays still pass
+
+Suggested files to inspect and likely modify:
+- `hsr_axis_sim/sim/damage.py`
+- `hsr_axis_sim/sim/stats.py`
+- `hsr_axis_sim/sim/effects.py`
+- `hsr_axis_sim/sim/unit.py`
+- `hsr_axis_sim/sim/data_schema.py`
+- `hsr_axis_sim/sim/data_loader.py`
+- `hsr_axis_sim/sim/replay.py`
+- `hsr_axis_sim/tests/test_damage.py`
+- `hsr_axis_sim/data/golden_replays/`
+- sample character JSON files if needed
+
+Deliverables:
+1. Updated code implementing Damage Formula V1.
+2. New or updated tests.
+3. At least one new golden replay for calculated damage formula V1.
+4. All previous tests and golden replays must continue to pass.
+5. Update `README.md` with a short Damage Formula V1 section.
+6. Write/update `hsr_axis_sim/LUMEN_RESULT.md` with:
+   - files changed
+   - exact tests run
+   - exact test results
+   - golden replay CLI results
+   - formula stages implemented
+   - known limitations
+   - whether 001O is safe to begin
+
+Acceptance criteria:
+- `pytest -q` passes.
+- Every JSON file under `hsr_axis_sim/data/golden_replays/*.json` passes via `python -m hsr_axis_sim.sim.replay <file>`.
+- Fixed-damage behavior remains backward compatible.
+- The calculated damage formula is isolated enough to extend later.
+- No Huroka import, AI search, UI, full break damage, or real character batch import appears in this task.

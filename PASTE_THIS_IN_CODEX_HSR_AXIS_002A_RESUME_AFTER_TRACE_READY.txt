@@ -1,0 +1,91 @@
+Task ID: HSR-AXIS-002A-RESUME
+Task name: Import First Real Manual Video Trace Fixture
+
+Codex Reasoning: Medium
+ChatGPT Model suggestion: GPT-5.5
+Reason: This is fixture intake, linting, replay validation, manifest update, and regression validation. Do not use GPT-5.5 Thinking unless the provided trace fails because of a suspected simulator mechanism mismatch.
+
+Context:
+You are continuing the HSR Axis Simulator project. 001Z passed and locked the regression manifest. A previous 002A attempt correctly blocked because no real manual trace JSON was provided.
+
+Now Ray/Lumen has provided a completed real manual trace JSON under:
+
+incoming_manual_video_traces/*.json
+
+Important boundaries:
+- Do NOT browse Bilibili or any external website.
+- Do NOT download videos.
+- Do NOT invent a real trace.
+- Do NOT fabricate builds, HP values, SP values, energy values, action order, or expected values.
+- Do NOT change combat core, timeline, damage, break, buff/debuff, target legality, enemy AI, action generation, ultimate windows, or beam search behavior in this task.
+- Only integrate the trace that has been provided locally.
+
+Goal:
+Add the first real manually recorded video trace fixture to the regression baseline without changing simulator mechanics.
+
+Steps:
+
+1. Locate exactly one provided trace under:
+
+   incoming_manual_video_traces/*.json
+
+   If there are multiple trace files, stop and ask for which one to import. Do not guess.
+
+2. Validate it with the existing manual trace lint tool.
+
+   Expected command shape:
+
+   python -m hsr_axis_sim.sim.replay_lint incoming_manual_video_traces/<trace_id>.json
+
+3. If lint passes, copy it into:
+
+   hsr_axis_sim/data/manual_video_traces/real/<trace_id>.json
+
+   Use the trace `name` as the filename when safe. Keep it lowercase snake_case.
+
+4. Attempt replay validation:
+
+   python -m hsr_axis_sim.sim.replay hsr_axis_sim/data/manual_video_traces/real/<trace_id>.json
+
+5. If replay passes, update:
+
+   hsr_axis_sim/data/regression_manifest.json
+
+   Add the new real trace under the manual group with a unique id and the correct path.
+
+6. Run manifest regression:
+
+   python -m hsr_axis_sim.regression.runner --manifest hsr_axis_sim/data/regression_manifest.json --format text
+   python -m hsr_axis_sim.regression.runner --manifest hsr_axis_sim/data/regression_manifest.json --format json
+
+7. Run tests:
+
+   python -m pytest -q
+
+8. Update `hsr_axis_sim/LUMEN_RESULT.md` with:
+
+   - status
+   - files changed
+   - trace metadata summary
+   - lint result
+   - replay result
+   - manifest update result
+   - tests run
+   - exact pass/fail results
+   - mismatches or uncertainties
+   - whether 002B is safe to begin
+
+If replay fails:
+- Do not silently change expected values.
+- Do not change simulator mechanics.
+- Record the exact mismatch in LUMEN_RESULT.md.
+- Do not add the failing trace to the locked manifest unless the existing system explicitly supports expected-failing traces.
+- Mark whether this needs Lumen/Ray review or a separate mechanism-diagnosis task.
+
+Acceptance criteria if passing:
+- pytest passes.
+- manual trace lint passes.
+- manual trace replay passes.
+- manifest regression passes.
+- manifest manual count increases from 1 to 2.
+- no combat core behavior changes.

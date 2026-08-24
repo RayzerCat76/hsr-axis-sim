@@ -1,0 +1,125 @@
+{
+  "metadata": {
+    "version": "1.0",
+    "date": "2026-07-12",
+    "status": "ARCHITECTURE_BASELINE",
+    "policy": "Evidence First; Unknown > Guess"
+  },
+  "defense_requests": {
+    "NormalShieldInstance": [
+      "shield_id",
+      "source_id",
+      "owner_id",
+      "target_id",
+      "current_value",
+      "max_value",
+      "duration_policy",
+      "attached_effect_ids",
+      "break_event"
+    ],
+    "StackableShieldFamily": [
+      "family_id",
+      "reference_value",
+      "cap_multiplier",
+      "current_value",
+      "grant_policy",
+      "refresh_policy"
+    ],
+    "CollectiveShieldPool": [
+      "pool_id",
+      "owner_id",
+      "protected_entities",
+      "current_value",
+      "eligible_damage_families",
+      "deduction_order",
+      "expiration_policy"
+    ],
+    "BarrierEffect": [
+      "effect_id",
+      "target_id",
+      "nullified_origins",
+      "excluded_damage_families",
+      "consume_event"
+    ]
+  },
+  "defense_resolution_order_candidate": [
+    "ATTACK_CONTACT",
+    "BARRIER_OR_SCRIPTED_NULLIFICATION",
+    "DAMAGE_DISTRIBUTION",
+    "PER_TARGET_DAMAGE_RESOLUTION",
+    "COLLECTIVE_POOL_AND_LOCAL_SHIELD_RESOLUTION",
+    "HP_CHANGE",
+    "LETHAL_BATCH"
+  ],
+  "toughness_model": {
+    "entity_fields": [
+      "gauges[]",
+      "active_gauge_index",
+      "locked",
+      "protection_source_id",
+      "weaknesses",
+      "ignore_weakness_policy",
+      "restore_policy"
+    ],
+    "gauge_fields": [
+      "gauge_id",
+      "gauge_type",
+      "current",
+      "maximum",
+      "visible",
+      "unlock_condition",
+      "break_event",
+      "restore_event",
+      "wave_policy"
+    ],
+    "gauge_types": [
+      "PRIMARY",
+      "EXO",
+      "PHASE_ARMOR",
+      "CONTENT_DEFINED"
+    ]
+  },
+  "precision_policy": {
+    "internal_type": "high_precision_decimal_or_rational",
+    "display_fields_separate": true,
+    "quantization_policies": [
+      "NONE",
+      "FLOOR",
+      "CEIL",
+      "ROUND_HALF_UP",
+      "ROUND_HALF_EVEN",
+      "TRUNCATE",
+      "DISPLAY_ONLY",
+      "CONTENT_DEFINED"
+    ],
+    "unknown_families": [
+      "damage",
+      "healing",
+      "shield",
+      "hp",
+      "overflow",
+      "energy_display",
+      "action_value_display"
+    ]
+  },
+  "implementation_tracks": [
+    "EVENT_AND_ACTION_CONTEXT",
+    "TIMELINE_AND_INSERTED_ACTIONS",
+    "EFFECT_DURATION_STACK_REFRESH",
+    "MODIFIER_AND_DAMAGE_RESOLVER",
+    "TOUGHNESS_BREAK_SUPER_BREAK",
+    "DEFENSE_SHIELD_BARRIER_DISTRIBUTION",
+    "ENTITY_SUMMON_MEMOSPRITE_LIFECYCLE",
+    "TARGETING_RNG_ENEMY_AI",
+    "TRACE_REPLAY_VALIDATION"
+  ],
+  "blocked_semantics": [
+    "Extra Turn FIFO/LIFO current frame evidence",
+    "Counter eligibility across attack/hit/damage/shield/distribution",
+    "DoT snapshot/dynamic policy",
+    "single-effect cleanse/dispel selection",
+    "damage/heal/shield/HP rounding",
+    "generic multi-hit continuation and bounce replacement policy",
+    "true revive AV/status re-entry"
+  ]
+}

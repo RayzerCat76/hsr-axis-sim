@@ -1,0 +1,152 @@
+Task ID: HSR-AXIS-002E
+Task name: Trace Evidence Regression Group MVP
+
+Codex Reasoning: Medium
+Recommended model: GPT-5.6 Terra
+Reason: This task is regression-manifest plumbing, validator integration, report formatting, and focused tests. It needs reliable engineering judgment but should not modify combat mechanics or require flagship-level open-ended reasoning.
+
+Context:
+HSR-AXIS-002D is accepted. We now have three separate layers for the first real video trace:
+
+1. Observable action sequence:
+   hsr_axis_sim/data/manual_video_traces/intake/real_video_trace_001_botu_dilemma_floor12_side1_action_sequence_only.json
+
+2. Non-executable semantic placeholder map:
+   hsr_axis_sim/data/manual_video_traces/semantic_maps/real_video_trace_001_botu_dilemma_semantics_v0_1.json
+
+3. Non-executable approximate frame-anchor evidence:
+   hsr_axis_sim/data/manual_video_traces/frame_anchors/real_video_trace_001_botu_dilemma_frame_anchors_v0_1.json
+
+Existing validators:
+- hsr_axis_sim.tools.trace_semantics.validate_semantic_map_files
+- hsr_axis_sim.tools.trace_frame_anchors.validate_frame_anchor_files
+
+Goal:
+Add a dedicated locked regression group named `trace_evidence` that validates semantic maps and frame-anchor files against their source action-sequence trace.
+
+Trust boundary:
+- Trace evidence is not a numeric replay.
+- Media timestamps are not AV, simulator time, speed, delay, or turn duration.
+- Semantic placeholders are not executable real-character kits.
+- Do not infer or add SP, energy, HP, toughness, damage, targets, RNG, buffs, speed, AV, delay, or action-advance percentages.
+- Do not modify combat mechanics.
+
+Pre-flight hardening required:
+Before locking the frame-anchor artifact, strengthen `trace_frame_anchors.py` so it rejects:
+- `status` values other than `approximate_media_evidence_only`;
+- `timestamp_basis` values other than `seconds_from_local_clip_start`;
+- empty or non-string `frame_anchor_id`;
+- empty or non-string `version`.
+
+Add focused tests for each rejected case. Do not change the accepted fixture values.
+
+Manifest design:
+Extend the regression manifest with a group:
+
+`trace_evidence`
+
+Use a clear entry schema. Recommended shape:
+
+{
+  "id": "real_video_trace_001_botu_dilemma_semantic_map_v0_1",
+  "path": "hsr_axis_sim/data/manual_video_traces/semantic_maps/real_video_trace_001_botu_dilemma_semantics_v0_1.json",
+  "source_trace_path": "hsr_axis_sim/data/manual_video_traces/intake/real_video_trace_001_botu_dilemma_floor12_side1_action_sequence_only.json",
+  "check": "semantic_map"
+}
+
+{
+  "id": "real_video_trace_001_botu_dilemma_frame_anchors_v0_1",
+  "path": "hsr_axis_sim/data/manual_video_traces/frame_anchors/real_video_trace_001_botu_dilemma_frame_anchors_v0_1.json",
+  "source_trace_path": "hsr_axis_sim/data/manual_video_traces/intake/real_video_trace_001_botu_dilemma_floor12_side1_action_sequence_only.json",
+  "check": "frame_anchors"
+}
+
+You may choose an equally clear schema, but it must keep evidence artifacts paired with an explicit source trace and must not overload numeric replay semantics.
+
+Manifest validation requirements:
+1. Add `trace_evidence` to supported and ordered groups.
+2. Require each trace-evidence entry to have:
+   - non-empty `id`;
+   - existing evidence `path`;
+   - existing `source_trace_path`;
+   - supported `check` value: `semantic_map` or `frame_anchors`.
+3. Reject unsupported check values.
+4. Reject missing source-trace paths.
+5. Keep older manifests without `trace_evidence` backward compatible.
+6. Preserve existing behavior for `replays`, `manual`, `scenarios`, and `action_sequence_traces`.
+
+Runner requirements:
+1. Add `trace_evidence` to `VALID_GROUPS` and report ordering.
+2. For `check == semantic_map`, call `validate_semantic_map_files(source_trace_path, path)`.
+3. For `check == frame_anchors`, call `validate_frame_anchor_files(source_trace_path, path)`.
+4. Return one deterministic `RegressionCheckResult` per evidence entry.
+5. Include details such as:
+   - `check`;
+   - source trace identifier or path.
+6. `--only trace_evidence` must work when a manifest is supplied.
+7. Text report should clearly show a separate line such as:
+
+   PASS 2/2 trace evidence checks
+
+8. Markdown and JSON reports must include the group and manifest count.
+9. Invalid evidence must produce a failed regression result, not crash the whole runner.
+10. `--fail-fast` must continue to behave correctly.
+
+Locked manifest change:
+Add exactly these two accepted evidence artifacts to the current regression manifest:
+- one semantic-map check;
+- one frame-anchor check.
+
+Do not move them into `replays`, `manual`, or `action_sequence_traces`.
+
+Required tests:
+- frame-anchor validator rejects wrong `status`;
+- frame-anchor validator rejects wrong `timestamp_basis`;
+- frame-anchor validator rejects empty/non-string `frame_anchor_id`;
+- frame-anchor validator rejects empty/non-string `version`;
+- manifest loads with `trace_evidence`;
+- manifest count reports `trace_evidence == 2`;
+- both accepted evidence checks pass;
+- `--only trace_evidence` runs exactly the evidence checks;
+- invalid semantic-map evidence becomes a failed result;
+- invalid frame-anchor evidence becomes a failed result;
+- unsupported evidence check is rejected by manifest parsing;
+- missing `source_trace_path` is rejected;
+- older manifests without the group remain valid;
+- text, Markdown, and JSON reports expose the new group;
+- all previous tests and locked regression groups still pass.
+
+Expected commands:
+
+python3 -m compileall -q hsr_axis_sim
+python3 -m pytest -q
+python3 -m hsr_axis_sim.regression.runner \
+  --manifest hsr_axis_sim/data/regression_manifest.json \
+  --format text
+python3 -m hsr_axis_sim.regression.runner \
+  --manifest hsr_axis_sim/data/regression_manifest.json \
+  --only trace_evidence \
+  --format text
+
+Expected report shape after completion:
+
+PASS 12/12 golden replays
+PASS 2/2 manual checks
+PASS 2/2 search scenarios
+PASS 2/2 action-sequence trace checks
+PASS 2/2 trace evidence checks
+
+Deliverable:
+Update `hsr_axis_sim/LUMEN_RESULT.md` with:
+1. files changed;
+2. commands run;
+3. full test result;
+4. manifest counts before and after;
+5. trace-evidence-only runner result;
+6. explicit trust-boundary statement;
+7. known limitations;
+8. next recommended task.
+
+Do not implement real Anaxa, Tingyun, Pela, Remembrance Trailblazer, or Mem kits in this task.
+Do not make trace evidence executable.
+Do not add new video-derived combat numbers.

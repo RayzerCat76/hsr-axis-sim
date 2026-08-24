@@ -1,0 +1,135 @@
+{
+  "name": "manual_video_trace_sample_mvp",
+  "trace_type": "manual_video_trace",
+  "source": {
+    "platform": "manual_fixture",
+    "url": "",
+    "video_title": "Synthetic manual video trace sample, not a real video",
+    "uploader": "",
+    "recorded_by": "Ray/Lumen manual trace protocol",
+    "recorded_at": "2026-07-08",
+    "notes": "No live video was fetched. This is a protocol fixture."
+  },
+  "assumptions": [
+    "All RNG outcomes are forced in step data where relevant.",
+    "Character data uses existing simulator mechanic representative kit.",
+    "This is synthetic data for protocol validation, not a real Bilibili trace."
+  ],
+  "builds": {
+    "carry": {
+      "character": "Kill Chain Carry MVP",
+      "level": 80,
+      "speed": 143,
+      "crit_rate": 0,
+      "crit_dmg": 0.5,
+      "notes": "Synthetic build for protocol validation."
+    },
+    "turn_pull": {
+      "character": "Turn Pull Support MVP",
+      "level": 80,
+      "speed": 134,
+      "notes": "Synthetic support build."
+    }
+  },
+  "enemy_setup": {
+    "notes": "Synthetic enemies from existing character kit replay."
+  },
+  "transcription": {
+    "step_source": "manual",
+    "fields_recorded": [
+      "actor",
+      "skill_id",
+      "target_ids",
+      "forced_rng",
+      "expected_hp",
+      "expected_energy",
+      "expected_skill_points",
+      "expected_current_av"
+    ],
+    "notes": "Synthetic transcription mirrors character_kit_001_mvp."
+  },
+  "tolerance": 0.001,
+  "data_sources": {
+    "characters_dir": "hsr_axis_sim/data/character_kits/kit_001_mechanic_representatives",
+    "team": "hsr_axis_sim/data/character_kits/kit_001_mechanic_representatives/teams/character_kit_001_team.json"
+  },
+  "steps": [
+    {
+      "step": 1,
+      "expected_actor": "turn_pull",
+      "skill_id": "skill",
+      "target_ids": ["carry"],
+      "forced_rng": {},
+      "expect": {
+        "global_av": 0,
+        "skill_points": 2,
+        "units": {
+          "turn_pull": {
+            "current_av": 74.6268656716,
+            "energy": 30
+          },
+          "carry": {
+            "current_av": 0,
+            "buffs": {
+              "turn_pull_damage_buff": {
+                "kind": "buff",
+                "duration_type": "target_normal_turns",
+                "remaining_turns": 1,
+                "source_id": "turn_pull"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "step": 2,
+      "expected_actor": "carry",
+      "skill_id": "skill",
+      "target_ids": ["enemy_low"],
+      "forced_rng": {},
+      "expect": {
+        "global_av": 0,
+        "skill_points": 1,
+        "extra_turn_stack": ["carry"],
+        "logs_contains": ["trigger:kill_chain_carry_on_kill_extra_turn"],
+        "units": {
+          "carry": {
+            "current_av": 69.9300699301,
+            "energy": 30,
+            "buffs": {}
+          },
+          "enemy_low": {
+            "hp": 0,
+            "is_alive": false,
+            "current_toughness": 0,
+            "is_broken": true
+          }
+        }
+      }
+    },
+    {
+      "step": 3,
+      "expected_actor": "carry",
+      "skill_id": "basic",
+      "target_ids": ["enemy_tough"],
+      "forced_rng": {},
+      "expect": {
+        "global_av": 0,
+        "skill_points": 2,
+        "extra_turn_stack": [],
+        "units": {
+          "carry": {
+            "current_av": 69.9300699301,
+            "energy": 50
+          },
+          "enemy_tough": {
+            "hp": 800,
+            "current_toughness": 30,
+            "is_broken": false
+          }
+        }
+      }
+    }
+  ]
+}

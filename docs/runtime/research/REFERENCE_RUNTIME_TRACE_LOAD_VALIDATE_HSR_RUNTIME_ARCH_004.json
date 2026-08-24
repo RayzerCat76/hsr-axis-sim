@@ -1,0 +1,209 @@
+{
+  "metadata": {
+    "task_id": "HSR-RUNTIME-ARCH-004",
+    "title": "Trace Document Loader and Integrity Validator",
+    "reference_version": "1.0",
+    "inspection_date": "2026-07-12",
+    "starting_package": "hsr_axis_001a_package(5).zip",
+    "policy": "Strict schema; exact canonical bytes; no repair; Unknown > Guess"
+  },
+  "accepted_schema": {
+    "schema_name": "hsr_runtime_trace",
+    "schema_version": "1.0",
+    "top_level_fields": [
+      "event_type_counts",
+      "first_sequence",
+      "last_sequence",
+      "metadata",
+      "record_count",
+      "records",
+      "schema_name",
+      "schema_version",
+      "semantic_gap_ids",
+      "sequence_policy",
+      "trace_id"
+    ],
+    "record_fields": [
+      "action_context",
+      "attack_context",
+      "event",
+      "hit_context",
+      "notes",
+      "numeric_values",
+      "sequence"
+    ],
+    "event_fields": [
+      "action_id",
+      "actor_id",
+      "attack_id",
+      "event_id",
+      "event_type",
+      "hit_id",
+      "payload",
+      "sequence",
+      "source_id",
+      "target_id"
+    ],
+    "projection_constraints": {
+      "action_context": null,
+      "attack_context": null,
+      "hit_context": null,
+      "numeric_values": {},
+      "notes": []
+    }
+  },
+  "load_policies": {
+    "canonical_form_policy": [
+      "COMPACT_ONLY",
+      "PRETTY_ONLY",
+      "EITHER_CANONICAL"
+    ],
+    "digest_policy": [
+      "REQUIRE_MATCH",
+      "VERIFY_IF_PROVIDED",
+      "SKIP"
+    ],
+    "no_defaults": true
+  },
+  "validation_order": [
+    "CONFIG",
+    "PAYLOAD_TYPE_AND_SIZE",
+    "SHA256_POLICY",
+    "UTF8_AND_BOM",
+    "JSON_DUPLICATE_KEYS_AND_CONSTANTS",
+    "EXACT_SCHEMA_AND_ENUMS",
+    "CONTRACT_RECONSTRUCTION",
+    "DOCUMENT_INTEGRITY",
+    "CANONICAL_FORM"
+  ],
+  "valid_sample": {
+    "compact_json": "{\"event_type_counts\":{\"ACTION_START\":1,\"CONTENT_DEFINED\":1},\"first_sequence\":10,\"last_sequence\":11,\"metadata\":{\"source\":\"ARCH-003 reference\"},\"record_count\":2,\"records\":[{\"action_context\":null,\"attack_context\":null,\"event\":{\"action_id\":\"action-1\",\"actor_id\":\"actor-1\",\"attack_id\":null,\"event_id\":\"legacy:sample-stream:10\",\"event_type\":\"ACTION_START\",\"hit_id\":null,\"payload\":{\"adapter\":{\"adapter_name\":\"legacy_mvp_event_adapter\",\"adapter_version\":\"1.0\",\"binding_status\":\"BOUND\",\"legacy_event_type\":\"action_started\",\"mapping_status\":\"BOUND\",\"mechanic_id\":\"LEGACY_EVENT.ACTION_STARTED\",\"semantic_gap_ids\":[]},\"legacy_data\":{\"action_id\":\"action-1\",\"actor_id\":\"actor-1\"}},\"sequence\":10,\"source_id\":null,\"target_id\":null},\"hit_context\":null,\"notes\":[],\"numeric_values\":{},\"sequence\":10},{\"action_context\":null,\"attack_context\":null,\"event\":{\"action_id\":null,\"actor_id\":null,\"attack_id\":null,\"event_id\":\"legacy:sample-stream:11\",\"event_type\":\"CONTENT_DEFINED\",\"hit_id\":null,\"payload\":{\"adapter\":{\"adapter_name\":\"legacy_mvp_event_adapter\",\"adapter_version\":\"1.0\",\"binding_status\":\"UNRESOLVED\",\"legacy_event_type\":\"unit_defeated\",\"mapping_status\":\"AMBIGUOUS\",\"mechanic_id\":\"LEGACY_EVENT.UNIT_DEFEATED_LIFECYCLE\",\"semantic_gap_ids\":[\"LEGACY_EVENT.UNIT_DEFEATED_LIFECYCLE\"]},\"legacy_data\":{\"killer_id\":\"actor-1\",\"target_id\":\"enemy-1\"}},\"sequence\":11,\"source_id\":null,\"target_id\":\"enemy-1\"},\"hit_context\":null,\"notes\":[],\"numeric_values\":{},\"sequence\":11}],\"schema_name\":\"hsr_runtime_trace\",\"schema_version\":\"1.0\",\"semantic_gap_ids\":[\"LEGACY_EVENT.UNIT_DEFEATED_LIFECYCLE\"],\"sequence_policy\":\"CONTIGUOUS\",\"trace_id\":\"sample-trace\"}",
+    "compact_sha256": "d9a123ccc03b1eec9a816ec0d55bf024998d3b656b27fa4f807439d7e34ad6bd",
+    "pretty_json": "{\n  \"event_type_counts\": {\n    \"ACTION_START\": 1,\n    \"CONTENT_DEFINED\": 1\n  },\n  \"first_sequence\": 10,\n  \"last_sequence\": 11,\n  \"metadata\": {\n    \"source\": \"ARCH-003 reference\"\n  },\n  \"record_count\": 2,\n  \"records\": [\n    {\n      \"action_context\": null,\n      \"attack_context\": null,\n      \"event\": {\n        \"action_id\": \"action-1\",\n        \"actor_id\": \"actor-1\",\n        \"attack_id\": null,\n        \"event_id\": \"legacy:sample-stream:10\",\n        \"event_type\": \"ACTION_START\",\n        \"hit_id\": null,\n        \"payload\": {\n          \"adapter\": {\n            \"adapter_name\": \"legacy_mvp_event_adapter\",\n            \"adapter_version\": \"1.0\",\n            \"binding_status\": \"BOUND\",\n            \"legacy_event_type\": \"action_started\",\n            \"mapping_status\": \"BOUND\",\n            \"mechanic_id\": \"LEGACY_EVENT.ACTION_STARTED\",\n            \"semantic_gap_ids\": []\n          },\n          \"legacy_data\": {\n            \"action_id\": \"action-1\",\n            \"actor_id\": \"actor-1\"\n          }\n        },\n        \"sequence\": 10,\n        \"source_id\": null,\n        \"target_id\": null\n      },\n      \"hit_context\": null,\n      \"notes\": [],\n      \"numeric_values\": {},\n      \"sequence\": 10\n    },\n    {\n      \"action_context\": null,\n      \"attack_context\": null,\n      \"event\": {\n        \"action_id\": null,\n        \"actor_id\": null,\n        \"attack_id\": null,\n        \"event_id\": \"legacy:sample-stream:11\",\n        \"event_type\": \"CONTENT_DEFINED\",\n        \"hit_id\": null,\n        \"payload\": {\n          \"adapter\": {\n            \"adapter_name\": \"legacy_mvp_event_adapter\",\n            \"adapter_version\": \"1.0\",\n            \"binding_status\": \"UNRESOLVED\",\n            \"legacy_event_type\": \"unit_defeated\",\n            \"mapping_status\": \"AMBIGUOUS\",\n            \"mechanic_id\": \"LEGACY_EVENT.UNIT_DEFEATED_LIFECYCLE\",\n            \"semantic_gap_ids\": [\n              \"LEGACY_EVENT.UNIT_DEFEATED_LIFECYCLE\"\n            ]\n          },\n          \"legacy_data\": {\n            \"killer_id\": \"actor-1\",\n            \"target_id\": \"enemy-1\"\n          }\n        },\n        \"sequence\": 11,\n        \"source_id\": null,\n        \"target_id\": \"enemy-1\"\n      },\n      \"hit_context\": null,\n      \"notes\": [],\n      \"numeric_values\": {},\n      \"sequence\": 11\n    }\n  ],\n  \"schema_name\": \"hsr_runtime_trace\",\n  \"schema_version\": \"1.0\",\n  \"semantic_gap_ids\": [\n    \"LEGACY_EVENT.UNIT_DEFEATED_LIFECYCLE\"\n  ],\n  \"sequence_policy\": \"CONTIGUOUS\",\n  \"trace_id\": \"sample-trace\"\n}\n",
+    "pretty_sha256": "71fa9c77239c30c2aa694a2a8e16f84538b37e3191db4318cf20c09154834d8f",
+    "expected": {
+      "trace_id": "sample-trace",
+      "record_count": 2,
+      "first_sequence": 10,
+      "last_sequence": 11,
+      "event_ids": [
+        "legacy:sample-stream:10",
+        "legacy:sample-stream:11"
+      ],
+      "canonical_forms": [
+        "COMPACT",
+        "PRETTY"
+      ]
+    }
+  },
+  "tamper_cases": [
+    {
+      "id": "INVALID_UTF8",
+      "payload_hex": "ff",
+      "expected_error": "RuntimeTraceEncodingError"
+    },
+    {
+      "id": "UTF8_BOM",
+      "payload_hex": "efbbbf7b226576656e745f747970655f636f756e7473223a7b22414354494f4e5f5354415254223a312c22434f4e54454e545f444546494e4544223a317d2c2266697273745f73657175656e6365223a31302c226c6173745f73657175656e6365223a31312c226d65746164617461223a7b22736f75726365223a22415243482d303033207265666572656e6365227d2c227265636f72645f636f756e74223a322c227265636f726473223a5b7b22616374696f6e5f636f6e74657874223a6e756c6c2c2261747461636b5f636f6e74657874223a6e756c6c2c226576656e74223a7b22616374696f6e5f6964223a22616374696f6e2d31222c226163746f725f6964223a226163746f722d31222c2261747461636b5f6964223a6e756c6c2c226576656e745f6964223a226c65676163793a73616d706c652d73747265616d3a3130222c226576656e745f74797065223a22414354494f4e5f5354415254222c226869745f6964223a6e756c6c2c227061796c6f6164223a7b2261646170746572223a7b22616461707465725f6e616d65223a226c65676163795f6d76705f6576656e745f61646170746572222c22616461707465725f76657273696f6e223a22312e30222c2262696e64696e675f737461747573223a22424f554e44222c226c65676163795f6576656e745f74797065223a22616374696f6e5f73746172746564222c226d617070696e675f737461747573223a22424f554e44222c226d656368616e69635f6964223a224c45474143595f4556454e542e414354494f4e5f53544152544544222c2273656d616e7469635f6761705f696473223a5b5d7d2c226c65676163795f64617461223a7b22616374696f6e5f6964223a22616374696f6e2d31222c226163746f725f6964223a226163746f722d31227d7d2c2273657175656e6365223a31302c22736f757263655f6964223a6e756c6c2c227461726765745f6964223a6e756c6c7d2c226869745f636f6e74657874223a6e756c6c2c226e6f746573223a5b5d2c226e756d657269635f76616c756573223a7b7d2c2273657175656e6365223a31307d2c7b22616374696f6e5f636f6e74657874223a6e756c6c2c2261747461636b5f636f6e74657874223a6e756c6c2c226576656e74223a7b22616374696f6e5f6964223a6e756c6c2c226163746f725f6964223a6e756c6c2c2261747461636b5f6964223a6e756c6c2c226576656e745f6964223a226c65676163793a73616d706c652d73747265616d3a3131222c226576656e745f74797065223a22434f4e54454e545f444546494e4544222c226869745f6964223a6e756c6c2c227061796c6f6164223a7b2261646170746572223a7b22616461707465725f6e616d65223a226c65676163795f6d76705f6576656e745f61646170746572222c22616461707465725f76657273696f6e223a22312e30222c2262696e64696e675f737461747573223a22554e5245534f4c564544222c226c65676163795f6576656e745f74797065223a22756e69745f6465666561746564222c226d617070696e675f737461747573223a22414d424947554f5553222c226d656368616e69635f6964223a224c45474143595f4556454e542e554e49545f44454645415445445f4c4946454359434c45222c2273656d616e7469635f6761705f696473223a5b224c45474143595f4556454e542e554e49545f44454645415445445f4c4946454359434c45225d7d2c226c65676163795f64617461223a7b226b696c6c65725f6964223a226163746f722d31222c227461726765745f6964223a22656e656d792d31227d7d2c2273657175656e6365223a31312c22736f757263655f6964223a6e756c6c2c227461726765745f6964223a22656e656d792d31227d2c226869745f636f6e74657874223a6e756c6c2c226e6f746573223a5b5d2c226e756d657269635f76616c756573223a7b7d2c2273657175656e6365223a31317d5d2c22736368656d615f6e616d65223a226873725f72756e74696d655f7472616365222c22736368656d615f76657273696f6e223a22312e30222c2273656d616e7469635f6761705f696473223a5b224c45474143595f4556454e542e554e49545f44454645415445445f4c4946454359434c45225d2c2273657175656e63655f706f6c696379223a22434f4e544947554f5553222c2274726163655f6964223a2273616d706c652d7472616365227d",
+      "expected_error": "RuntimeTraceEncodingError"
+    },
+    {
+      "id": "JSON_NAN",
+      "payload_text": "{\"value\":NaN}",
+      "expected_error": "RuntimeTraceJsonError"
+    },
+    {
+      "id": "DUPLICATE_TOP_LEVEL_KEY",
+      "payload_text": "{\"schema_name\":\"hsr_runtime_trace\",\"schema_name\":\"hsr_runtime_trace\",\"schema_version\":\"1.0\"}",
+      "expected_error": "DuplicateJsonKeyError"
+    },
+    {
+      "id": "DUPLICATE_NESTED_KEY",
+      "payload_text": "{\"schema_name\":\"hsr_runtime_trace\",\"schema_version\":\"1.0\",\"trace_id\":\"x\",\"sequence_policy\":\"CONTIGUOUS\",\"record_count\":0,\"first_sequence\":null,\"last_sequence\":null,\"event_type_counts\":{},\"semantic_gap_ids\":[],\"records\":[],\"metadata\":{\"x\":1,\"x\":2}}",
+      "expected_error": "DuplicateJsonKeyError"
+    },
+    {
+      "id": "WRONG_SCHEMA_VERSION",
+      "payload_text": "{\"event_type_counts\":{\"ACTION_START\":1,\"CONTENT_DEFINED\":1},\"first_sequence\":10,\"last_sequence\":11,\"metadata\":{\"source\":\"ARCH-003 reference\"},\"record_count\":2,\"records\":[{\"action_context\":null,\"attack_context\":null,\"event\":{\"action_id\":\"action-1\",\"actor_id\":\"actor-1\",\"attack_id\":null,\"event_id\":\"legacy:sample-stream:10\",\"event_type\":\"ACTION_START\",\"hit_id\":null,\"payload\":{\"adapter\":{\"adapter_name\":\"legacy_mvp_event_adapter\",\"adapter_version\":\"1.0\",\"binding_status\":\"BOUND\",\"legacy_event_type\":\"action_started\",\"mapping_status\":\"BOUND\",\"mechanic_id\":\"LEGACY_EVENT.ACTION_STARTED\",\"semantic_gap_ids\":[]},\"legacy_data\":{\"action_id\":\"action-1\",\"actor_id\":\"actor-1\"}},\"sequence\":10,\"source_id\":null,\"target_id\":null},\"hit_context\":null,\"notes\":[],\"numeric_values\":{},\"sequence\":10},{\"action_context\":null,\"attack_context\":null,\"event\":{\"action_id\":null,\"actor_id\":null,\"attack_id\":null,\"event_id\":\"legacy:sample-stream:11\",\"event_type\":\"CONTENT_DEFINED\",\"hit_id\":null,\"payload\":{\"adapter\":{\"adapter_name\":\"legacy_mvp_event_adapter\",\"adapter_version\":\"1.0\",\"binding_status\":\"UNRESOLVED\",\"legacy_event_type\":\"unit_defeated\",\"mapping_status\":\"AMBIGUOUS\",\"mechanic_id\":\"LEGACY_EVENT.UNIT_DEFEATED_LIFECYCLE\",\"semantic_gap_ids\":[\"LEGACY_EVENT.UNIT_DEFEATED_LIFECYCLE\"]},\"legacy_data\":{\"killer_id\":\"actor-1\",\"target_id\":\"enemy-1\"}},\"sequence\":11,\"source_id\":null,\"target_id\":\"enemy-1\"},\"hit_context\":null,\"notes\":[],\"numeric_values\":{},\"sequence\":11}],\"schema_name\":\"hsr_runtime_trace\",\"schema_version\":\"1.1\",\"semantic_gap_ids\":[\"LEGACY_EVENT.UNIT_DEFEATED_LIFECYCLE\"],\"sequence_policy\":\"CONTIGUOUS\",\"trace_id\":\"sample-trace\"}",
+      "expected_error": "UnsupportedRuntimeTraceVersionError"
+    },
+    {
+      "id": "EXTRA_TOP_LEVEL_FIELD",
+      "payload_text": "{\"event_type_counts\":{\"ACTION_START\":1,\"CONTENT_DEFINED\":1},\"first_sequence\":10,\"last_sequence\":11,\"metadata\":{\"source\":\"ARCH-003 reference\"},\"record_count\":2,\"records\":[{\"action_context\":null,\"attack_context\":null,\"event\":{\"action_id\":\"action-1\",\"actor_id\":\"actor-1\",\"attack_id\":null,\"event_id\":\"legacy:sample-stream:10\",\"event_type\":\"ACTION_START\",\"hit_id\":null,\"payload\":{\"adapter\":{\"adapter_name\":\"legacy_mvp_event_adapter\",\"adapter_version\":\"1.0\",\"binding_status\":\"BOUND\",\"legacy_event_type\":\"action_started\",\"mapping_status\":\"BOUND\",\"mechanic_id\":\"LEGACY_EVENT.ACTION_STARTED\",\"semantic_gap_ids\":[]},\"legacy_data\":{\"action_id\":\"action-1\",\"actor_id\":\"actor-1\"}},\"sequence\":10,\"source_id\":null,\"target_id\":null},\"hit_context\":null,\"notes\":[],\"numeric_values\":{},\"sequence\":10},{\"action_context\":null,\"attack_context\":null,\"event\":{\"action_id\":null,\"actor_id\":null,\"attack_id\":null,\"event_id\":\"legacy:sample-stream:11\",\"event_type\":\"CONTENT_DEFINED\",\"hit_id\":null,\"payload\":{\"adapter\":{\"adapter_name\":\"legacy_mvp_event_adapter\",\"adapter_version\":\"1.0\",\"binding_status\":\"UNRESOLVED\",\"legacy_event_type\":\"unit_defeated\",\"mapping_status\":\"AMBIGUOUS\",\"mechanic_id\":\"LEGACY_EVENT.UNIT_DEFEATED_LIFECYCLE\",\"semantic_gap_ids\":[\"LEGACY_EVENT.UNIT_DEFEATED_LIFECYCLE\"]},\"legacy_data\":{\"killer_id\":\"actor-1\",\"target_id\":\"enemy-1\"}},\"sequence\":11,\"source_id\":null,\"target_id\":\"enemy-1\"},\"hit_context\":null,\"notes\":[],\"numeric_values\":{},\"sequence\":11}],\"schema_name\":\"hsr_runtime_trace\",\"schema_version\":\"1.0\",\"semantic_gap_ids\":[\"LEGACY_EVENT.UNIT_DEFEATED_LIFECYCLE\"],\"sequence_policy\":\"CONTIGUOUS\",\"trace_id\":\"sample-trace\",\"unexpected\":true}",
+      "expected_error": "RuntimeTraceSchemaError"
+    },
+    {
+      "id": "MISSING_TOP_LEVEL_FIELD",
+      "payload_text": "{\"event_type_counts\":{\"ACTION_START\":1,\"CONTENT_DEFINED\":1},\"first_sequence\":10,\"last_sequence\":11,\"record_count\":2,\"records\":[{\"action_context\":null,\"attack_context\":null,\"event\":{\"action_id\":\"action-1\",\"actor_id\":\"actor-1\",\"attack_id\":null,\"event_id\":\"legacy:sample-stream:10\",\"event_type\":\"ACTION_START\",\"hit_id\":null,\"payload\":{\"adapter\":{\"adapter_name\":\"legacy_mvp_event_adapter\",\"adapter_version\":\"1.0\",\"binding_status\":\"BOUND\",\"legacy_event_type\":\"action_started\",\"mapping_status\":\"BOUND\",\"mechanic_id\":\"LEGACY_EVENT.ACTION_STARTED\",\"semantic_gap_ids\":[]},\"legacy_data\":{\"action_id\":\"action-1\",\"actor_id\":\"actor-1\"}},\"sequence\":10,\"source_id\":null,\"target_id\":null},\"hit_context\":null,\"notes\":[],\"numeric_values\":{},\"sequence\":10},{\"action_context\":null,\"attack_context\":null,\"event\":{\"action_id\":null,\"actor_id\":null,\"attack_id\":null,\"event_id\":\"legacy:sample-stream:11\",\"event_type\":\"CONTENT_DEFINED\",\"hit_id\":null,\"payload\":{\"adapter\":{\"adapter_name\":\"legacy_mvp_event_adapter\",\"adapter_version\":\"1.0\",\"binding_status\":\"UNRESOLVED\",\"legacy_event_type\":\"unit_defeated\",\"mapping_status\":\"AMBIGUOUS\",\"mechanic_id\":\"LEGACY_EVENT.UNIT_DEFEATED_LIFECYCLE\",\"semantic_gap_ids\":[\"LEGACY_EVENT.UNIT_DEFEATED_LIFECYCLE\"]},\"legacy_data\":{\"killer_id\":\"actor-1\",\"target_id\":\"enemy-1\"}},\"sequence\":11,\"source_id\":null,\"target_id\":\"enemy-1\"},\"hit_context\":null,\"notes\":[],\"numeric_values\":{},\"sequence\":11}],\"schema_name\":\"hsr_runtime_trace\",\"schema_version\":\"1.0\",\"semantic_gap_ids\":[\"LEGACY_EVENT.UNIT_DEFEATED_LIFECYCLE\"],\"sequence_policy\":\"CONTIGUOUS\",\"trace_id\":\"sample-trace\"}",
+      "expected_error": "RuntimeTraceSchemaError"
+    },
+    {
+      "id": "RECORD_COUNT_MISMATCH",
+      "payload_text": "{\"event_type_counts\":{\"ACTION_START\":1,\"CONTENT_DEFINED\":1},\"first_sequence\":10,\"last_sequence\":11,\"metadata\":{\"source\":\"ARCH-003 reference\"},\"record_count\":3,\"records\":[{\"action_context\":null,\"attack_context\":null,\"event\":{\"action_id\":\"action-1\",\"actor_id\":\"actor-1\",\"attack_id\":null,\"event_id\":\"legacy:sample-stream:10\",\"event_type\":\"ACTION_START\",\"hit_id\":null,\"payload\":{\"adapter\":{\"adapter_name\":\"legacy_mvp_event_adapter\",\"adapter_version\":\"1.0\",\"binding_status\":\"BOUND\",\"legacy_event_type\":\"action_started\",\"mapping_status\":\"BOUND\",\"mechanic_id\":\"LEGACY_EVENT.ACTION_STARTED\",\"semantic_gap_ids\":[]},\"legacy_data\":{\"action_id\":\"action-1\",\"actor_id\":\"actor-1\"}},\"sequence\":10,\"source_id\":null,\"target_id\":null},\"hit_context\":null,\"notes\":[],\"numeric_values\":{},\"sequence\":10},{\"action_context\":null,\"attack_context\":null,\"event\":{\"action_id\":null,\"actor_id\":null,\"attack_id\":null,\"event_id\":\"legacy:sample-stream:11\",\"event_type\":\"CONTENT_DEFINED\",\"hit_id\":null,\"payload\":{\"adapter\":{\"adapter_name\":\"legacy_mvp_event_adapter\",\"adapter_version\":\"1.0\",\"binding_status\":\"UNRESOLVED\",\"legacy_event_type\":\"unit_defeated\",\"mapping_status\":\"AMBIGUOUS\",\"mechanic_id\":\"LEGACY_EVENT.UNIT_DEFEATED_LIFECYCLE\",\"semantic_gap_ids\":[\"LEGACY_EVENT.UNIT_DEFEATED_LIFECYCLE\"]},\"legacy_data\":{\"killer_id\":\"actor-1\",\"target_id\":\"enemy-1\"}},\"sequence\":11,\"source_id\":null,\"target_id\":\"enemy-1\"},\"hit_context\":null,\"notes\":[],\"numeric_values\":{},\"sequence\":11}],\"schema_name\":\"hsr_runtime_trace\",\"schema_version\":\"1.0\",\"semantic_gap_ids\":[\"LEGACY_EVENT.UNIT_DEFEATED_LIFECYCLE\"],\"sequence_policy\":\"CONTIGUOUS\",\"trace_id\":\"sample-trace\"}",
+      "expected_error": "RuntimeTraceSchemaError"
+    },
+    {
+      "id": "CONTIGUOUS_SEQUENCE_GAP",
+      "payload_text": "{\"event_type_counts\":{\"ACTION_START\":1,\"CONTENT_DEFINED\":1},\"first_sequence\":10,\"last_sequence\":12,\"metadata\":{\"source\":\"ARCH-003 reference\"},\"record_count\":2,\"records\":[{\"action_context\":null,\"attack_context\":null,\"event\":{\"action_id\":\"action-1\",\"actor_id\":\"actor-1\",\"attack_id\":null,\"event_id\":\"legacy:sample-stream:10\",\"event_type\":\"ACTION_START\",\"hit_id\":null,\"payload\":{\"adapter\":{\"adapter_name\":\"legacy_mvp_event_adapter\",\"adapter_version\":\"1.0\",\"binding_status\":\"BOUND\",\"legacy_event_type\":\"action_started\",\"mapping_status\":\"BOUND\",\"mechanic_id\":\"LEGACY_EVENT.ACTION_STARTED\",\"semantic_gap_ids\":[]},\"legacy_data\":{\"action_id\":\"action-1\",\"actor_id\":\"actor-1\"}},\"sequence\":10,\"source_id\":null,\"target_id\":null},\"hit_context\":null,\"notes\":[],\"numeric_values\":{},\"sequence\":10},{\"action_context\":null,\"attack_context\":null,\"event\":{\"action_id\":null,\"actor_id\":null,\"attack_id\":null,\"event_id\":\"legacy:sample-stream:11\",\"event_type\":\"CONTENT_DEFINED\",\"hit_id\":null,\"payload\":{\"adapter\":{\"adapter_name\":\"legacy_mvp_event_adapter\",\"adapter_version\":\"1.0\",\"binding_status\":\"UNRESOLVED\",\"legacy_event_type\":\"unit_defeated\",\"mapping_status\":\"AMBIGUOUS\",\"mechanic_id\":\"LEGACY_EVENT.UNIT_DEFEATED_LIFECYCLE\",\"semantic_gap_ids\":[\"LEGACY_EVENT.UNIT_DEFEATED_LIFECYCLE\"]},\"legacy_data\":{\"killer_id\":\"actor-1\",\"target_id\":\"enemy-1\"}},\"sequence\":12,\"source_id\":null,\"target_id\":\"enemy-1\"},\"hit_context\":null,\"notes\":[],\"numeric_values\":{},\"sequence\":12}],\"schema_name\":\"hsr_runtime_trace\",\"schema_version\":\"1.0\",\"semantic_gap_ids\":[\"LEGACY_EVENT.UNIT_DEFEATED_LIFECYCLE\"],\"sequence_policy\":\"CONTIGUOUS\",\"trace_id\":\"sample-trace\"}",
+      "expected_error": "RuntimeTraceIntegrityError"
+    },
+    {
+      "id": "DUPLICATE_EVENT_ID",
+      "payload_text": "{\"event_type_counts\":{\"ACTION_START\":1,\"CONTENT_DEFINED\":1},\"first_sequence\":10,\"last_sequence\":11,\"metadata\":{\"source\":\"ARCH-003 reference\"},\"record_count\":2,\"records\":[{\"action_context\":null,\"attack_context\":null,\"event\":{\"action_id\":\"action-1\",\"actor_id\":\"actor-1\",\"attack_id\":null,\"event_id\":\"legacy:sample-stream:10\",\"event_type\":\"ACTION_START\",\"hit_id\":null,\"payload\":{\"adapter\":{\"adapter_name\":\"legacy_mvp_event_adapter\",\"adapter_version\":\"1.0\",\"binding_status\":\"BOUND\",\"legacy_event_type\":\"action_started\",\"mapping_status\":\"BOUND\",\"mechanic_id\":\"LEGACY_EVENT.ACTION_STARTED\",\"semantic_gap_ids\":[]},\"legacy_data\":{\"action_id\":\"action-1\",\"actor_id\":\"actor-1\"}},\"sequence\":10,\"source_id\":null,\"target_id\":null},\"hit_context\":null,\"notes\":[],\"numeric_values\":{},\"sequence\":10},{\"action_context\":null,\"attack_context\":null,\"event\":{\"action_id\":null,\"actor_id\":null,\"attack_id\":null,\"event_id\":\"legacy:sample-stream:10\",\"event_type\":\"CONTENT_DEFINED\",\"hit_id\":null,\"payload\":{\"adapter\":{\"adapter_name\":\"legacy_mvp_event_adapter\",\"adapter_version\":\"1.0\",\"binding_status\":\"UNRESOLVED\",\"legacy_event_type\":\"unit_defeated\",\"mapping_status\":\"AMBIGUOUS\",\"mechanic_id\":\"LEGACY_EVENT.UNIT_DEFEATED_LIFECYCLE\",\"semantic_gap_ids\":[\"LEGACY_EVENT.UNIT_DEFEATED_LIFECYCLE\"]},\"legacy_data\":{\"killer_id\":\"actor-1\",\"target_id\":\"enemy-1\"}},\"sequence\":11,\"source_id\":null,\"target_id\":\"enemy-1\"},\"hit_context\":null,\"notes\":[],\"numeric_values\":{},\"sequence\":11}],\"schema_name\":\"hsr_runtime_trace\",\"schema_version\":\"1.0\",\"semantic_gap_ids\":[\"LEGACY_EVENT.UNIT_DEFEATED_LIFECYCLE\"],\"sequence_policy\":\"CONTIGUOUS\",\"trace_id\":\"sample-trace\"}",
+      "expected_error": "RuntimeTraceIntegrityError"
+    },
+    {
+      "id": "RECORD_EVENT_SEQUENCE_MISMATCH",
+      "payload_text": "{\"event_type_counts\":{\"ACTION_START\":1,\"CONTENT_DEFINED\":1},\"first_sequence\":10,\"last_sequence\":11,\"metadata\":{\"source\":\"ARCH-003 reference\"},\"record_count\":2,\"records\":[{\"action_context\":null,\"attack_context\":null,\"event\":{\"action_id\":\"action-1\",\"actor_id\":\"actor-1\",\"attack_id\":null,\"event_id\":\"legacy:sample-stream:10\",\"event_type\":\"ACTION_START\",\"hit_id\":null,\"payload\":{\"adapter\":{\"adapter_name\":\"legacy_mvp_event_adapter\",\"adapter_version\":\"1.0\",\"binding_status\":\"BOUND\",\"legacy_event_type\":\"action_started\",\"mapping_status\":\"BOUND\",\"mechanic_id\":\"LEGACY_EVENT.ACTION_STARTED\",\"semantic_gap_ids\":[]},\"legacy_data\":{\"action_id\":\"action-1\",\"actor_id\":\"actor-1\"}},\"sequence\":10,\"source_id\":null,\"target_id\":null},\"hit_context\":null,\"notes\":[],\"numeric_values\":{},\"sequence\":10},{\"action_context\":null,\"attack_context\":null,\"event\":{\"action_id\":null,\"actor_id\":null,\"attack_id\":null,\"event_id\":\"legacy:sample-stream:11\",\"event_type\":\"CONTENT_DEFINED\",\"hit_id\":null,\"payload\":{\"adapter\":{\"adapter_name\":\"legacy_mvp_event_adapter\",\"adapter_version\":\"1.0\",\"binding_status\":\"UNRESOLVED\",\"legacy_event_type\":\"unit_defeated\",\"mapping_status\":\"AMBIGUOUS\",\"mechanic_id\":\"LEGACY_EVENT.UNIT_DEFEATED_LIFECYCLE\",\"semantic_gap_ids\":[\"LEGACY_EVENT.UNIT_DEFEATED_LIFECYCLE\"]},\"legacy_data\":{\"killer_id\":\"actor-1\",\"target_id\":\"enemy-1\"}},\"sequence\":12,\"source_id\":null,\"target_id\":\"enemy-1\"},\"hit_context\":null,\"notes\":[],\"numeric_values\":{},\"sequence\":11}],\"schema_name\":\"hsr_runtime_trace\",\"schema_version\":\"1.0\",\"semantic_gap_ids\":[\"LEGACY_EVENT.UNIT_DEFEATED_LIFECYCLE\"],\"sequence_policy\":\"CONTIGUOUS\",\"trace_id\":\"sample-trace\"}",
+      "expected_error": "RuntimeTraceIntegrityError"
+    },
+    {
+      "id": "SEMANTIC_GAP_SUMMARY_MISMATCH",
+      "payload_text": "{\"event_type_counts\":{\"ACTION_START\":1,\"CONTENT_DEFINED\":1},\"first_sequence\":10,\"last_sequence\":11,\"metadata\":{\"source\":\"ARCH-003 reference\"},\"record_count\":2,\"records\":[{\"action_context\":null,\"attack_context\":null,\"event\":{\"action_id\":\"action-1\",\"actor_id\":\"actor-1\",\"attack_id\":null,\"event_id\":\"legacy:sample-stream:10\",\"event_type\":\"ACTION_START\",\"hit_id\":null,\"payload\":{\"adapter\":{\"adapter_name\":\"legacy_mvp_event_adapter\",\"adapter_version\":\"1.0\",\"binding_status\":\"BOUND\",\"legacy_event_type\":\"action_started\",\"mapping_status\":\"BOUND\",\"mechanic_id\":\"LEGACY_EVENT.ACTION_STARTED\",\"semantic_gap_ids\":[]},\"legacy_data\":{\"action_id\":\"action-1\",\"actor_id\":\"actor-1\"}},\"sequence\":10,\"source_id\":null,\"target_id\":null},\"hit_context\":null,\"notes\":[],\"numeric_values\":{},\"sequence\":10},{\"action_context\":null,\"attack_context\":null,\"event\":{\"action_id\":null,\"actor_id\":null,\"attack_id\":null,\"event_id\":\"legacy:sample-stream:11\",\"event_type\":\"CONTENT_DEFINED\",\"hit_id\":null,\"payload\":{\"adapter\":{\"adapter_name\":\"legacy_mvp_event_adapter\",\"adapter_version\":\"1.0\",\"binding_status\":\"UNRESOLVED\",\"legacy_event_type\":\"unit_defeated\",\"mapping_status\":\"AMBIGUOUS\",\"mechanic_id\":\"LEGACY_EVENT.UNIT_DEFEATED_LIFECYCLE\",\"semantic_gap_ids\":[\"LEGACY_EVENT.UNIT_DEFEATED_LIFECYCLE\"]},\"legacy_data\":{\"killer_id\":\"actor-1\",\"target_id\":\"enemy-1\"}},\"sequence\":11,\"source_id\":null,\"target_id\":\"enemy-1\"},\"hit_context\":null,\"notes\":[],\"numeric_values\":{},\"sequence\":11}],\"schema_name\":\"hsr_runtime_trace\",\"schema_version\":\"1.0\",\"semantic_gap_ids\":[],\"sequence_policy\":\"CONTIGUOUS\",\"trace_id\":\"sample-trace\"}",
+      "expected_error": "RuntimeTraceIntegrityError"
+    },
+    {
+      "id": "NON_NULL_ACTION_CONTEXT",
+      "payload_text": "{\"event_type_counts\":{\"ACTION_START\":1,\"CONTENT_DEFINED\":1},\"first_sequence\":10,\"last_sequence\":11,\"metadata\":{\"source\":\"ARCH-003 reference\"},\"record_count\":2,\"records\":[{\"action_context\":{\"action_id\":\"action-1\"},\"attack_context\":null,\"event\":{\"action_id\":\"action-1\",\"actor_id\":\"actor-1\",\"attack_id\":null,\"event_id\":\"legacy:sample-stream:10\",\"event_type\":\"ACTION_START\",\"hit_id\":null,\"payload\":{\"adapter\":{\"adapter_name\":\"legacy_mvp_event_adapter\",\"adapter_version\":\"1.0\",\"binding_status\":\"BOUND\",\"legacy_event_type\":\"action_started\",\"mapping_status\":\"BOUND\",\"mechanic_id\":\"LEGACY_EVENT.ACTION_STARTED\",\"semantic_gap_ids\":[]},\"legacy_data\":{\"action_id\":\"action-1\",\"actor_id\":\"actor-1\"}},\"sequence\":10,\"source_id\":null,\"target_id\":null},\"hit_context\":null,\"notes\":[],\"numeric_values\":{},\"sequence\":10},{\"action_context\":null,\"attack_context\":null,\"event\":{\"action_id\":null,\"actor_id\":null,\"attack_id\":null,\"event_id\":\"legacy:sample-stream:11\",\"event_type\":\"CONTENT_DEFINED\",\"hit_id\":null,\"payload\":{\"adapter\":{\"adapter_name\":\"legacy_mvp_event_adapter\",\"adapter_version\":\"1.0\",\"binding_status\":\"UNRESOLVED\",\"legacy_event_type\":\"unit_defeated\",\"mapping_status\":\"AMBIGUOUS\",\"mechanic_id\":\"LEGACY_EVENT.UNIT_DEFEATED_LIFECYCLE\",\"semantic_gap_ids\":[\"LEGACY_EVENT.UNIT_DEFEATED_LIFECYCLE\"]},\"legacy_data\":{\"killer_id\":\"actor-1\",\"target_id\":\"enemy-1\"}},\"sequence\":11,\"source_id\":null,\"target_id\":\"enemy-1\"},\"hit_context\":null,\"notes\":[],\"numeric_values\":{},\"sequence\":11}],\"schema_name\":\"hsr_runtime_trace\",\"schema_version\":\"1.0\",\"semantic_gap_ids\":[\"LEGACY_EVENT.UNIT_DEFEATED_LIFECYCLE\"],\"sequence_policy\":\"CONTIGUOUS\",\"trace_id\":\"sample-trace\"}",
+      "expected_error": "RuntimeTraceSchemaError"
+    },
+    {
+      "id": "NONEMPTY_NUMERIC_VALUES",
+      "payload_text": "{\"event_type_counts\":{\"ACTION_START\":1,\"CONTENT_DEFINED\":1},\"first_sequence\":10,\"last_sequence\":11,\"metadata\":{\"source\":\"ARCH-003 reference\"},\"record_count\":2,\"records\":[{\"action_context\":null,\"attack_context\":null,\"event\":{\"action_id\":\"action-1\",\"actor_id\":\"actor-1\",\"attack_id\":null,\"event_id\":\"legacy:sample-stream:10\",\"event_type\":\"ACTION_START\",\"hit_id\":null,\"payload\":{\"adapter\":{\"adapter_name\":\"legacy_mvp_event_adapter\",\"adapter_version\":\"1.0\",\"binding_status\":\"BOUND\",\"legacy_event_type\":\"action_started\",\"mapping_status\":\"BOUND\",\"mechanic_id\":\"LEGACY_EVENT.ACTION_STARTED\",\"semantic_gap_ids\":[]},\"legacy_data\":{\"action_id\":\"action-1\",\"actor_id\":\"actor-1\"}},\"sequence\":10,\"source_id\":null,\"target_id\":null},\"hit_context\":null,\"notes\":[],\"numeric_values\":{\"damage\":{\"displayed_value\":\"100\",\"quantization_policy\":\"NONE\",\"raw_value\":\"100\"}},\"sequence\":10},{\"action_context\":null,\"attack_context\":null,\"event\":{\"action_id\":null,\"actor_id\":null,\"attack_id\":null,\"event_id\":\"legacy:sample-stream:11\",\"event_type\":\"CONTENT_DEFINED\",\"hit_id\":null,\"payload\":{\"adapter\":{\"adapter_name\":\"legacy_mvp_event_adapter\",\"adapter_version\":\"1.0\",\"binding_status\":\"UNRESOLVED\",\"legacy_event_type\":\"unit_defeated\",\"mapping_status\":\"AMBIGUOUS\",\"mechanic_id\":\"LEGACY_EVENT.UNIT_DEFEATED_LIFECYCLE\",\"semantic_gap_ids\":[\"LEGACY_EVENT.UNIT_DEFEATED_LIFECYCLE\"]},\"legacy_data\":{\"killer_id\":\"actor-1\",\"target_id\":\"enemy-1\"}},\"sequence\":11,\"source_id\":null,\"target_id\":\"enemy-1\"},\"hit_context\":null,\"notes\":[],\"numeric_values\":{},\"sequence\":11}],\"schema_name\":\"hsr_runtime_trace\",\"schema_version\":\"1.0\",\"semantic_gap_ids\":[\"LEGACY_EVENT.UNIT_DEFEATED_LIFECYCLE\"],\"sequence_policy\":\"CONTIGUOUS\",\"trace_id\":\"sample-trace\"}",
+      "expected_error": "RuntimeTraceSchemaError"
+    },
+    {
+      "id": "NONEMPTY_NOTES",
+      "payload_text": "{\"event_type_counts\":{\"ACTION_START\":1,\"CONTENT_DEFINED\":1},\"first_sequence\":10,\"last_sequence\":11,\"metadata\":{\"source\":\"ARCH-003 reference\"},\"record_count\":2,\"records\":[{\"action_context\":null,\"attack_context\":null,\"event\":{\"action_id\":\"action-1\",\"actor_id\":\"actor-1\",\"attack_id\":null,\"event_id\":\"legacy:sample-stream:10\",\"event_type\":\"ACTION_START\",\"hit_id\":null,\"payload\":{\"adapter\":{\"adapter_name\":\"legacy_mvp_event_adapter\",\"adapter_version\":\"1.0\",\"binding_status\":\"BOUND\",\"legacy_event_type\":\"action_started\",\"mapping_status\":\"BOUND\",\"mechanic_id\":\"LEGACY_EVENT.ACTION_STARTED\",\"semantic_gap_ids\":[]},\"legacy_data\":{\"action_id\":\"action-1\",\"actor_id\":\"actor-1\"}},\"sequence\":10,\"source_id\":null,\"target_id\":null},\"hit_context\":null,\"notes\":[\"not permitted in schema v1 projection\"],\"numeric_values\":{},\"sequence\":10},{\"action_context\":null,\"attack_context\":null,\"event\":{\"action_id\":null,\"actor_id\":null,\"attack_id\":null,\"event_id\":\"legacy:sample-stream:11\",\"event_type\":\"CONTENT_DEFINED\",\"hit_id\":null,\"payload\":{\"adapter\":{\"adapter_name\":\"legacy_mvp_event_adapter\",\"adapter_version\":\"1.0\",\"binding_status\":\"UNRESOLVED\",\"legacy_event_type\":\"unit_defeated\",\"mapping_status\":\"AMBIGUOUS\",\"mechanic_id\":\"LEGACY_EVENT.UNIT_DEFEATED_LIFECYCLE\",\"semantic_gap_ids\":[\"LEGACY_EVENT.UNIT_DEFEATED_LIFECYCLE\"]},\"legacy_data\":{\"killer_id\":\"actor-1\",\"target_id\":\"enemy-1\"}},\"sequence\":11,\"source_id\":null,\"target_id\":\"enemy-1\"},\"hit_context\":null,\"notes\":[],\"numeric_values\":{},\"sequence\":11}],\"schema_name\":\"hsr_runtime_trace\",\"schema_version\":\"1.0\",\"semantic_gap_ids\":[\"LEGACY_EVENT.UNIT_DEFEATED_LIFECYCLE\"],\"sequence_policy\":\"CONTIGUOUS\",\"trace_id\":\"sample-trace\"}",
+      "expected_error": "RuntimeTraceSchemaError"
+    },
+    {
+      "id": "UNKNOWN_EVENT_TYPE",
+      "payload_text": "{\"event_type_counts\":{\"CONTENT_DEFINED\":1,\"FUTURE_EVENT\":1},\"first_sequence\":10,\"last_sequence\":11,\"metadata\":{\"source\":\"ARCH-003 reference\"},\"record_count\":2,\"records\":[{\"action_context\":null,\"attack_context\":null,\"event\":{\"action_id\":\"action-1\",\"actor_id\":\"actor-1\",\"attack_id\":null,\"event_id\":\"legacy:sample-stream:10\",\"event_type\":\"FUTURE_EVENT\",\"hit_id\":null,\"payload\":{\"adapter\":{\"adapter_name\":\"legacy_mvp_event_adapter\",\"adapter_version\":\"1.0\",\"binding_status\":\"BOUND\",\"legacy_event_type\":\"action_started\",\"mapping_status\":\"BOUND\",\"mechanic_id\":\"LEGACY_EVENT.ACTION_STARTED\",\"semantic_gap_ids\":[]},\"legacy_data\":{\"action_id\":\"action-1\",\"actor_id\":\"actor-1\"}},\"sequence\":10,\"source_id\":null,\"target_id\":null},\"hit_context\":null,\"notes\":[],\"numeric_values\":{},\"sequence\":10},{\"action_context\":null,\"attack_context\":null,\"event\":{\"action_id\":null,\"actor_id\":null,\"attack_id\":null,\"event_id\":\"legacy:sample-stream:11\",\"event_type\":\"CONTENT_DEFINED\",\"hit_id\":null,\"payload\":{\"adapter\":{\"adapter_name\":\"legacy_mvp_event_adapter\",\"adapter_version\":\"1.0\",\"binding_status\":\"UNRESOLVED\",\"legacy_event_type\":\"unit_defeated\",\"mapping_status\":\"AMBIGUOUS\",\"mechanic_id\":\"LEGACY_EVENT.UNIT_DEFEATED_LIFECYCLE\",\"semantic_gap_ids\":[\"LEGACY_EVENT.UNIT_DEFEATED_LIFECYCLE\"]},\"legacy_data\":{\"killer_id\":\"actor-1\",\"target_id\":\"enemy-1\"}},\"sequence\":11,\"source_id\":null,\"target_id\":\"enemy-1\"},\"hit_context\":null,\"notes\":[],\"numeric_values\":{},\"sequence\":11}],\"schema_name\":\"hsr_runtime_trace\",\"schema_version\":\"1.0\",\"semantic_gap_ids\":[\"LEGACY_EVENT.UNIT_DEFEATED_LIFECYCLE\"],\"sequence_policy\":\"CONTIGUOUS\",\"trace_id\":\"sample-trace\"}",
+      "expected_error": "RuntimeTraceSchemaError"
+    },
+    {
+      "id": "ADAPTER_GAP_STRING_SCALAR",
+      "payload_text": "{\"event_type_counts\":{\"ACTION_START\":1,\"CONTENT_DEFINED\":1},\"first_sequence\":10,\"last_sequence\":11,\"metadata\":{\"source\":\"ARCH-003 reference\"},\"record_count\":2,\"records\":[{\"action_context\":null,\"attack_context\":null,\"event\":{\"action_id\":\"action-1\",\"actor_id\":\"actor-1\",\"attack_id\":null,\"event_id\":\"legacy:sample-stream:10\",\"event_type\":\"ACTION_START\",\"hit_id\":null,\"payload\":{\"adapter\":{\"adapter_name\":\"legacy_mvp_event_adapter\",\"adapter_version\":\"1.0\",\"binding_status\":\"BOUND\",\"legacy_event_type\":\"action_started\",\"mapping_status\":\"BOUND\",\"mechanic_id\":\"LEGACY_EVENT.ACTION_STARTED\",\"semantic_gap_ids\":[]},\"legacy_data\":{\"action_id\":\"action-1\",\"actor_id\":\"actor-1\"}},\"sequence\":10,\"source_id\":null,\"target_id\":null},\"hit_context\":null,\"notes\":[],\"numeric_values\":{},\"sequence\":10},{\"action_context\":null,\"attack_context\":null,\"event\":{\"action_id\":null,\"actor_id\":null,\"attack_id\":null,\"event_id\":\"legacy:sample-stream:11\",\"event_type\":\"CONTENT_DEFINED\",\"hit_id\":null,\"payload\":{\"adapter\":{\"adapter_name\":\"legacy_mvp_event_adapter\",\"adapter_version\":\"1.0\",\"binding_status\":\"UNRESOLVED\",\"legacy_event_type\":\"unit_defeated\",\"mapping_status\":\"AMBIGUOUS\",\"mechanic_id\":\"LEGACY_EVENT.UNIT_DEFEATED_LIFECYCLE\",\"semantic_gap_ids\":\"LEGACY_EVENT.UNIT_DEFEATED_LIFECYCLE\"},\"legacy_data\":{\"killer_id\":\"actor-1\",\"target_id\":\"enemy-1\"}},\"sequence\":11,\"source_id\":null,\"target_id\":\"enemy-1\"},\"hit_context\":null,\"notes\":[],\"numeric_values\":{},\"sequence\":11}],\"schema_name\":\"hsr_runtime_trace\",\"schema_version\":\"1.0\",\"semantic_gap_ids\":[\"LEGACY_EVENT.UNIT_DEFEATED_LIFECYCLE\"],\"sequence_policy\":\"CONTIGUOUS\",\"trace_id\":\"sample-trace\"}",
+      "expected_error": "RuntimeTraceSchemaError"
+    },
+    {
+      "id": "VALID_BUT_NONCANONICAL_JSON",
+      "payload_text": "{\"schema_name\": \"hsr_runtime_trace\", \"schema_version\": \"1.0\", \"trace_id\": \"sample-trace\", \"sequence_policy\": \"CONTIGUOUS\", \"record_count\": 2, \"first_sequence\": 10, \"last_sequence\": 11, \"event_type_counts\": {\"ACTION_START\": 1, \"CONTENT_DEFINED\": 1}, \"semantic_gap_ids\": [\"LEGACY_EVENT.UNIT_DEFEATED_LIFECYCLE\"], \"records\": [{\"sequence\": 10, \"event\": {\"event_id\": \"legacy:sample-stream:10\", \"event_type\": \"ACTION_START\", \"sequence\": 10, \"action_id\": \"action-1\", \"attack_id\": null, \"hit_id\": null, \"actor_id\": \"actor-1\", \"source_id\": null, \"target_id\": null, \"payload\": {\"adapter\": {\"adapter_name\": \"legacy_mvp_event_adapter\", \"adapter_version\": \"1.0\", \"binding_status\": \"BOUND\", \"legacy_event_type\": \"action_started\", \"mapping_status\": \"BOUND\", \"mechanic_id\": \"LEGACY_EVENT.ACTION_STARTED\", \"semantic_gap_ids\": []}, \"legacy_data\": {\"action_id\": \"action-1\", \"actor_id\": \"actor-1\"}}}, \"action_context\": null, \"attack_context\": null, \"hit_context\": null, \"numeric_values\": {}, \"notes\": []}, {\"sequence\": 11, \"event\": {\"event_id\": \"legacy:sample-stream:11\", \"event_type\": \"CONTENT_DEFINED\", \"sequence\": 11, \"action_id\": null, \"attack_id\": null, \"hit_id\": null, \"actor_id\": null, \"source_id\": null, \"target_id\": \"enemy-1\", \"payload\": {\"adapter\": {\"adapter_name\": \"legacy_mvp_event_adapter\", \"adapter_version\": \"1.0\", \"binding_status\": \"UNRESOLVED\", \"legacy_event_type\": \"unit_defeated\", \"mapping_status\": \"AMBIGUOUS\", \"mechanic_id\": \"LEGACY_EVENT.UNIT_DEFEATED_LIFECYCLE\", \"semantic_gap_ids\": [\"LEGACY_EVENT.UNIT_DEFEATED_LIFECYCLE\"]}, \"legacy_data\": {\"killer_id\": \"actor-1\", \"target_id\": \"enemy-1\"}}}, \"action_context\": null, \"attack_context\": null, \"hit_context\": null, \"numeric_values\": {}, \"notes\": []}], \"metadata\": {\"source\": \"ARCH-003 reference\"}}",
+      "expected_error": "RuntimeTraceCanonicalityError"
+    }
+  ],
+  "prohibited_behavior": [
+    "repair or normalize source bytes before canonicality decision",
+    "accept duplicate JSON keys",
+    "accept unknown schema versions",
+    "accept unknown RuntimeEventType values",
+    "renumber sequences",
+    "deduplicate event IDs",
+    "recompute or replace semantic gap summaries silently",
+    "create ActionContext, AttackContext, HitContext, or TraceNumericValue",
+    "write files during load",
+    "compare expected and actual traces",
+    "modify simulator, adapter, or exporter behavior"
+  ]
+}

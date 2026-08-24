@@ -1,0 +1,147 @@
+{
+  "name": "buff_duration_mvp",
+  "tolerance": 0.001,
+  "initial_state": {
+    "global_av": 0,
+    "skill_points": 3,
+    "max_skill_points": 5,
+    "units": [
+      {
+        "id": "bronya",
+        "name": "Bronya-like Support",
+        "team": "ally",
+        "base_speed": 134,
+        "speed": 134,
+        "current_av": 50,
+        "energy": 80,
+        "max_energy": 120,
+        "hp": 3200,
+        "max_hp": 3200
+      },
+      {
+        "id": "seele",
+        "name": "Seele-like DPS",
+        "team": "ally",
+        "base_speed": 143,
+        "speed": 143,
+        "current_av": 80,
+        "energy": 60,
+        "max_energy": 120,
+        "hp": 3000,
+        "max_hp": 3000
+      },
+      {
+        "id": "enemy_1",
+        "name": "Training Enemy",
+        "team": "enemy",
+        "base_speed": 100,
+        "speed": 100,
+        "current_av": 100,
+        "energy": 0,
+        "max_energy": 100,
+        "hp": 10000,
+        "max_hp": 10000
+      }
+    ]
+  },
+  "actions": {
+    "bronya_buff_pull": {
+      "id": "bronya_buff_pull",
+      "name": "Buff And Pull",
+      "actor_id": "bronya",
+      "target_ids": ["seele"],
+      "ends_turn": true,
+      "effects": [
+        {"type": "ConsumeSkillPoint", "amount": 1},
+        {"type": "GainEnergy", "amount": 30, "target_ids": ["bronya"]},
+        {
+          "type": "AddBuff",
+          "id": "damage_boost",
+          "name": "Generic Damage Boost",
+          "target_ids": ["seele"],
+          "duration_type": "target_normal_turns",
+          "remaining_turns": 1,
+          "stacks": 1,
+          "max_stacks": 1
+        },
+        {"type": "ImmediateAction", "target_ids": ["seele"]}
+      ]
+    },
+    "seele_buffed_attack": {
+      "id": "seele_buffed_attack",
+      "name": "Buffed Attack",
+      "actor_id": "seele",
+      "target_ids": ["enemy_1"],
+      "ends_turn": true,
+      "effects": [
+        {"type": "ConsumeSkillPoint", "amount": 1},
+        {"type": "GainEnergy", "amount": 30, "target_ids": ["seele"]},
+        {"type": "DealDamage", "amount": 2500, "target_ids": ["enemy_1"]}
+      ]
+    }
+  },
+  "steps": [
+    {
+      "step": 1,
+      "expected_actor": "bronya",
+      "action_id": "bronya_buff_pull",
+      "target_ids": ["seele"],
+      "expect": {
+        "global_av": 50,
+        "skill_points": 2,
+        "units": {
+          "bronya": {
+            "current_av": 74.6268656716,
+            "energy": 110,
+            "buffs": {},
+            "debuffs": {}
+          },
+          "seele": {
+            "current_av": 0,
+            "buffs": {
+              "damage_boost": {
+                "remaining_turns": 1,
+                "stacks": 1,
+                "source_id": "bronya",
+                "kind": "buff",
+                "duration_type": "target_normal_turns"
+              }
+            },
+            "debuffs": {}
+          },
+          "enemy_1": {
+            "current_av": 50,
+            "hp": 10000,
+            "buffs": {},
+            "debuffs": {}
+          }
+        }
+      }
+    },
+    {
+      "step": 2,
+      "expected_actor": "seele",
+      "action_id": "seele_buffed_attack",
+      "target_ids": ["enemy_1"],
+      "expect": {
+        "global_av": 50,
+        "skill_points": 1,
+        "units": {
+          "bronya": {
+            "current_av": 74.6268656716
+          },
+          "seele": {
+            "current_av": 69.9300699301,
+            "energy": 90,
+            "buffs": {},
+            "debuffs": {}
+          },
+          "enemy_1": {
+            "current_av": 50,
+            "hp": 7500
+          }
+        }
+      }
+    }
+  ]
+}

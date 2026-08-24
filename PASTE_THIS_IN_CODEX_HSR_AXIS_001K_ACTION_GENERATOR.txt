@@ -1,0 +1,207 @@
+Task ID: HSR-AXIS-001K
+Reasoning: HIGH
+
+You are continuing the same permanent Python project for a Honkai: Star Rail inspired action-axis simulator.
+
+Previous accepted tasks:
+- 001A: action value core
+- 001B: replay validator MVP
+- 001C: multi-step replay
+- 001D: buff/debuff duration
+- 001E: damage/stats/forced RNG MVP
+- 001F: toughness/weakness/break MVP
+- 001G: event hooks / trigger system MVP
+- 001H: data-driven character/skill schema MVP
+- 001I: target_ref / semantic target references MVP
+- 001J: target legality / legal target group generation MVP
+
+Current task:
+Implement Action Generator / Resource-Gated Skill Legality MVP.
+
+Goal:
+Create a deterministic module that can enumerate legal actions for a given actor in the current BattleState using loaded SkillSpec data.
+
+This is NOT AI search yet. This task only generates legal one-step choices. Future search will call this generator repeatedly.
+
+Hard boundaries:
+Do NOT implement:
+- Beam search
+- DFS search
+- scoring/evaluator
+- Huroka/Yatta/HoneyHunter importers
+- real HSR character batch import
+- enemy AI behavior
+- taunt/aggro probability
+- random target selection
+- blast adjacency
+- bounce targeting
+- full HSR damage formula rewrite
+- automatic ultimate insertion timing
+
+Required behavior:
+
+1. Add a new module, preferably:
+
+```text
+hsr_axis_sim/sim/action_generator.py
+```
+
+2. Implement a small result model, using dataclass if appropriate:
+
+```python
+@dataclass
+class ActionChoice:
+    actor_id: str
+    skill_id: str
+    skill_type: str
+    target_ids: list[str]
+    action: Action
+```
+
+Optional but useful:
+
+```python
+@dataclass
+class AffordabilityResult:
+    affordable: bool
+    reasons: list[str]
+```
+
+3. Implement resource affordability helpers.
+
+At minimum:
+
+```python
+def skill_affordability(state, actor_id, skill) -> AffordabilityResult:
+    ...
+
+def is_skill_affordable(state, actor_id, skill) -> bool:
+    ...
+```
+
+Resource rules for this MVP:
+
+- If `skill.sp_delta` is negative, require `state.skill_points >= -skill.sp_delta`.
+- If `skill.sp_delta` is zero or positive, do not make the skill illegal. Skill point gain is capped during execution by existing effects.
+- If `skill.energy_delta` is negative, require actor energy `>= -skill.energy_delta`.
+- If `skill.energy_delta` is zero or positive, do not make the skill illegal.
+- Unknown actor should fail clearly.
+- Dead actor should not generate actions.
+- This task should not try to infer affordability from every effect. Use SkillSpec metadata for MVP gating. Effects will still validate during execution.
+
+4. Implement legal action generation.
+
+Required function:
+
+```python
+def legal_action_choices_for_actor(state, actor_id, skills) -> list[ActionChoice]:
+    ...
+```
+
+Where `skills` may be either:
+
+```python
+list[SkillSpec]
+```
+
+or:
+
+```python
+dict[str, SkillSpec]
+```
+
+Choose one API and document it in tests and README. If supporting both is easy and clean, that is acceptable.
+
+Generation rules:
+
+- Actor must exist.
+- Actor must be alive.
+- Iterate skills in deterministic order. If `skills` is a dict, preserve insertion order.
+- Skip unaffordable skills.
+- For each affordable skill, call `legal_target_groups(state, actor_id, skill.target_type)`.
+- For each target group, build an Action using:
+
+```python
+action_from_skill(
+    skill,
+    actor_id=actor_id,
+    target_ids=target_group,
+    state=state,
+    validate_targets=True,
+)
+```
+
+- Return `ActionChoice` entries in stable order:
+  1. skill order
+  2. target group order from `legal_target_groups`
+
+5. Optional useful function:
+
+```python
+def legal_actions_for_actor(state, actor_id, skills) -> list[Action]:
+    ...
+```
+
+This can simply return `[choice.action for choice in legal_action_choices_for_actor(...)]`.
+
+6. Add tests.
+
+Required tests:
+
+- `legal_action_choices_for_actor` generates basic and skill choices for Seele-like when enough SP exists.
+- It generates one choice per legal alive enemy target for `single_enemy` skills.
+- It excludes dead targets.
+- It excludes a skill when SP is insufficient.
+- It includes the same skill when SP is sufficient.
+- It excludes an energy-consuming skill when energy is insufficient.
+- It includes an energy-consuming skill when energy is sufficient.
+- It normalizes `self` target skills to `[actor_id]`.
+- It supports an AoE/no-selected-target skill such as `all_enemies` by generating one choice with `target_ids == []`.
+- It returns `[]` for a dead actor.
+- It fails clearly for an unknown actor.
+
+7. Do not mutate the battle state during generation.
+
+Add a test that captures at least these before/after fields:
+
+- `state.skill_points`
+- actor energy
+- target HP
+- current AV values
+
+The generator should only build candidate actions. It must not execute them.
+
+8. Existing tests and golden replays must still pass.
+
+Run:
+
+```bash
+python -m compileall -q hsr_axis_sim
+python -m pytest -q
+```
+
+Run all golden replays:
+
+```bash
+for f in hsr_axis_sim/data/golden_replays/*.json; do
+  python -m hsr_axis_sim.sim.replay "$f"
+done
+```
+
+9. Update exports and docs.
+
+- Export the new generator functions/classes from `hsr_axis_sim/sim/__init__.py` if that matches the existing export style.
+- Update `README.md` briefly with the new action-generation layer.
+
+10. Update `hsr_axis_sim/LUMEN_RESULT.md` with:
+
+- files changed
+- exact tests run
+- exact test results
+- action generator API implemented
+- resource-gating rules implemented
+- what remains intentionally unsupported
+- whether 001L is safe to begin
+
+Important design note:
+This generator is a search prerequisite, not search itself. Keep it deterministic, small, and heavily tested.

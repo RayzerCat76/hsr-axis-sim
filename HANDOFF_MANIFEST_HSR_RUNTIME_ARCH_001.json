@@ -1,0 +1,43 @@
+{
+  "task_id": "HSR-RUNTIME-ARCH-001",
+  "title": "Universal Runtime Contract Skeleton",
+  "created": "2026-07-12",
+  "recommended_model": "GPT-5.6 Sol",
+  "codex_reasoning": "High",
+  "starting_baseline": {
+    "compileall": "PASS",
+    "pytest": {
+      "passed": 662,
+      "failed": 0
+    },
+    "locked_regression": {
+      "passed": 20,
+      "failed": 0
+    }
+  },
+  "files": {
+    "PASTE_THIS_IN_CODEX_HSR_RUNTIME_ARCH_001.txt": "b870567b59276a68f74a34e4ae96d9e106677b2e9531fe3401537fb08a4f97f8",
+    "LUMEN_TASK_HSR_RUNTIME_ARCH_001.md": "53ea90374e70d65e9819dfd13e7134f58df4a1e630c4953ff14a9684437125a8",
+    "BASELINE_HSR_RUNTIME_ARCH_001.txt": "40cf487e12abec1e77571e4c1ec54f435fe2c1de7828259a72fa09aca4eb851d",
+    "HSR_RUNTIME_FRAMEWORK_BASELINE_V1_0.md": "cf6b94fb29ce8ca2cf5e0dbcd125c87a65c026304bf8c68dfdd0a4e7b9074817",
+    "HSR_RUNTIME_FORMULA_REGISTRY_V1_0.json": "7adaeb30b38c70c9c32de39925561abdf64ef1415e9fdd57b56026feca6912d9",
+    "HSR_RUNTIME_DEFENSE_TOUGHNESS_PRECISION_MODEL_V1_0.json": "cf3e46a7a0a12db73f30bc96837a143061e1a012d66384c43eb20685d6a223b3"
+  },
+  "placement": {
+    "prompt": "Paste into Codex after extracting the bundle into the repository root.",
+    "task": "Repository root; new file, does not replace an existing file.",
+    "research": "docs/runtime/research/; new files, byte-for-byte copies.",
+    "baseline": "Repository root or retain in handoff folder for audit."
+  },
+  "preservation": [
+    "hsr_axis_sim/sim/**",
+    "hsr_axis_sim/search/**",
+    "hsr_axis_sim/regression/**",
+    "hsr_axis_sim/data/**",
+    "fixtures/**",
+    "README.md",
+    "pyproject.toml",
+    "PACKAGE_MANIFEST.json",
+    "HSR-AXIS-002Q-FIX artifacts"
+  ]
+}

@@ -1,0 +1,39 @@
+HSR-AXIS-002M-FIX2 independent verification
+
+compileall
+PASS
+
+pytest collection
+421 tests collected
+
+complete pytest, disjoint shards
+Shard 1: 307 passed in 19.02s
+Shard 2: 114 passed in 28.92s
+Total: 421 passed, 0 failed
+
+focused test
+hsr_axis_sim/tests/test_tingyun_ultimate_damage_buff_review.py
+12 passed in 5.90s
+
+locked regression
+PASS 12/12 golden replays
+PASS 2/2 manual checks
+PASS 2/2 search scenarios
+PASS 2/2 action-sequence trace checks
+PASS 2/2 trace evidence checks
+Total: PASS 20/20
+
+trace-evidence-only regression
+PASS 2/2
+
+report determinism
+Markdown byte-identical
+SHA-256 427ecca38eb7a8d92f5c8aa4fec19cee0a51b1ac9193b7e9dc1566bf2fb391ea
+JSON byte-identical
+SHA-256 8cbdbec44c0132a7cc0c0eb4029357fe1f9feaa84f49b23ad79dc5d797eaf696
+
+independent malformed provenance matrix
+29/29 cases produced controlled ValueError
+0 native TypeError/AttributeError/KeyError escapes
+malformed CLI exit code 1
+no Traceback

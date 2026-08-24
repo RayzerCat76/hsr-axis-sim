@@ -1,0 +1,118 @@
+[
+  {
+    "binding_status": "BOUND",
+    "evidence_status": "CONFIRMED",
+    "legacy_event_type": "action_finished",
+    "mapping_status": "BOUND",
+    "mechanic_id": "LEGACY_EVENT.ACTION_FINISHED",
+    "normalized_field_map": {
+      "action_id": "action_id",
+      "actor_id": "actor_id"
+    },
+    "notes": null,
+    "runtime_event_type": "ACTION_END",
+    "selected_policy": "ACTION_END",
+    "source_refs": [
+      "hsr_axis_sim/sim/action.py"
+    ]
+  },
+  {
+    "binding_status": "BOUND",
+    "evidence_status": "CONFIRMED",
+    "legacy_event_type": "action_started",
+    "mapping_status": "BOUND",
+    "mechanic_id": "LEGACY_EVENT.ACTION_STARTED",
+    "normalized_field_map": {
+      "action_id": "action_id",
+      "actor_id": "actor_id"
+    },
+    "notes": null,
+    "runtime_event_type": "ACTION_START",
+    "selected_policy": "ACTION_START",
+    "source_refs": [
+      "hsr_axis_sim/sim/action.py"
+    ]
+  },
+  {
+    "binding_status": "BOUND",
+    "evidence_status": "CONFIRMED",
+    "legacy_event_type": "damage_dealt",
+    "mapping_status": "BOUND",
+    "mechanic_id": "LEGACY_EVENT.DAMAGE_DEALT",
+    "normalized_field_map": {
+      "source_id": "source_id",
+      "target_id": "target_id"
+    },
+    "notes": "Preserve amount and formula parts as raw legacy data; infer no hit or attack.",
+    "runtime_event_type": "DAMAGE_RESOLVED",
+    "selected_policy": "DAMAGE_RESOLVED",
+    "source_refs": [
+      "hsr_axis_sim/sim/effects.py"
+    ]
+  },
+  {
+    "binding_status": "BOUND",
+    "evidence_status": "CONFIRMED",
+    "legacy_event_type": "turn_ended",
+    "mapping_status": "BOUND",
+    "mechanic_id": "LEGACY_EVENT.TURN_ENDED",
+    "normalized_field_map": {
+      "actor_id": "actor_id"
+    },
+    "notes": null,
+    "runtime_event_type": "TURN_END",
+    "selected_policy": "TURN_END",
+    "source_refs": [
+      "hsr_axis_sim/sim/timeline.py"
+    ]
+  },
+  {
+    "binding_status": "BOUND",
+    "evidence_status": "CONFIRMED",
+    "legacy_event_type": "turn_started",
+    "mapping_status": "BOUND",
+    "mechanic_id": "LEGACY_EVENT.TURN_STARTED",
+    "normalized_field_map": {
+      "actor_id": "actor_id"
+    },
+    "notes": "Do not infer turn kind or priority from is_extra_turn.",
+    "runtime_event_type": "TURN_START",
+    "selected_policy": "TURN_START",
+    "source_refs": [
+      "hsr_axis_sim/sim/timeline.py"
+    ]
+  },
+  {
+    "binding_status": "UNRESOLVED",
+    "evidence_status": "UNKNOWN",
+    "legacy_event_type": "unit_defeated",
+    "mapping_status": "AMBIGUOUS",
+    "mechanic_id": "LEGACY_EVENT.UNIT_DEFEATED_LIFECYCLE",
+    "normalized_field_map": {
+      "target_id": "target_id"
+    },
+    "notes": "Preserve killer_id only in legacy_data; do not infer source_id.",
+    "runtime_event_type": "CONTENT_DEFINED",
+    "selected_policy": null,
+    "source_refs": [
+      "hsr_axis_sim/sim/effects.py"
+    ]
+  },
+  {
+    "binding_status": "BOUND",
+    "evidence_status": "CONFIRMED",
+    "legacy_event_type": "weakness_break",
+    "mapping_status": "BOUND",
+    "mechanic_id": "LEGACY_EVENT.WEAKNESS_BREAK",
+    "normalized_field_map": {
+      "source_id": "source_id",
+      "target_id": "target_id"
+    },
+    "notes": null,
+    "runtime_event_type": "WEAKNESS_BROKEN",
+    "selected_policy": "WEAKNESS_BROKEN",
+    "source_refs": [
+      "hsr_axis_sim/sim/effects.py"
+    ]
+  }
+]

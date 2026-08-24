@@ -1,0 +1,224 @@
+Task ID: HSR-AXIS-002F
+Task name: Human-Readable Trace Evidence Report MVP
+
+Codex Reasoning: MEDIUM
+Recommended model: GPT-5.6 Terra
+Fallback model: GPT-5.6 Sol only if integration or validation behavior becomes genuinely ambiguous
+
+Context:
+HSR-AXIS-002E-FIX has passed independent review:
+
+- compileall: PASS
+- full pytest: 323 passed
+- locked manifest regression: PASS 20/20
+- trace-evidence-only regression: PASS 2/2
+
+The project currently has three accepted, separate evidence artifacts for the first real video trace:
+
+1. Action-sequence-only source trace:
+   `hsr_axis_sim/data/manual_video_traces/intake/real_video_trace_001_botu_dilemma_floor12_side1_action_sequence_only.json`
+
+2. Semantic placeholder map:
+   `hsr_axis_sim/data/manual_video_traces/semantic_maps/real_video_trace_001_botu_dilemma_semantics_v0_1.json`
+
+3. Approximate media frame anchors:
+   `hsr_axis_sim/data/manual_video_traces/frame_anchors/real_video_trace_001_botu_dilemma_frame_anchors_v0_1.json`
+
+Goal:
+Build one deterministic, human-readable evidence report that combines those three accepted artifacts without converting them into executable combat logic and without inventing any numeric combat state.
+
+This task is an evidence/reporting task only.
+
+Required implementation
+=======================
+
+1. Add a new module:
+
+   `hsr_axis_sim/tools/trace_evidence_report.py`
+
+2. Provide a clear report model. Dataclasses are preferred. The report should represent at least:
+
+   - report ID/version;
+   - source trace ID and source video metadata;
+   - scenario metadata;
+   - team metadata;
+   - explicit evidence-only policy flags;
+   - prebattle evidence;
+   - ordered step evidence.
+
+3. Each ordered step must combine, without inference:
+
+   - source step number;
+   - actor;
+   - action;
+   - target and target confidence exactly as recorded by the source trace;
+   - semantic label;
+   - semantic category;
+   - semantic `known` list;
+   - semantic `unknown` list;
+   - media time start/end in seconds;
+   - representative frame filenames;
+   - frame-anchor confidence;
+   - frame-anchor notes;
+   - source-trace notes.
+
+4. The merge order must come from the source trace, not from the physical ordering of the semantic-map or frame-anchor JSON lists.
+
+5. Before building a report, validate all three source artifacts using the existing validators:
+
+   - manual-video-trace lint / action-sequence requirements;
+   - `validate_semantic_map`;
+   - `validate_frame_anchors`.
+
+   Invalid or mismatched inputs must fail clearly. Do not silently omit or guess missing evidence.
+
+6. The report must state prominently:
+
+   - evidence-only;
+   - non-executable;
+   - media timestamps are not AV or simulator time;
+   - unknown combat values remain unknown;
+   - no damage, SP, energy, HP, toughness, speed, target, buff, debuff, or RNG value may be inferred beyond what the accepted source trace explicitly records.
+
+7. Add deterministic renderers:
+
+   - Markdown;
+   - JSON-compatible dictionary / JSON text.
+
+8. Markdown output should include at least:
+
+   - title and source video;
+   - evidence-policy warning;
+   - scenario and team;
+   - prebattle section;
+   - compact ordered step table with media range, actor, action, semantic label, category, confidence, and representative frames;
+   - per-step details with known, unknown, source notes, and frame notes.
+
+9. JSON output must clearly namespace media timing as media evidence. Do not use names such as `global_av`, `turn_time`, or `action_value` for media timestamps.
+
+10. Add a CLI:
+
+```bash
+python -m hsr_axis_sim.tools.trace_evidence_report \
+  --trace <source-trace.json> \
+  --semantic-map <semantic-map.json> \
+  --frame-anchors <frame-anchors.json> \
+  --format markdown|json \
+  [--output <path>]
+```
+
+The CLI must:
+
+- print to stdout when `--output` is absent;
+- write UTF-8 output when `--output` is present;
+- return 0 on success, 1 for validated evidence mismatch, and 2 for unreadable/invalid input or CLI/runtime failure;
+- produce readable errors without a traceback for normal validation failures.
+
+11. Generate accepted sample reports for the first real trace under:
+
+   `hsr_axis_sim/data/manual_video_traces/reports/`
+
+Suggested filenames:
+
+- `real_video_trace_001_botu_dilemma_evidence_report_v0_1.md`
+- `real_video_trace_001_botu_dilemma_evidence_report_v0_1.json`
+
+The generated sample reports must be reproducible exactly from the three accepted source files.
+
+12. Add tests in a focused file such as:
+
+   `hsr_axis_sim/tests/test_trace_evidence_report.py`
+
+Required test coverage
+======================
+
+- Builds one prebattle entry and exactly 9 ordered steps.
+- Preserves the exact accepted actor/action sequence.
+- Preserves Chinese semantic labels in UTF-8 output.
+- Preserves explicitly unknown fields rather than filling them.
+- Includes media ranges and representative frame filenames.
+- Clearly labels media time as media evidence, not AV.
+- Produces the same report when semantic-map and anchor lists are shuffled.
+- Rejects missing semantic mappings.
+- Rejects missing frame anchors.
+- Rejects actor/action/step mismatches.
+- Rejects invalid source-trace references.
+- Markdown output contains the evidence-only warnings.
+- JSON output is deterministic.
+- Two identical runs produce byte-identical Markdown and JSON.
+- CLI stdout works for both formats.
+- CLI `--output` writes UTF-8 files.
+- Committed sample report files exactly match generated outputs.
+
+Scope and trust boundary
+========================
+
+Do not:
+
+- change combat mechanics;
+- change replay execution;
+- change search behavior;
+- add or alter real character kits;
+- infer action-advance percentage;
+- split Naxia composite actions into executable sub-actions;
+- infer targets that remain unknown;
+- infer SP, energy, HP, toughness, damage, speed, buffs, debuffs, or RNG;
+- perform OCR or automatic action recognition;
+- inspect or download network video;
+- modify the locked regression manifest in this task;
+- add a new regression group in this task;
+- begin HSR-AXIS-002G.
+
+Required gates
+==============
+
+Run:
+
+```bash
+python -m compileall -q hsr_axis_sim
+python -m pytest -q
+python -m hsr_axis_sim.regression.runner \
+  --manifest hsr_axis_sim/data/regression_manifest.json \
+  --format text
+python -m hsr_axis_sim.regression.runner \
+  --manifest hsr_axis_sim/data/regression_manifest.json \
+  --only trace_evidence \
+  --format text
+```
+
+Also run the new report CLI in both Markdown and JSON modes against the accepted first-trace files.
+
+Expected existing regression state must remain:
+
+```text
+PASS 20/20
+replays=12
+manual=1
+scenarios=2
+action_sequence_traces=1
+trace_evidence=2
+```
+
+Deliverables
+============
+
+- `hsr_axis_sim/tools/trace_evidence_report.py`
+- focused tests
+- deterministic accepted Markdown report
+- deterministic accepted JSON report
+- any small README needed under the reports directory
+- updated `hsr_axis_sim/LUMEN_RESULT.md`
+
+`LUMEN_RESULT.md` must state:
+
+1. exact files changed;
+2. report schema and merge behavior;
+3. validation behavior;
+4. exact test results;
+5. exact existing regression results;
+6. confirmation that the manifest was not changed;
+7. explicit confirmation that no combat values or executable semantics were inferred;
+8. known limitations;
+9. next recommended task only after all gates pass.
+
+Do not claim completion when the full pytest suite is unavailable or failing. Preserve the implementation and report BLOCKED if required gates cannot be run.

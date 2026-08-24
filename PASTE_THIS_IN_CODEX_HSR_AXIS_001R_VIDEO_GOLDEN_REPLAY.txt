@@ -1,0 +1,209 @@
+Task ID: HSR-AXIS-001R
+Task name: Manual Video Golden Replay Protocol MVP
+
+Codex Reasoning: Medium
+ChatGPT Model recommendation: GPT-5.5 is enough; GPT-5.5 Thinking is not required unless you discover you must change core replay or combat semantics.
+Reason: this task is mostly replay metadata, fixture protocol, linting, templates, documentation, and tests. It should not change action-value, damage, break, event, enemy AI, or search behavior.
+
+You are continuing the existing `hsr_axis_sim` project.
+
+Goal:
+Build the first safe protocol for validating the simulator against manually transcribed gameplay/video traces. This is preparation for later Bilibili “无凹轴 / 凹分轴” validation, but this task must not fetch, scrape, download, OCR, or parse videos.
+
+Very important boundaries:
+- Do NOT scrape Bilibili or any website.
+- Do NOT download videos.
+- Do NOT use OCR.
+- Do NOT make network requests.
+- Do NOT add AI search or beam search.
+- Do NOT implement all official characters.
+- Do NOT rewrite the combat engine.
+- Do NOT make damage formula or break formula changes.
+- Existing tests and golden replays must continue passing.
+
+Why this task exists:
+We already have `ReplayValidator`, imported character fixtures, representative character kits, and golden replays. The next step is to standardize how a human records a video axis into JSON so the simulator can validate it step by step.
+
+This task should create:
+1. A manual video trace metadata format.
+2. A lint/checker for video-style replay files.
+3. A template file for future Bilibili/video transcription.
+4. One synthetic “video-style” golden replay fixture using existing simulator data, not a real downloaded video.
+5. Tests proving the lint/checker works and existing replay validation still passes.
+
+Required new or updated structure:
+
+hsr_axis_sim/
+  data/
+    manual_video_traces/
+      README.md
+      templates/
+        manual_video_trace_template.json
+      samples/
+        manual_video_trace_sample_mvp.json
+  sim/
+    replay_lint.py
+  tests/
+    test_manual_video_trace_protocol.py
+
+Implementation requirements:
+
+1. Manual video trace metadata format
+
+A video-style replay JSON should still be compatible with the existing `ReplayValidator`. Add optional metadata fields that are ignored by the simulator execution but required by the new linter for “video trace” files.
+
+Recommended top-level fields:
+
+```json
+{
+  "name": "manual_video_trace_sample_mvp",
+  "trace_type": "manual_video_trace",
+  "source": {
+    "platform": "manual_fixture",
+    "url": "",
+    "video_title": "Synthetic manual video trace sample, not a real video",
+    "uploader": "",
+    "recorded_by": "Ray/Lumen manual trace protocol",
+    "recorded_at": "2026-07-08",
+    "notes": "No live video was fetched. This is a protocol fixture."
+  },
+  "assumptions": [
+    "All RNG outcomes are forced in step data where relevant.",
+    "Character data uses existing simulator mechanic representative kit."
+  ],
+  "builds": {
+    "carry": {
+      "character": "Kill Chain Carry MVP",
+      "level": 80,
+      "speed": 143,
+      "crit_rate": 1.0,
+      "crit_dmg": 1.0,
+      "notes": "Synthetic build for protocol validation."
+    }
+  },
+  "enemy_setup": {
+    "notes": "Synthetic enemies from existing character kit replay."
+  },
+  "transcription": {
+    "step_source": "manual",
+    "fields_recorded": [
+      "actor",
+      "skill_id",
+      "target_ids",
+      "forced_rng",
+      "expected_hp",
+      "expected_energy",
+      "expected_skill_points",
+      "expected_current_av"
+    ]
+  },
+  "tolerance": 0.001,
+  "data_sources": { ... },
+  "steps": [ ... ]
+}
+```
+
+Do not require real video URL. Empty URL must be allowed for synthetic fixtures.
+
+2. Add `replay_lint.py`
+
+Create `hsr_axis_sim/sim/replay_lint.py` with functions such as:
+
+- `lint_manual_video_trace(replay_data: dict) -> list[str]`
+- `load_and_lint_manual_video_trace(path) -> list[str]`
+- CLI: `python -m hsr_axis_sim.sim.replay_lint <replay.json>`
+
+The linter should be strict enough to catch missing metadata but should not execute combat logic. Combat validation remains the job of `ReplayValidator`.
+
+For `trace_type == "manual_video_trace"`, lint should require:
+
+- `name`
+- `source`
+- `source.platform`
+- `source.video_title`
+- `source.recorded_by`
+- `assumptions` as a list
+- `builds` as an object
+- `transcription` as an object
+- `steps` as a non-empty list
+- every step has `step`
+- every step has either `skill_id`, `action_id`, or `use_enemy_ai`
+- normal steps should have `expected_actor` unless explicitly marked with `allow_missing_expected_actor: true`
+- if a step includes `forced_rng`, it must be an object
+- if a step includes `expect`, it must be an object
+
+For non-manual-video replay files, the linter may return no issues or a note that the file is not a manual video trace. Do not break existing replay files.
+
+CLI behavior:
+
+```bash
+python -m hsr_axis_sim.sim.replay_lint hsr_axis_sim/data/manual_video_traces/samples/manual_video_trace_sample_mvp.json
+```
+
+Expected success output should include something like:
+
+```text
+PASS manual_video_trace_sample_mvp: manual video trace lint passed.
+```
+
+On lint failure, exit nonzero and print every issue.
+
+3. Add template and sample
+
+Add:
+
+`hsr_axis_sim/data/manual_video_traces/templates/manual_video_trace_template.json`
+
+This should be a human-editable template with placeholder metadata and comments represented as string fields such as `notes`, because JSON cannot contain comments.
+
+Add:
+
+`hsr_axis_sim/data/manual_video_traces/samples/manual_video_trace_sample_mvp.json`
+
+This should be a synthetic video-style replay built using existing simulator data. Prefer reusing the current `character_kit_001_mvp` data sources and a short 2–3 step sequence. It must pass both:
+
+```bash
+python -m hsr_axis_sim.sim.replay_lint hsr_axis_sim/data/manual_video_traces/samples/manual_video_trace_sample_mvp.json
+python -m hsr_axis_sim.sim.replay hsr_axis_sim/data/manual_video_traces/samples/manual_video_trace_sample_mvp.json
+```
+
+4. Add tests
+
+Create `hsr_axis_sim/tests/test_manual_video_trace_protocol.py` covering:
+
+- valid sample passes lint
+- valid sample also passes `ReplayValidator`
+- missing required source metadata fails lint
+- missing `expected_actor` on a normal step fails lint unless `allow_missing_expected_actor` is true
+- invalid `forced_rng` type fails lint
+- non-manual existing replay does not fail lint just because it lacks video metadata
+- CLI returns 0 for valid sample if project tests use subprocess patterns elsewhere; otherwise direct function tests are enough
+
+5. README update
+
+Add a short section explaining:
+
+- Manual video trace files are human-created; the project does not scrape or download videos.
+- Use this protocol when transcribing a Bilibili/no-reset axis video.
+- `forced_rng` should record observed random outcomes such as crit, enemy target, hit/resist, and any other RNG needed to reproduce the video.
+- The trace must pass both lint and replay validation before being trusted.
+
+Acceptance criteria:
+
+- `python -m compileall -q hsr_axis_sim` passes.
+- `python -m pytest -q hsr_axis_sim/tests` passes.
+- All existing golden replay CLI checks still pass.
+- The new manual video trace sample passes replay lint.
+- The new manual video trace sample passes existing replay validation.
+- No network access, no scraping, no OCR, no AI search.
+
+Update `hsr_axis_sim/LUMEN_RESULT.md` with:
+
+1. Files changed
+2. Exact tests run
+3. Exact test results
+4. Manual video trace lint CLI output
+5. Manual video trace replay CLI output
+6. Existing golden replay status
+7. Known limitations
+8. Whether 001S is safe to begin

@@ -1,0 +1,198 @@
+Task ID: HSR-AXIS-001I
+Reasoning: HIGH
+
+You are continuing the existing HSR Axis Simulator project.
+
+Current accepted milestone:
+- 001H passed.
+- The project now has a data-driven character / skill schema MVP.
+- 97 tests passed in Lumen's pytest environment.
+- All existing golden replay CLI checks passed.
+
+Goal for this task:
+Implement semantic target resolution so character JSON does not hard-code concrete instantiated unit ids inside skill effects.
+
+This task is still NOT about:
+- Huroka scraping
+- Yatta/HoneyHunter adapters
+- Bilibili parsing
+- real official character kits
+- AI axis search
+- full damage formula
+
+Problem to solve:
+Current sample skill effects contain brittle unit ids like:
+
+  {"type": "GainEnergy", "amount": 20, "target_ids": ["seele_like"]}
+
+This fails if the same character is instantiated as a different unit id, such as `seele_a`, `seele_b`, or `dps_1`.
+
+We need character data to use semantic target references like:
+
+  {"type": "GainEnergy", "amount": 20, "target_ref": "actor"}
+  {"type": "ImmediateAction", "target_ref": "action_targets"}
+  {"type": "GrantExtraTurn", "target_ref": "actor"}
+
+Required implementation:
+
+1. Add a target resolution module
+
+Create:
+
+  hsr_axis_sim/sim/targets.py
+
+It should expose something like:
+
+  resolve_target_ids(state, action, turn_context, target_ref=None, target_ids=None) -> list[str]
+
+Target resolution must support at least:
+
+- `actor` / `self`
+  - resolves to `[action.actor_id]`
+
+- `action_targets` / `selected_targets`
+  - resolves to `action.target_ids`
+  - if empty and the effect requires selected targets, fail clearly
+
+- explicit existing `target_ids`
+  - preserve backward compatibility
+
+- `all_allies`
+  - all units on the same team as the actor
+
+- `alive_allies`
+  - alive units on the same team as the actor
+
+- `all_enemies`
+  - all units not on the same team as the actor
+
+- `alive_enemies`
+  - alive units not on the same team as the actor
+
+Optional but useful if easy:
+
+- `event_source`
+  - resolves from event data field `source_id`
+
+- `event_target`
+  - resolves from event data field `target_id`
+
+- `event_killer`
+  - resolves from event data field `killer_id`
+
+- `event_victim`
+  - resolves from event data field `target_id` for unit_defeated events
+
+If event-based refs are implemented, update trigger dispatch so synthetic trigger actions carry event data, e.g. `event_data=event.data`.
+
+2. Update UnitEffect
+
+Currently `UnitEffect.target_units()` decides targets from `target_ids`, then action targets, then actor.
+
+Update `UnitEffect` to support:
+
+- `target_ref: str | None = None`
+- existing `target_ids: list[str] | None = None`
+
+Resolution precedence should be:
+
+1. explicit `target_ref` if present
+2. explicit `target_ids` if present
+3. action target ids if present
+4. actor id fallback
+
+Keep old JSON files working.
+
+3. Update data loader
+
+`effect_from_spec()` must pass `target_ref` through to effect classes that inherit from `UnitEffect`.
+
+Do not pass `target_ref` to non-unit effects such as `GainSkillPoint`, `ConsumeSkillPoint`, or `DoesNotEndTurn`.
+
+4. Update sample character JSON
+
+Remove hard-coded self unit ids from sample character skill effects.
+
+For example:
+
+Seele-like basic should become conceptually:
+
+  GainSkillPoint + GainEnergy(target_ref="actor") + DealDamage(target_ref="action_targets")
+
+Bronya-like skill should become conceptually:
+
+  ConsumeSkillPoint + GainEnergy(target_ref="actor") + ImmediateAction(target_ref="action_targets")
+
+The data-loaded replay should still pass unchanged, except that the underlying JSON no longer hard-codes instantiated unit ids in effects.
+
+5. Add tests
+
+Add tests to prove the target resolver works and prevents the brittle bug.
+
+Required tests:
+
+- `test_actor_target_ref_targets_instantiated_unit_id_not_character_id`
+  - Instantiate the same character template as a differently named unit id, e.g. `seele_a`.
+  - Execute a skill with `GainEnergy(target_ref="actor")`.
+  - Assert `seele_a` gains energy.
+  - Assert no lookup of character id `seele_like` is required.
+
+- `test_action_targets_ref_uses_selected_targets`
+  - A damage or immediate-action effect with `target_ref="action_targets"` should affect the action's target ids.
+
+- `test_all_allies_and_alive_allies_refs`
+  - Verify dead allies are excluded only from `alive_allies`.
+
+- `test_all_enemies_and_alive_enemies_refs`
+  - Verify dead enemies are excluded only from `alive_enemies`.
+
+- `test_unknown_target_ref_fails_clearly`
+  - Unknown references should raise a clear `ValueError`.
+
+- `test_data_loaded_replay_still_passes_after_target_refs`
+  - The existing data-loaded replay must still pass.
+
+Optional tests if event target refs are implemented:
+
+- `test_event_target_ref_can_apply_trigger_effect_to_event_target`
+- `test_event_killer_ref_can_apply_trigger_effect_to_killer`
+
+6. Preserve existing behavior
+
+All existing tests must still pass.
+All existing replay CLI checks must still pass.
+
+Run:
+
+  python -m compileall -q hsr_axis_sim
+  python -m pytest -q
+
+Also run all golden replay CLIs:
+
+  python -m hsr_axis_sim.sim.replay hsr_axis_sim/data/golden_replays/bronya_seele_timeline_mvp.json
+  python -m hsr_axis_sim.sim.replay hsr_axis_sim/data/golden_replays/bronya_seele_multistep_mvp.json
+  python -m hsr_axis_sim.sim.replay hsr_axis_sim/data/golden_replays/buff_duration_mvp.json
+  python -m hsr_axis_sim.sim.replay hsr_axis_sim/data/golden_replays/damage_rng_mvp.json
+  python -m hsr_axis_sim.sim.replay hsr_axis_sim/data/golden_replays/toughness_break_mvp.json
+  python -m hsr_axis_sim.sim.replay hsr_axis_sim/data/golden_replays/trigger_on_kill_extra_turn_mvp.json
+  python -m hsr_axis_sim.sim.replay hsr_axis_sim/data/golden_replays/data_loaded_bronya_seele_mvp.json
+
+7. Update LUMEN_RESULT.md
+
+The result must include:
+
+- files changed
+- exact tests run
+- exact test results
+- target_ref syntax implemented
+- backward compatibility notes
+- known limitations
+- whether 001J is safe to begin
+
+Acceptance criteria:
+
+- All previous tests pass.
+- New target resolution tests pass.
+- Existing golden replays pass.
+- Sample character JSON no longer hard-codes unit ids for self-targeting effects.
+- Skills are now reusable across different instantiated unit ids.

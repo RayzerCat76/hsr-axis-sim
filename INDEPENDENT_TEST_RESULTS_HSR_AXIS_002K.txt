@@ -1,0 +1,20 @@
+HSR-AXIS-002K independent test results
+
+PASS: python3 -m compileall -q hsr_axis_sim
+PASS: full pytest suite — 367 passed in 36.83s
+PASS: reviewed registry focused tests — 8 passed
+PASS: locked regression — 20/20 checks
+PASS: trace-evidence-only regression — 2/2 checks
+PASS: registry Markdown report byte-identical
+PASS: registry JSON report byte-identical
+PASS: validation mismatch exit code 1
+PASS: unreadable input exit code 2 without traceback
+PASS: atomic-fact SHA-256 unchanged
+
+Independent malformed-input probes:
+
+FAIL: registry_entry_id = {"x": 1} was accepted, CLI exit 0
+FAIL: complete_game_skill = 0 was accepted, CLI exit 0
+FAIL: source_atomic_fact_ids = [{"x": 1}] produced an unhandled TypeError traceback
+
+Gate decision: NEEDS FIX before HSR-AXIS-002L.

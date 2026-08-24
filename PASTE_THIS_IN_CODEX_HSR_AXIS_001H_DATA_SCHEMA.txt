@@ -1,0 +1,250 @@
+Task ID: HSR-AXIS-001H
+Reasoning: HIGH
+
+You are continuing the permanent Python project for a Honkai: Star Rail inspired action-axis simulator.
+
+The previous accepted task was HSR-AXIS-001G, which added the event hook / trigger system MVP.
+
+Do not scrape Huroka, Yatta, HoneyHunter, Bilibili, or any external website in this task.
+Do not implement AI axis search in this task.
+Do not implement every real character in this task.
+Do not rewrite the simulator core unless a small compatibility change is strictly required and covered by tests.
+
+Goal:
+Add a data-driven character / skill schema MVP so the simulator can load simplified characters, skills, actions, and triggers from JSON files instead of hard-coding everything inside replay action specs.
+
+Why this matters:
+The project will eventually import character data from external databases such as Huroka/Yatta, but external raw data must first map into our own stable schema. This task creates that internal schema and loader.
+
+Required new structure:
+
+hsr_axis_sim/
+  data/
+    sample_characters/
+      bronya_like.json
+      seele_like.json
+      generic_enemy.json
+    sample_teams/
+      bronya_seele_team.json
+    golden_replays/
+      data_loaded_bronya_seele_mvp.json
+  sim/
+    data_schema.py
+    data_loader.py
+  tests/
+    test_data_schema.py
+    test_data_loader.py
+    test_data_loaded_replay.py
+
+Use dataclasses or Pydantic, whichever is consistent with the existing project style. If Pydantic is not already a project dependency, prefer dataclasses plus explicit validation so the project stays lightweight.
+
+Required schema concepts:
+
+1. CharacterSpec
+   Fields:
+   - id
+   - name
+   - team default or suggested team
+   - element optional
+   - path optional
+   - base_stats
+   - skills
+   - triggers optional
+
+2. BaseStatsSpec
+   Fields:
+   - hp
+   - atk
+   - defense
+   - base_speed
+   - max_energy
+   - crit_rate
+   - crit_dmg
+   - dmg_bonus
+   - max_toughness optional
+   - weaknesses optional
+
+3. SkillSpec
+   Fields:
+   - id
+   - name
+   - skill_type, such as basic / skill / ultimate / talent / technique / special
+   - target_type, such as self / single_ally / single_enemy / all_enemies / selected
+   - sp_delta or explicit SP effects
+   - energy_delta or explicit energy effects
+   - ends_turn
+   - effects
+
+4. TeamSpec
+   Fields:
+   - id
+   - name
+   - unit_refs
+   - initial_skill_points
+   - max_skill_points
+
+5. UnitBuildSpec or UnitInstanceSpec
+   Fields:
+   - character_id
+   - unit_id
+   - team
+   - level optional
+   - stat_overrides optional
+   - initial_energy optional
+   - initial_current_av optional
+   - initial_hp optional
+   - initial_toughness optional
+
+6. TriggerSpec
+   Use the existing Trigger fields:
+   - id
+   - owner_id may be omitted in character-owned trigger templates and filled by loader
+   - event_type
+   - condition
+   - effects
+   - max_triggers_per_action
+   - enabled
+
+7. EffectSpec
+   Must support all existing replay effect types:
+   - AddBuff
+   - AddDebuff
+   - AdvanceAction
+   - ChangeSpeed
+   - ConsumeEnergy
+   - ConsumeSkillPoint
+   - DealDamage
+   - DealToughnessDamage
+   - DelayAction
+   - DoesNotEndTurn
+   - GainEnergy
+   - GainSkillPoint
+   - GrantExtraTurn
+   - ImmediateAction
+   - RemoveBuff
+   - RemoveDebuff
+
+Loader requirements:
+
+1. Implement a function to load a CharacterSpec from JSON.
+2. Implement a function to instantiate a Unit from a CharacterSpec + UnitInstanceSpec.
+3. Implement a function to build a BattleState from a TeamSpec plus character JSON files.
+4. Implement a function to construct an Action from a loaded SkillSpec for a specific actor and target list.
+5. Character-owned trigger templates must become real Trigger objects with `owner_id` filled as the instantiated unit id.
+6. Stat overrides must apply cleanly and only to known stat fields.
+7. Unknown effect types, missing required fields, duplicate skill ids, duplicate unit ids, and unknown character ids must raise clear errors.
+
+Sample data requirements:
+
+Create simplified data files only. Do not use copyrighted full official text. Use generic names and minimal numeric values.
+
+1. `seele_like.json`
+   - A simplified DPS character.
+   - Has a skill that deals fixed or calculated damage to one enemy.
+   - Has an on-kill trigger that grants an extra turn.
+   - This should use the existing generic trigger system, not hard-coded Python character logic.
+
+2. `bronya_like.json`
+   - A simplified support character.
+   - Has a skill that gives one selected ally immediate action or action advance according to current engine capabilities.
+   - Has a simple damage/buff effect if useful, but keep it minimal.
+
+3. `generic_enemy.json`
+   - A simplified enemy unit with HP, toughness, and speed.
+
+4. `bronya_seele_team.json`
+   - Instantiates one Bronya-like support, one Seele-like DPS, and one or two enemies.
+   - Provides initial SP and initial AV values.
+
+Replay requirement:
+
+Add `data_loaded_bronya_seele_mvp.json`.
+
+This replay should demonstrate that the same kind of Bronya-like + Seele-like flow can be executed using data-loaded skills/actions rather than fully hard-coded replay action definitions.
+
+Acceptable approach:
+- The replay may reference loaded skills by `actor_id` and `skill_id`, if you extend replay support for that.
+- Or it may be generated/validated through a test rather than the CLI, if extending CLI replay format is too large for this task.
+
+Preferred approach:
+Extend ReplayValidator minimally so a replay can optionally include:
+
+```json
+"data_sources": {
+  "characters_dir": "hsr_axis_sim/data/sample_characters",
+  "team": "hsr_axis_sim/data/sample_teams/bronya_seele_team.json"
+}
+```
+
+and steps can use:
+
+```json
+{
+  "expected_actor": "seele_like",
+  "skill_id": "skill",
+  "target_ids": ["enemy_1"]
+}
+```
+
+Do this only if it can be implemented cleanly. Otherwise implement a test-level data-loaded replay first and document the limitation.
+
+Tests required:
+
+1. Schema loading tests
+   - valid character loads
+   - missing required fields fail clearly
+   - unknown effect type fails clearly
+   - duplicate skill ids fail clearly
+
+2. Data loader tests
+   - Unit is created with correct stats
+   - stat overrides work
+   - unknown stat override fails clearly
+   - character-owned trigger is attached to instantiated unit
+   - duplicate unit ids fail clearly
+   - unknown character id fails clearly
+
+3. Skill/action construction tests
+   - SkillSpec becomes executable Action
+   - target_ids are applied correctly
+   - SP and energy effects execute correctly
+   - generic effects still work
+
+4. Data-loaded battle/replay test
+   - Load Bronya-like + Seele-like team from JSON
+   - Execute Seele-like kill
+   - Confirm on-kill trigger grants extra turn
+   - Execute extra turn
+   - Confirm timeline and HP outcomes match expectations
+
+Do not break existing tests or replay CLIs.
+All previous tests must continue passing.
+All previous golden replay files must continue passing.
+
+Deliverables:
+
+1. New `data_schema.py` and `data_loader.py`.
+2. Sample character/team JSON files.
+3. New data-loaded replay or data-loaded replay test.
+4. New pytest tests.
+5. Updated README section explaining the data layer.
+6. Updated `hsr_axis_sim/LUMEN_RESULT.md` with:
+   - files changed
+   - exact tests run
+   - exact results
+   - schema decisions
+   - what is intentionally not implemented
+   - known assumptions
+   - whether 001I is safe to begin
+
+Important design rules:
+
+- Do not put Huroka-specific field names into the simulator schema yet.
+- This is the internal normalized schema, not an external adapter.
+- Keep raw source import separate from normalized executable data.
+- Skills should be represented as executable effect primitives, not natural language text.
+- Avoid real official skill text. Use simplified names and generic descriptions only.
+- Keep this task narrow: data schema and loader only.
+
+Recommended next task after this, if 001H passes:
+HSR-AXIS-001I — Enemy Action Pattern / Basic Enemy AI MVP, or HSR-AXIS-002A — External Data Adapter Planning, depending on review results.

@@ -1,0 +1,46 @@
+HSR-AXIS-002N-FIX — Independent Test Results
+Date: 2026-07-12
+
+Source package:
+/mnt/data/hsr_axis_001a_package(52).zip
+
+1. Compile
+python -m compileall -q hsr_axis_sim
+PASS
+
+2. Complete pytest collection
+44 test files, 430 tests total.
+
+Group 1 (files 1-22):
+206 passed in 9.28s
+
+Group 2A (files 23-33):
+110 passed in 13.63s
+
+Group 2B (files 34-44):
+114 passed in 28.82s
+
+TOTAL: 430 / 430 passed
+
+3. Focused 002N-FIX tests
+python -m pytest -q hsr_axis_sim/tests/test_tingyun_ultimate_damage_buff_magnitude.py
+9 passed in 5.57s
+
+4. Locked regression
+PASS 12/12 golden replays
+PASS 2/2 manual checks
+PASS 2/2 search scenarios
+PASS 2/2 action-sequence trace checks
+PASS 2/2 trace evidence checks
+TOTAL: PASS 20/20
+
+5. Trace-evidence-only regression
+PASS 2/2
+
+6. Deterministic reports
+Markdown byte identity: PASS
+JSON byte identity: PASS
+
+7. Malformed-input audit
+5,000 random path mutations of the committed JSON fixture.
+Unexpected TypeError/AttributeError/KeyError leakage: 0

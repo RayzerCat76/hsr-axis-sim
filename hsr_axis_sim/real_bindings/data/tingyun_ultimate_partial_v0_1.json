@@ -1,0 +1,33 @@
+{
+  "binding_id": "tingyun_ultimate_partial_resource_interrupt_shell_v0_1",
+  "version": "0.1",
+  "actor_id": "tingyun",
+  "action_category": "ultimate",
+  "binding_scope": "partial_resource_interrupt_shell",
+  "complete_game_skill": false,
+  "complete_character_kit": false,
+  "source_atomic_fact_ids": [
+    "tingyun.ultimate.target_scope",
+    "tingyun.ultimate.energy_cost",
+    "tingyun.ultimate.target_energy_restore"
+  ],
+  "unresolved_atomic_fact_ids": [
+    "tingyun.ultimate.damage_buff_duration",
+    "tingyun.ultimate.observed_target"
+  ],
+  "unresolved_fields": [
+    "damage_buff_magnitude",
+    "damage_buff_duration_decrement_and_expiration",
+    "observed_real_video_target",
+    "real_video_initial_energy_and_combat_state"
+  ],
+  "target_type": "single_ally",
+  "actor_energy_cost": 130,
+  "target_energy_restore": 50,
+  "timing_classification": "ultimate_interrupt",
+  "damage_effect": false,
+  "toughness_effect": false,
+  "buff_effect": false,
+  "synthetic_only": true,
+  "real_trace_executable": false
+}

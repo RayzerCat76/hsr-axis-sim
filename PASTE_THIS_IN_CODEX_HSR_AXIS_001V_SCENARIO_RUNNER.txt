@@ -1,0 +1,173 @@
+Task ID: HSR-AXIS-001V
+Task name: Minimal CLI Scenario Runner / Axis Export MVP
+
+Codex Reasoning: Medium
+ChatGPT Model suggestion: GPT-5.5 is enough; GPT-5.5 Thinking is not required for this task.
+Reason: This task is mostly CLI wiring, scenario loading, report formatting, JSON/Markdown export, and tests. Do not change combat-core mechanics.
+
+Context:
+The project already has:
+- data-driven character/team loading
+- action generator
+- ultimate interrupt windows
+- enemy AI pattern MVP
+- beam search MVP
+- evaluator profiles
+- search report formatting / dict export
+
+Goal:
+Add a minimal local CLI scenario runner that can load a search scenario JSON file, run beam search, and export a human-readable axis report.
+
+Do NOT:
+- Do not scrape Huroka, Yatta, Bilibili, or any external website.
+- Do not add real character imports.
+- Do not add a web UI.
+- Do not change combat-core semantics.
+- Do not modify timeline, effects, damage, break logic, buffs, enemy AI, targeting, or ultimate behavior unless a test reveals a truly unavoidable bug. If such a bug is found, document it clearly in LUMEN_RESULT.md and keep the fix minimal.
+
+Expected new/changed files:
+
+```text
+hsr_axis_sim/search/scenario.py
+hsr_axis_sim/data/search_scenarios/basic_search_mvp.json
+hsr_axis_sim/tests/test_search_scenario_runner.py
+hsr_axis_sim/search/__init__.py          # only if needed for exports
+hsr_axis_sim/LUMEN_RESULT.md
+```
+
+You may choose slightly different names if the architecture is cleaner, but keep the scope equivalent.
+
+Scenario JSON format:
+Create and support a minimal scenario file like this:
+
+```json
+{
+  "id": "basic_search_mvp",
+  "name": "Basic Search MVP",
+  "description": "Small offline search scenario using existing sample characters.",
+  "characters_dir": "../sample_characters",
+  "team_path": "../sample_teams/bronya_seele_team.json",
+  "search": {
+    "max_depth": 2,
+    "beam_width": 3,
+    "profile": "generic_kill",
+    "include_ultimates": false,
+    "max_global_av": null,
+    "max_nodes_expanded": 100
+  },
+  "report": {
+    "format": "markdown",
+    "top_k": 5
+  }
+}
+```
+
+Path resolution rule:
+- `characters_dir` and `team_path` must be resolved relative to the scenario JSON file's parent directory if they are relative paths.
+- Absolute paths may be accepted, but tests should focus on relative paths.
+
+Required functionality:
+
+1. Load scenario JSON.
+2. Validate required fields with helpful errors.
+3. Build `BattleState` and `skill_lookup` using existing data-loader functions.
+4. Create an `Evaluator` from the profile id.
+5. Run existing `beam_search(...)` with the scenario search settings.
+6. Build a `SearchReport` using existing `build_search_report(...)`.
+7. Return/export one of these formats:
+   - `text`
+   - `markdown`
+   - `json`
+8. Provide a CLI entry point such as:
+
+```bash
+python -m hsr_axis_sim.search.scenario hsr_axis_sim/data/search_scenarios/basic_search_mvp.json
+python -m hsr_axis_sim.search.scenario hsr_axis_sim/data/search_scenarios/basic_search_mvp.json --format markdown
+python -m hsr_axis_sim.search.scenario hsr_axis_sim/data/search_scenarios/basic_search_mvp.json --format text
+python -m hsr_axis_sim.search.scenario hsr_axis_sim/data/search_scenarios/basic_search_mvp.json --format json
+python -m hsr_axis_sim.search.scenario hsr_axis_sim/data/search_scenarios/basic_search_mvp.json --output /tmp/axis_report.md
+```
+
+CLI behavior:
+- If `--format` is omitted, use `report.format` from the scenario JSON.
+- If `--output` is omitted, print to stdout.
+- If `--output` is supplied, write the selected report format to that file.
+- `--profile`, `--max-depth`, `--beam-width`, `--include-ultimates`, and `--top-k` may optionally override scenario JSON values. Implement these overrides only if they stay simple.
+- Unknown format should raise a clear error.
+- Unknown evaluator profile should raise a clear error.
+- Missing scenario file should fail clearly.
+
+Suggested Python API:
+
+```python
+@dataclass
+class SearchScenario:
+    id: str
+    name: str
+    description: str
+    characters_dir: Path
+    team_path: Path
+    max_depth: int
+    beam_width: int
+    profile: str
+    include_ultimates: bool
+    max_global_av: float | None
+    max_nodes_expanded: int | None
+    report_format: str
+    top_k: int
+
+
+def load_search_scenario(path: str | Path) -> SearchScenario:
+    ...
+
+
+def run_search_scenario(scenario: SearchScenario) -> SearchReport:
+    ...
+
+
+def render_search_scenario_report(report: SearchReport, format: str) -> str:
+    ...
+```
+
+Tests required:
+
+Add pytest tests for:
+
+1. Scenario JSON loads and resolves relative paths correctly.
+2. `run_search_scenario(...)` returns a `SearchReport` with at least one axis step or a clear terminal reason.
+3. Markdown rendering contains `# HSR Axis Search Report`.
+4. Text rendering contains `HSR Axis Search Report`.
+5. JSON rendering is valid JSON and contains `best_axis_steps`.
+6. CLI stdout works for at least one format.
+7. CLI `--output` writes a file.
+8. Unknown report format fails clearly.
+9. Unknown evaluator profile fails clearly.
+
+Backward compatibility:
+All existing tests and golden replay CLIs must continue to pass.
+
+Commands to run:
+
+```bash
+python -m compileall -q hsr_axis_sim
+python -m pytest -q
+for f in hsr_axis_sim/data/golden_replays/*.json; do python -m hsr_axis_sim.sim.replay "$f"; done
+python -m hsr_axis_sim.sim.replay_lint hsr_axis_sim/data/manual_video_traces/samples/manual_video_trace_sample_mvp.json
+python -m hsr_axis_sim.sim.replay hsr_axis_sim/data/manual_video_traces/samples/manual_video_trace_sample_mvp.json
+python -m hsr_axis_sim.search.scenario hsr_axis_sim/data/search_scenarios/basic_search_mvp.json --format markdown
+python -m hsr_axis_sim.search.scenario hsr_axis_sim/data/search_scenarios/basic_search_mvp.json --format json
+```
+
+Update `hsr_axis_sim/LUMEN_RESULT.md` with:
+
+1. Files changed.
+2. Tests run.
+3. Exact pass/fail results.
+4. CLI examples run and outputs confirmed.
+5. What was implemented.
+6. What was intentionally not implemented.
+7. Any known limitations.
+8. Whether 001W is safe to begin.
+
+Expected next task after this:
+HSR-AXIS-001W may be a lightweight static timeline visualization/export task, but do not start it in 001V.

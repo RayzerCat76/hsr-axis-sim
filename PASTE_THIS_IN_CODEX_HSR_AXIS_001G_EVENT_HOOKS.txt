@@ -1,0 +1,296 @@
+Task ID: HSR-AXIS-001G
+Reasoning: HIGH
+
+You are continuing the same permanent Python project for a Honkai: Star Rail inspired action-axis simulator.
+
+Previous accepted tasks:
+- 001A: deterministic action value timeline core
+- 001A-FIX: resource validation and turn actor validation
+- 001B: replay validator MVP
+- 001C: multi-step Bronya-like + Seele-like replay
+- 001D: buff/debuff duration semantics
+- 001E: Damage / Stats / Forced RNG MVP
+- 001F: Toughness / Weakness / Break MVP
+
+Do not scrape Huroka/Yatta/HoneyHunter yet.
+Do not implement all real HSR characters yet.
+Do not implement enemy AI yet.
+Do not implement AI axis search yet.
+Do not implement the full HSR damage formula yet.
+
+Goal of this task:
+Add a deterministic Event Hooks / Trigger System MVP so future character kits can express triggered mechanics such as Seele-like on-kill extra turns, on-break effects, on-hit effects, and follow-up style hooks.
+
+This task must stay generic. Do not hard-code Seele, Bronya, Robin, Ruan Mei, Aventurine, or any real HSR character.
+
+Required deliverables:
+1. Add a generic `Event` model.
+2. Add a generic `Trigger` model.
+3. Add a deterministic event queue / dispatcher.
+4. Make existing effects emit events where appropriate.
+5. Allow triggers to execute generic existing effects.
+6. Add replay JSON support for triggers.
+7. Add at least one golden replay showing a Seele-like generic on-kill extra turn.
+8. Add tests for trigger correctness and regression safety.
+9. Update README and `hsr_axis_sim/LUMEN_RESULT.md`.
+
+Suggested architecture:
+
+```text
+hsr_axis_sim/
+  sim/
+    events.py          # Event, Trigger, event dispatch helpers
+    state.py           # pending event queue / triggers storage if needed
+    unit.py            # unit-owned triggers if appropriate
+    effects.py         # emit damage/kill/break events
+    action.py          # action lifecycle event dispatch
+    timeline.py        # turn start / turn end event hooks if appropriate
+    replay.py          # load/check triggers and new replay fields
+  data/golden_replays/
+    trigger_on_kill_extra_turn_mvp.json
+  tests/
+    test_events_triggers.py
+    test_replay_validator.py  # extend as needed
+```
+
+Core models:
+
+Implement something equivalent to:
+
+```python
+@dataclass
+class Event:
+    type: str
+    data: dict[str, Any]
+```
+
+Example event types for this MVP:
+
+```text
+action_started
+action_finished
+damage_dealt
+unit_defeated
+weakness_break
+turn_started
+turn_ended
+```
+
+Implement something equivalent to:
+
+```python
+@dataclass
+class Trigger:
+    id: str
+    owner_id: str
+    event_type: str
+    condition: dict[str, Any]
+    effects: list[Effect]
+    max_triggers_per_action: int = 1
+    enabled: bool = True
+```
+
+The trigger system may live on `BattleState.triggers`, on `Unit.triggers`, or both, but the replay schema must be clear and tests must cover loading it.
+
+Condition MVP:
+
+Support a small deterministic condition language. Do not build a huge rules engine.
+
+Required condition types:
+
+1. `always`
+2. `event_actor_is_owner`
+3. `event_source_is_owner`
+4. `event_target_is_owner`
+5. `event_killer_is_owner`
+6. `field_equals`
+
+Example:
+
+```json
+{
+  "type": "event_killer_is_owner"
+}
+```
+
+Example:
+
+```json
+{
+  "type": "field_equals",
+  "field": "target_id",
+  "value": "enemy_1"
+}
+```
+
+Event emission requirements:
+
+`DealDamage` should emit:
+
+- `damage_dealt` with at least:
+  - `source_id`
+  - `target_id`
+  - `amount`
+  - `damage_type`
+  - `is_crit` if available from the damage calculation result
+
+If damage reduces a target to 0 HP and the target was alive before the hit, emit:
+
+- `unit_defeated` with at least:
+  - `killer_id`
+  - `target_id`
+
+`DealToughnessDamage` / break logic should emit:
+
+- `weakness_break` with at least:
+  - `source_id`
+  - `target_id`
+  - `element`
+
+Action / timeline lifecycle should emit at least:
+
+- `action_started`
+- `action_finished`
+
+Optional but useful:
+
+- `turn_started`
+- `turn_ended`
+
+Trigger execution requirements:
+
+When an event is emitted, matching enabled triggers should run their effects deterministically.
+
+Trigger effects should execute as if the trigger owner is the actor. This allows self-targeting effects to work through the existing `UnitEffect` default target resolution.
+
+Example:
+
+A trigger owned by `seele_like` with this effect:
+
+```json
+{
+  "type": "GrantExtraTurn"
+}
+```
+
+should grant an extra turn to `seele_like` because `GrantExtraTurn` with no explicit target defaults to the synthetic trigger action actor, i.e. the trigger owner.
+
+Determinism and safety:
+
+- Trigger ordering must be deterministic.
+- Use insertion order or sort by trigger id, but document the chosen policy.
+- Add a recursion / event processing limit to avoid infinite trigger loops.
+- If the limit is exceeded, raise a clear `ValueError`.
+- `max_triggers_per_action` should prevent the same trigger from firing too many times from one action.
+- Existing tests and golden replays must still pass.
+
+Replay Validator requirements:
+
+Extend replay loading so initial state can include triggers.
+
+Accept either top-level initial triggers:
+
+```json
+"initial_state": {
+  "triggers": [ ... ]
+}
+```
+
+or unit-owned triggers:
+
+```json
+"units": [
+  {
+    "id": "seele_like",
+    "name": "Seele-like Unit",
+    "team": "ally",
+    "base_speed": 100,
+    "triggers": [ ... ]
+  }
+]
+```
+
+Choose one primary schema and document it. Supporting both is optional.
+
+The replay validator should also be able to check at least:
+
+```json
+"expect": {
+  "extra_turn_stack": ["seele_like"],
+  "logs_contains": ["trigger:on_kill_extra_turn"]
+}
+```
+
+If you add `logs_contains`, keep it generic and tested.
+
+Golden replay requirement:
+
+Create:
+
+```text
+hsr_axis_sim/data/golden_replays/trigger_on_kill_extra_turn_mvp.json
+```
+
+This replay should verify:
+
+1. A Seele-like generic unit acts.
+2. It deals deterministic fixed damage that kills an enemy.
+3. `DealDamage` emits `unit_defeated`.
+4. A generic trigger with condition `event_killer_is_owner` fires.
+5. The trigger grants an extra turn to the owner.
+6. The next action selected by the timeline is that extra turn.
+7. The replay passes by CLI.
+
+Do not implement real Seele’s full kit. This is only a generic on-kill extra-turn trigger.
+
+Tests required:
+
+1. `DealDamage` emits `damage_dealt`.
+2. `DealDamage` emits `unit_defeated` only when the target newly reaches 0 HP.
+3. A trigger with `event_killer_is_owner` fires when the owner kills a target.
+4. The same trigger does not fire when another unit gets the kill.
+5. A trigger can execute `GrantExtraTurn`.
+6. A trigger can execute `GainEnergy` or `AddBuff`.
+7. `DealToughnessDamage` / break emits `weakness_break` and can activate a trigger.
+8. Trigger ordering is deterministic.
+9. Recursive trigger loop protection works.
+10. Replay Validator can load triggers.
+11. `trigger_on_kill_extra_turn_mvp.json` passes by CLI.
+12. All previous tests and all previous golden replays still pass.
+
+Commands to run:
+
+```bash
+python -m compileall -q hsr_axis_sim
+python -m pytest -q
+pytest -q
+python -m hsr_axis_sim.sim.replay hsr_axis_sim/data/golden_replays/bronya_seele_timeline_mvp.json
+python -m hsr_axis_sim.sim.replay hsr_axis_sim/data/golden_replays/bronya_seele_multistep_mvp.json
+python -m hsr_axis_sim.sim.replay hsr_axis_sim/data/golden_replays/buff_duration_mvp.json
+python -m hsr_axis_sim.sim.replay hsr_axis_sim/data/golden_replays/damage_rng_mvp.json
+python -m hsr_axis_sim.sim.replay hsr_axis_sim/data/golden_replays/toughness_break_mvp.json
+python -m hsr_axis_sim.sim.replay hsr_axis_sim/data/golden_replays/trigger_on_kill_extra_turn_mvp.json
+```
+
+Update `hsr_axis_sim/LUMEN_RESULT.md` with:
+
+- files changed
+- exact tests run
+- exact test results
+- event and trigger semantics implemented
+- trigger ordering policy
+- recursion safety policy
+- what is intentionally not implemented yet
+- known assumptions
+- whether 001H is safe to begin
+
+Acceptance criteria:
+
+- Test suite passes.
+- Existing replay JSONs still pass.
+- New trigger golden replay passes.
+- No website scraping.
+- No real character-kit implementation.
+- No enemy AI.
+- No AI search.
+- Trigger system remains generic and data-driven.

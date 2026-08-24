@@ -1,0 +1,741 @@
+Task ID: HSR-RUNTIME-ARCH-003
+Task title: Read-Only Runtime Trace Export
+
+Recommended ChatGPT model: GPT-5.6 Sol
+Codex reasoning level: HIGH
+
+Current confirmed state
+=======================
+
+`HSR-RUNTIME-ARCH-002 — Event Envelope Adapter Bridge` has passed independent
+Luman validation.
+
+Real independent baseline:
+
+```text
+compileall: PASS
+ARCH-001/002 focused checks: 84/84 passed
+complete pytest: 746/746 passed
+locked regression: 20/20 passed
+trace-evidence-only regression: 2/2 passed
+```
+
+The current boundaries are:
+
+```text
+hsr_axis_sim.sim
+  active production MVP
+
+hsr_axis_sim.runtime_contracts
+  immutable RuntimeEvent and RuntimeTraceRecord contracts
+
+hsr_axis_sim.runtime_adapters
+  manual legacy Event → RuntimeEvent conversion
+```
+
+Existing production LIFO behavior is unchanged. FIFO/LIFO game semantics remain
+unresolved. `unit_defeated` remains `UNKNOWN + UNRESOLVED`.
+
+Objective
+=========
+
+Create a standard-library-only, sidecar trace export layer that accepts an
+explicit iterable of immutable `RuntimeEvent` objects and produces:
+
+1. one `RuntimeTraceRecord` per event;
+2. an immutable `RuntimeTraceDocument`;
+3. deterministic compact or pretty UTF-8 JSON bytes;
+4. a SHA-256 digest over the exact exported bytes;
+5. an optional, explicitly requested file write.
+
+The export layer must be read-only with respect to the simulator.
+
+It must not:
+
+- import or read `BattleState`;
+- read or clear `pending_events`;
+- hook `emit_event`;
+- observe battles automatically;
+- mutate RuntimeEvents;
+- reconstruct Action/Attack/Hit contexts;
+- extract or quantize numeric values;
+- load, parse, validate, or compare trace files;
+- alter any production behavior.
+
+Required reference-file placement
+=================================
+
+The handoff bundle contains:
+
+```text
+REFERENCE_RUNTIME_TRACE_EXPORT_HSR_RUNTIME_ARCH_003.md
+REFERENCE_RUNTIME_TRACE_EXPORT_HSR_RUNTIME_ARCH_003.json
+```
+
+Copy them byte-for-byte to:
+
+```text
+docs/runtime/research/REFERENCE_RUNTIME_TRACE_EXPORT_HSR_RUNTIME_ARCH_003.md
+docs/runtime/research/REFERENCE_RUNTIME_TRACE_EXPORT_HSR_RUNTIME_ARCH_003.json
+```
+
+Required SHA-256:
+
+```text
+REFERENCE_RUNTIME_TRACE_EXPORT_HSR_RUNTIME_ARCH_003.md
+fad9697cda084cbcb84d98e81588181548e08806a8c1a83ebe3a28a6441894b8
+
+REFERENCE_RUNTIME_TRACE_EXPORT_HSR_RUNTIME_ARCH_003.json
+5adea3181e488cc9e74e3ee73a483a8107f59b13d8abb8e7f2071be6cacf48ea
+```
+
+Do not rewrite, normalize, or regenerate these reference files.
+
+Required implementation
+=======================
+
+Create a new package:
+
+```text
+hsr_axis_sim/runtime_exports/
+  __init__.py
+  enums.py
+  model.py
+  trace_export.py
+  files.py
+```
+
+Also create:
+
+```text
+docs/runtime/RUNTIME_TRACE_EXPORT_V1.md
+docs/runtime/RUNTIME_TRACE_SCHEMA_V1.json
+
+hsr_axis_sim/tests/test_runtime_trace_export_model.py
+hsr_axis_sim/tests/test_runtime_trace_export_builder.py
+hsr_axis_sim/tests/test_runtime_trace_export_file.py
+hsr_axis_sim/tests/test_runtime_arch_003_preservation.py
+```
+
+Use only the Python standard library.
+
+Do not modify existing files under:
+
+```text
+hsr_axis_sim/runtime_contracts/**
+hsr_axis_sim/runtime_adapters/**
+```
+
+1. Explicit export policies
+---------------------------
+
+Define stable string enums:
+
+```text
+TraceSequencePolicy:
+  CONTIGUOUS
+  STRICTLY_INCREASING
+
+EmptyTracePolicy:
+  ALLOW
+  REJECT
+```
+
+Neither enum may have a default selection.
+
+Create a frozen configuration dataclass:
+
+```python
+TraceExportConfig:
+    trace_id: str
+    sequence_policy: TraceSequencePolicy
+    empty_trace_policy: EmptyTracePolicy
+    metadata: Mapping[str, JSON-compatible value]
+```
+
+Requirements:
+
+- all fields are mandatory;
+- `trace_id` is a non-empty string;
+- policy values must be the exact enum types;
+- metadata is defensively copied/frozen;
+- unsupported opaque objects and non-finite floats are rejected;
+- no timestamp, UUID, process ID, object identity, environment value, or random
+  value is generated;
+- config mutation is rejected.
+
+2. Controlled errors
+--------------------
+
+Create:
+
+```text
+RuntimeTraceExportError
+RuntimeTraceExportSchemaError
+RuntimeTraceSequenceError
+DuplicateRuntimeEventIdError
+EmptyRuntimeTraceError
+RuntimeTraceFileError
+```
+
+Requirements:
+
+- all failures use controlled task-specific errors;
+- preserve the original exception as `__cause__` when wrapping serialization or
+  file-system failures;
+- never silently skip a bad event;
+- never stringify unsupported objects with `repr()`.
+
+3. RuntimeTraceDocument
+-----------------------
+
+Create a frozen dataclass:
+
+```python
+RuntimeTraceDocument:
+    schema_name: str
+    schema_version: str
+    trace_id: str
+    sequence_policy: TraceSequencePolicy
+    record_count: int
+    first_sequence: int | None
+    last_sequence: int | None
+    event_type_counts: Mapping[str, int]
+    semantic_gap_ids: tuple[str, ...]
+    records: tuple[RuntimeTraceRecord, ...]
+    metadata: Mapping[str, JSON-compatible value]
+```
+
+Required fixed values:
+
+```text
+schema_name = hsr_runtime_trace
+schema_version = 1.0
+```
+
+Prefer `init=False` fixed dataclass fields or an equivalent design that prevents
+callers from selecting another schema name/version.
+
+Validation:
+
+- `trace_id` non-empty;
+- `record_count == len(records)`;
+- empty document has `first_sequence = null` and `last_sequence = null`;
+- non-empty document boundaries equal the first and last record sequences;
+- event-type counts exactly match records;
+- semantic gaps are unique and deterministically sorted;
+- records are a tuple and immutable;
+- metadata and count mappings are defensively frozen;
+- document mutation is rejected.
+
+4. Event-to-record projection
+-----------------------------
+
+Provide a pure function equivalent to:
+
+```python
+runtime_event_to_trace_record(event: RuntimeEvent) -> RuntimeTraceRecord
+```
+
+It must create exactly:
+
+```text
+record.sequence = event.sequence
+record.event = event
+record.action_context = None
+record.attack_context = None
+record.hit_context = None
+record.numeric_values = {}
+record.notes = ()
+```
+
+Requirements:
+
+- input must be `RuntimeEvent`;
+- no new event is created;
+- the original immutable event object is retained in the record;
+- do not infer ActionContext, AttackContext, HitContext, attack ID, hit ID,
+  lifecycle, or numeric values;
+- do not inspect legacy `amount` or `formula_parts` for numeric conversion.
+
+5. Document building
+--------------------
+
+Provide a function equivalent to:
+
+```python
+build_runtime_trace_document(
+    events: Iterable[RuntimeEvent],
+    *,
+    config: TraceExportConfig,
+) -> RuntimeTraceDocument
+```
+
+Requirements:
+
+- validate config before consuming the iterable;
+- consume the iterable exactly once;
+- preserve input order;
+- do not mutate the input collection;
+- reject any non-RuntimeEvent item;
+- preserve original event sequences; never renumber;
+- reject duplicate `event_id` values.
+
+Sequence policies:
+
+### CONTIGUOUS
+
+For each adjacent pair:
+
+```text
+next.sequence == previous.sequence + 1
+```
+
+### STRICTLY_INCREASING
+
+For each adjacent pair:
+
+```text
+next.sequence > previous.sequence
+```
+
+Both policies reject repeated or decreasing sequence numbers.
+
+Empty policies:
+
+```text
+ALLOW:
+  produce an empty document
+
+REJECT:
+  raise EmptyRuntimeTraceError
+```
+
+No policy may be selected implicitly.
+
+Event type counts:
+
+```text
+key = RuntimeEventType.value
+value = exact number of records
+```
+
+Keys must be deterministically sorted in canonical output.
+
+6. Semantic-gap aggregation
+---------------------------
+
+For each event:
+
+- if `event.payload` has no `adapter` key, contribute no gap;
+- if it has an `adapter` mapping with no `semantic_gap_ids`, contribute no gap;
+- if `semantic_gap_ids` exists, it must be a sequence of non-empty strings;
+- reject a string scalar in place of a sequence;
+- reject duplicate IDs within one event rather than silently deduplicating;
+- collect the global sorted unique union.
+
+Malformed adapter metadata must raise:
+
+```text
+RuntimeTraceExportSchemaError
+```
+
+Do not infer semantic gaps from event type or legacy data.
+
+7. Artifact bytes and digest
+----------------------------
+
+Create a frozen dataclass:
+
+```python
+RuntimeTraceArtifact:
+    document: RuntimeTraceDocument
+    pretty: bool
+    payload_bytes: bytes
+    sha256: str
+```
+
+Provide a function equivalent to:
+
+```python
+build_runtime_trace_artifact(
+    document: RuntimeTraceDocument,
+    *,
+    pretty: bool,
+) -> RuntimeTraceArtifact
+```
+
+Requirements:
+
+- `pretty` must be an actual bool;
+- compact bytes use existing `canonical_json_bytes(document, pretty=False)`;
+- pretty bytes use existing `canonical_json_bytes(document, pretty=True)`;
+- SHA-256 is lowercase hexadecimal over the exact `payload_bytes`;
+- artifact validates that its digest matches its payload;
+- repeated builds are byte-identical;
+- compact and pretty hashes may differ;
+- do not embed the digest into the trace document.
+
+Reference sample expected hashes:
+
+```text
+compact:
+d9a123ccc03b1eec9a816ec0d55bf024998d3b656b27fa4f807439d7e34ad6bd
+
+pretty:
+71fa9c77239c30c2aa694a2a8e16f84538b37e3191db4318cf20c09154834d8f
+```
+
+The produced sample compact JSON must exactly match
+`sample.expected_compact_json` in the supplied JSON reference.
+
+8. Explicit file writing
+------------------------
+
+Provide a function equivalent to:
+
+```python
+write_runtime_trace_artifact(
+    artifact: RuntimeTraceArtifact,
+    path: str | pathlib.Path,
+    *,
+    overwrite: bool,
+) -> pathlib.Path
+```
+
+Requirements:
+
+- `overwrite` is mandatory and must be an actual bool;
+- artifact must be `RuntimeTraceArtifact`;
+- target path must name a file, not an existing directory;
+- parent directory must already exist;
+- do not silently create parent directories;
+- `overwrite=False` uses create-new semantics and rejects an existing target;
+- `overwrite=True` replaces exactly the requested target;
+- write exact `artifact.payload_bytes`;
+- return the resolved or normalized `Path` without changing file contents;
+- wrap controlled file-system failures as `RuntimeTraceFileError`;
+- do not write sidecar hashes or additional files;
+- do not write anywhere unless this function is explicitly called.
+
+9. Schema and documentation
+---------------------------
+
+Create:
+
+```text
+docs/runtime/RUNTIME_TRACE_SCHEMA_V1.json
+```
+
+It must be a deterministic machine-readable projection containing:
+
+```text
+schema_name
+schema_version
+document_fields
+record_projection
+sequence_policies
+empty_trace_policies
+semantic_gap_source
+numeric_projection
+prohibited_inference
+```
+
+Create:
+
+```text
+docs/runtime/RUNTIME_TRACE_EXPORT_V1.md
+```
+
+Document:
+
+- manual read-only scope;
+- exact input/output direction;
+- document schema;
+- one-event-to-one-record projection;
+- explicit sequence and empty policies;
+- semantic-gap aggregation;
+- no numeric extraction;
+- compact/pretty serialization;
+- exact-byte SHA-256;
+- explicit file-write boundary;
+- no loading, validation, comparison, JSONL, or automatic observation;
+- production simulator, adapter, contracts, and LIFO remain unchanged.
+
+Acceptance criteria
+===================
+
+1. `hsr_axis_sim.runtime_exports` imports successfully.
+
+2. Policy enums have exact stable string values.
+
+3. `TraceExportConfig` requires both policies explicitly.
+
+4. No timestamp, UUID, random, environment, process, or object-identity value is
+   generated.
+
+5. Every RuntimeEvent projects to exactly one RuntimeTraceRecord.
+
+6. All projected contexts are `None`.
+
+7. All projected numeric values are empty.
+
+8. Event object identity is preserved inside each record.
+
+9. Iterable is consumed exactly once.
+
+10. Input order and original sequences are preserved.
+
+11. CONTIGUOUS and STRICTLY_INCREASING rules are enforced exactly.
+
+12. Duplicate event IDs are rejected.
+
+13. Empty-trace behavior is explicitly ALLOW or REJECT.
+
+14. Event counts and sequence boundaries are exact.
+
+15. Semantic gaps come only from validated adapter metadata.
+
+16. Compact reference sample JSON is byte-exact.
+
+17. Artifact SHA-256 matches exact bytes.
+
+18. File writing is impossible without an explicit function call and explicit
+    `overwrite` argument.
+
+19. No trace loader, parser, validator, comparator, JSONL writer, automatic
+    observer, or production hook is introduced.
+
+20. No existing production or runtime contract/adapter behavior changes.
+
+21. Complete tests and regressions remain green.
+
+Required tests
+==============
+
+Add focused tests for at least:
+
+### Configuration and model
+
+- exact enum values;
+- missing explicit policies;
+- invalid policy types;
+- empty trace ID;
+- frozen config;
+- nested metadata defensive freeze;
+- opaque and non-finite metadata rejection;
+- fixed schema name/version;
+- frozen document and artifact;
+- document count/boundary/count-map validation.
+
+### Event projection
+
+- exact one-to-one projection;
+- original event identity retained;
+- all contexts `None`;
+- numeric values empty;
+- notes empty;
+- non-RuntimeEvent rejection;
+- no legacy amount/formula-parts extraction.
+
+### Sequence and stream behavior
+
+- contiguous success;
+- contiguous gap failure;
+- strictly increasing success with gaps;
+- duplicate/decreasing sequence failure;
+- duplicate event-ID failure;
+- iterable consumed once;
+- invalid config rejected before iterable consumption;
+- input list remains intact;
+- empty ALLOW;
+- empty REJECT.
+
+### Semantic gaps
+
+- no adapter metadata;
+- adapter metadata without gaps;
+- one gap;
+- globally sorted unique union;
+- string scalar rejection;
+- non-string/empty ID rejection;
+- duplicate gap within one event rejection;
+- malformed adapter object rejection;
+- no inference from `CONTENT_DEFINED` alone.
+
+### Serialization and artifact
+
+- exact supplied reference sample compact bytes;
+- exact compact and pretty SHA-256 values;
+- repeated byte stability;
+- compact and pretty bytes differ;
+- digest mismatch rejected;
+- unsupported content remains controlled through canonical serialization.
+
+### File writing
+
+- write new file;
+- existing file with overwrite false;
+- overwrite true;
+- missing parent;
+- directory target;
+- invalid artifact;
+- invalid overwrite type;
+- exact written bytes;
+- no sidecar files.
+
+### Real adapter smoke test
+
+Using the existing ARCH-002 adapter manually:
+
+```text
+execute simple normal action
+manually adapt state.pending_events
+build trace document
+build artifact
+```
+
+Verify:
+
+- three records: ACTION_START, DAMAGE_RESOLVED, ACTION_END;
+- event IDs and sequences are unchanged;
+- no contexts or numeric values are manufactured;
+- simulator events remain unchanged;
+- no production hook exists.
+
+### Preservation
+
+- exact SHA-256 of both supplied ARCH-003 reference files;
+- all ARCH-001 and ARCH-002 accepted documents still exist;
+- no import of `runtime_exports` from existing production modules;
+- no changes under `runtime_contracts` or `runtime_adapters`;
+- existing LIFO behavior unchanged.
+
+Files and areas that must remain unchanged
+==========================================
+
+Do not edit:
+
+```text
+hsr_axis_sim/sim/**
+hsr_axis_sim/runtime_contracts/**
+hsr_axis_sim/runtime_adapters/**
+hsr_axis_sim/search/**
+hsr_axis_sim/regression/**
+hsr_axis_sim/adapters/**
+hsr_axis_sim/real_bindings/**
+hsr_axis_sim/data/**
+fixtures/**
+README.md
+pyproject.toml
+PACKAGE_MANIFEST.json
+all existing tests
+all existing docs/runtime files
+all HSR-AXIS-002Q-FIX artifacts
+```
+
+Allowed modification:
+
+```text
+hsr_axis_sim/LUMEN_RESULT.md
+```
+
+Allowed additions only:
+
+```text
+hsr_axis_sim/runtime_exports/**
+docs/runtime/RUNTIME_TRACE_EXPORT_V1.md
+docs/runtime/RUNTIME_TRACE_SCHEMA_V1.json
+docs/runtime/research/REFERENCE_RUNTIME_TRACE_EXPORT_HSR_RUNTIME_ARCH_003.md
+docs/runtime/research/REFERENCE_RUNTIME_TRACE_EXPORT_HSR_RUNTIME_ARCH_003.json
+the four new ARCH-003 test files
+```
+
+Explicit exclusions
+===================
+
+Do not implement:
+
+- automatic simulator observation;
+- hooks into emit_event or pending_events;
+- event adaptation changes;
+- trace file loading or parsing;
+- trace schema validation from external files;
+- first-divergence comparison;
+- expected-vs-actual replay validation;
+- JSONL;
+- append mode;
+- Action/Attack/Hit reconstruction;
+- numeric extraction or quantization;
+- formulas;
+- character kits;
+- lifecycle binding;
+- FIFO/LIFO changes;
+- UI;
+- video parsing, OCR, or scraping.
+
+Commands to run
+===============
+
+Run and report exact output:
+
+```bash
+python -m compileall -q hsr_axis_sim
+
+python -m pytest -q   hsr_axis_sim/tests/test_runtime_trace_export_model.py   hsr_axis_sim/tests/test_runtime_trace_export_builder.py   hsr_axis_sim/tests/test_runtime_trace_export_file.py   hsr_axis_sim/tests/test_runtime_arch_003_preservation.py
+
+python -m pytest -q
+
+python -m hsr_axis_sim.regression.runner   --manifest hsr_axis_sim/data/regression_manifest.json   --format text
+
+python -m hsr_axis_sim.regression.runner   --manifest hsr_axis_sim/data/regression_manifest.json   --only trace_evidence   --format text
+
+sha256sum   docs/runtime/research/REFERENCE_RUNTIME_TRACE_EXPORT_HSR_RUNTIME_ARCH_003.md   docs/runtime/research/REFERENCE_RUNTIME_TRACE_EXPORT_HSR_RUNTIME_ARCH_003.json
+
+git diff --check
+```
+
+If monolithic pytest exceeds the execution window, run every test file in
+non-overlapping groups, list the exact files in each group, and report the
+summed total. Do not omit any file.
+
+Final report format
+===================
+
+Update:
+
+```text
+hsr_axis_sim/LUMEN_RESULT.md
+```
+
+Include:
+
+1. Task ID and title.
+2. Status: PASS, PARTIAL, BLOCKED, or FAIL.
+3. Implementation summary.
+4. Exact files added/modified.
+5. Exact tests added.
+6. Exact commands and real results.
+7. Focused and complete pytest counts/timings.
+8. Regression counts.
+9. Reference SHA-256 values.
+10. Reference compact/pretty sample SHA-256 values.
+11. Confirmation of one-event-to-one-record projection.
+12. Confirmation all contexts remain `None`.
+13. Confirmation numeric values remain empty.
+14. Confirmation no automatic simulator observation or production hook exists.
+15. Confirmation no existing `runtime_contracts` or `runtime_adapters` file
+    changed.
+16. Confirmation all prior ARCH-001/002 docs remain present.
+17. Confirmation all preservation boundaries were respected.
+18. Unresolved issues.
+19. Exclusions respected.
+20. Suggested next milestone only:
+
+```text
+HSR-RUNTIME-ARCH-004 — Trace Document Loader and Integrity Validator
+```
+
+21. Do not start ARCH-004.
+
+Stop after HSR-RUNTIME-ARCH-003.

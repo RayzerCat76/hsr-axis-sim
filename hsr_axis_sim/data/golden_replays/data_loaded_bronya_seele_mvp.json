@@ -1,0 +1,74 @@
+{
+  "name": "data_loaded_bronya_seele_mvp",
+  "tolerance": 0.001,
+  "data_sources": {
+    "characters_dir": "hsr_axis_sim/data/sample_characters",
+    "team": "hsr_axis_sim/data/sample_teams/bronya_seele_team.json"
+  },
+  "steps": [
+    {
+      "step": 1,
+      "expected_actor": "seele_like",
+      "skill_id": "basic",
+      "target_ids": ["enemy_1"],
+      "expect": {
+        "global_av": 0,
+        "skill_points": 4,
+        "extra_turn_stack": ["seele_like"],
+        "logs_contains": ["trigger:seele_like_on_kill_extra_turn"],
+        "units": {
+          "seele_like": {
+            "current_av": 69.9300699301,
+            "energy": 80
+          },
+          "enemy_1": {
+            "hp": 0,
+            "is_alive": false
+          },
+          "enemy_2": {
+            "hp": 1000
+          }
+        }
+      }
+    },
+    {
+      "step": 2,
+      "expected_actor": "seele_like",
+      "skill_id": "skill",
+      "target_ids": ["enemy_2"],
+      "expect": {
+        "global_av": 0,
+        "skill_points": 3,
+        "extra_turn_stack": [],
+        "units": {
+          "seele_like": {
+            "current_av": 69.9300699301,
+            "energy": 110
+          },
+          "enemy_2": {
+            "hp": 100
+          }
+        }
+      }
+    },
+    {
+      "step": 3,
+      "expected_actor": "bronya_like",
+      "skill_id": "skill",
+      "target_ids": ["seele_like"],
+      "expect": {
+        "global_av": 60,
+        "skill_points": 2,
+        "units": {
+          "bronya_like": {
+            "current_av": 74.6268656716,
+            "energy": 110
+          },
+          "seele_like": {
+            "current_av": 0
+          }
+        }
+      }
+    }
+  ]
+}

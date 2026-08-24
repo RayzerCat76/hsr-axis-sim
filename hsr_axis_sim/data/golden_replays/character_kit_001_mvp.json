@@ -1,0 +1,84 @@
+{
+  "name": "character_kit_001_mvp",
+  "tolerance": 0.001,
+  "data_sources": {
+    "characters_dir": "hsr_axis_sim/data/character_kits/kit_001_mechanic_representatives",
+    "team": "hsr_axis_sim/data/character_kits/kit_001_mechanic_representatives/teams/character_kit_001_team.json"
+  },
+  "steps": [
+    {
+      "step": 1,
+      "expected_actor": "turn_pull",
+      "skill_id": "skill",
+      "target_ids": ["carry"],
+      "expect": {
+        "global_av": 0,
+        "skill_points": 2,
+        "units": {
+          "turn_pull": {
+            "current_av": 74.6268656716,
+            "energy": 30
+          },
+          "carry": {
+            "current_av": 0,
+            "buffs": {
+              "turn_pull_damage_buff": {
+                "kind": "buff",
+                "duration_type": "target_normal_turns",
+                "remaining_turns": 1,
+                "source_id": "turn_pull"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "step": 2,
+      "expected_actor": "carry",
+      "skill_id": "skill",
+      "target_ids": ["enemy_low"],
+      "expect": {
+        "global_av": 0,
+        "skill_points": 1,
+        "extra_turn_stack": ["carry"],
+        "logs_contains": ["trigger:kill_chain_carry_on_kill_extra_turn"],
+        "units": {
+          "carry": {
+            "current_av": 69.9300699301,
+            "energy": 30,
+            "buffs": {}
+          },
+          "enemy_low": {
+            "hp": 0,
+            "is_alive": false,
+            "current_toughness": 0,
+            "is_broken": true
+          }
+        }
+      }
+    },
+    {
+      "step": 3,
+      "expected_actor": "carry",
+      "skill_id": "basic",
+      "target_ids": ["enemy_tough"],
+      "expect": {
+        "global_av": 0,
+        "skill_points": 2,
+        "extra_turn_stack": [],
+        "units": {
+          "carry": {
+            "current_av": 69.9300699301,
+            "energy": 50
+          },
+          "enemy_tough": {
+            "hp": 800,
+            "current_toughness": 30,
+            "is_broken": false
+          }
+        }
+      }
+    }
+  ]
+}

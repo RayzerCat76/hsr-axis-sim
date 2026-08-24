@@ -1,0 +1,135 @@
+Task ID: HSR-AXIS-002A-TOOLS-001-FIX
+
+Codex Reasoning: Medium
+ChatGPT Model recommendation: GPT-5.5
+Reason: This is a tool reliability/performance fix for video frame extraction and output generation. Do not modify battle simulation core mechanics. GPT-5.5 is enough; use GPT-5.5 Thinking only if ffmpeg behavior becomes hard to diagnose.
+
+You are working in the existing HSR Axis Simulator project.
+
+Context:
+HSR-AXIS-002A-TOOLS-001 added an offline Video Trace Assistant. It passes tests and works for very short smoke runs, but the intended real workflow on `sample1.mov` with start=0, end=16, interval=0.5 did not finish reliably. The current implementation launches one ffmpeg process per timestamp, which is too slow/fragile for the real 2880x1800 60fps clip.
+
+Goal:
+Fix the Video Trace Assistant so it can reliably generate the full opening intake package for the first real trace without changing output formats or simulator core mechanics.
+
+Do NOT:
+- Do not change action-value simulator core logic.
+- Do not change replay validator semantics.
+- Do not add OCR.
+- Do not add Bilibili downloading/scraping.
+- Do not auto-classify actions/targets.
+- Do not mark the real trace as replay-ready.
+- Do not update the locked regression manifest.
+
+Required changes:
+
+1. Add extraction modes
+
+Support at least:
+
+- `batch` mode: preferred default for normal use.
+- `per_frame` mode: fallback/debug mode using one ffmpeg call per timestamp.
+
+CLI:
+
+```bash
+--extraction-mode batch
+--extraction-mode per_frame
+```
+
+Default should be `batch`.
+
+2. Implement batch extraction
+
+Use one ffmpeg process for the selected range instead of one process per frame.
+
+Suggested approach:
+
+- Generate expected timestamps using the existing timestamp generation function.
+- Run ffmpeg once into a temporary directory with a numeric pattern.
+- Use an fps filter derived from interval.
+- Rename/copy generated frames to the existing deterministic timestamp names:
+  - `frames/t_000.0.jpg`
+  - `frames/t_000.5.jpg`
+  - etc.
+
+Example direction, not mandatory:
+
+```bash
+ffmpeg -hide_banner -loglevel error -nostdin -y \
+  -ss <start> \
+  -i <video> \
+  -t <duration_plus_small_epsilon> \
+  -vf fps=<1/interval> \
+  -q:v 2 \
+  <tmp_dir>/frame_%06d.jpg
+```
+
+Then map generated files to expected timestamps.
+
+Important:
+- The existing output paths and frame records must remain stable.
+- `draft_trace.json` and `frame_index.csv` should still refer to `frames/t_XXX.X.jpg`.
+- For start=0, end=16, interval=0.5, expected frame count is 33.
+
+3. Improve per-frame mode
+
+If keeping the current per-frame path, harden it:
+
+- Use `-hide_banner`, `-loglevel error`, `-nostdin`.
+- Add `-update 1` when writing a single image to avoid ffmpeg image sequence warnings.
+- Add a per-command timeout option.
+
+CLI:
+
+```bash
+--ffmpeg-timeout-seconds 30
+```
+
+4. Validate frame counts
+
+After extraction:
+
+- Verify every expected `FrameRecord` has a corresponding image file.
+- If batch mode generates too few frames, raise a clear error that includes expected and actual counts.
+- If it generates too many frames, ignore extras or clean them up, but report enough debug info.
+
+5. Keep tests lightweight
+
+Add or update tests without requiring an actual video file or ffmpeg execution.
+
+Suggested tests:
+
+- `generate_timestamps(0, 16, 0.5)` returns 33 values.
+- batch mode constructs deterministic frame records and output names.
+- batch extraction handles generated temporary frames by renaming/copying to timestamp names. This can be tested by creating fake temp jpg files and calling a helper function.
+- per-frame ffmpeg command builder includes `-nostdin`, `-loglevel error`, and `-update 1`.
+- missing ffmpeg still raises a clear `FfmpegUnavailableError`.
+- CLI accepts `--extraction-mode` and `--ffmpeg-timeout-seconds`.
+- regression manifest remains unchanged.
+
+6. Update LUMEN_RESULT.md
+
+Include:
+
+- Files changed
+- Tests run
+- Exact pass/fail counts
+- Whether the locked manifest changed; it should not
+- How to run batch mode on `sample1.mov`
+- How to run per-frame fallback mode
+- Known limitations
+
+Acceptance criteria:
+
+- `python -m pytest -q` passes.
+- `python -m hsr_axis_sim.regression.runner --manifest hsr_axis_sim/data/regression_manifest.json --format text` passes.
+- The default command should use batch mode and produce 33 frames for start=0, end=16, interval=0.5 when the user has the real `sample1.mov` locally.
+- The output package still contains:
+  - `frames/`
+  - `frame_index.csv`
+  - `trace_annotation_worksheet.md`
+  - `draft_trace.json`
+  - `README.md`
+
+Do not proceed to replay-ready trace conversion in this task.

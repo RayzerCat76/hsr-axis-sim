@@ -1,0 +1,40 @@
+{
+  "id": "bronya_seele_team",
+  "name": "Bronya-like + Seele-like Sample Team",
+  "initial_skill_points": 3,
+  "max_skill_points": 5,
+  "unit_refs": [
+    {
+      "character_id": "seele_like",
+      "unit_id": "seele_like",
+      "team": "ally",
+      "initial_energy": 60,
+      "initial_current_av": 0,
+      "initial_hp": 3000
+    },
+    {
+      "character_id": "bronya_like",
+      "unit_id": "bronya_like",
+      "team": "ally",
+      "initial_energy": 80,
+      "initial_current_av": 60,
+      "initial_hp": 3200
+    },
+    {
+      "character_id": "generic_enemy",
+      "unit_id": "enemy_1",
+      "team": "enemy",
+      "initial_current_av": 100,
+      "initial_hp": 500,
+      "initial_toughness": 60
+    },
+    {
+      "character_id": "generic_enemy",
+      "unit_id": "enemy_2",
+      "team": "enemy",
+      "initial_current_av": 100,
+      "initial_hp": 1000,
+      "initial_toughness": 60
+    }
+  ]
+}

@@ -1,0 +1,54 @@
+{
+  "binding_id": "pela_skill_partial_resource_target_dispel_shell_v0_1",
+  "version": "0.1",
+  "warning": "PARTIAL BINDING SHELL ONLY. complete_game_skill=false; no damage or toughness semantics are implemented.",
+  "binding_scope": "partial_resource_target_dispel_shell",
+  "complete_game_skill": false,
+  "atomic_fields_bound": [
+    "pela.skill.dispel_count",
+    "pela.skill.energy_generation",
+    "pela.skill.sp_delta",
+    "pela.skill.target_scope"
+  ],
+  "atomic_fields_not_bound": [
+    "build_assumptions",
+    "damage_multiplier",
+    "debuff_application",
+    "eidolon_trace_light_cone_relic_team_interactions",
+    "final_damage",
+    "normalized_toughness",
+    "observed_real_video_target",
+    "pela.skill.observed_target_and_level",
+    "pela.skill.toughness_native",
+    "trace_level"
+  ],
+  "generic_primitives_used": [
+    "single-enemy target validation",
+    "skill-point consumption",
+    "actor energy gain",
+    "ID-specific buff removal",
+    "normal turn completion"
+  ],
+  "generic_extensions_added": [],
+  "synthetic_fixture_result": {
+    "fixture_id": "pela_skill_partial_v0_1_synthetic",
+    "removed_buff_id": "alpha_guard",
+    "skill_points_before": 3,
+    "skill_points_after": 2,
+    "actor_energy_before": 10,
+    "actor_energy_after": 40,
+    "target_hp_before": 2000,
+    "target_hp_after": 2000,
+    "target_toughness_before": 60,
+    "target_toughness_after": 60,
+    "actor_av_before": 0,
+    "actor_av_after": 100.0,
+    "normal_turn_ended": true
+  },
+  "real_trace_executable": false,
+  "real_trace_blockers": [
+    "Observed real-video target is unknown.",
+    "Damage, normalized toughness, trace level, build, and initial state remain unresolved.",
+    "This shell is synthetic-only and is not a complete Pela skill or kit."
+  ]
+}

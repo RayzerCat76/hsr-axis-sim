@@ -1,0 +1,145 @@
+Task ID: HSR-AXIS-002O
+Task name: Tingyun Ultimate DMG-buff semantic readiness review
+
+Codex Reasoning: HIGH
+Recommended model: GPT-5.6 Sol
+Fallback model: GPT-5.6 Terra only if all semantic evidence is already explicit and no cross-module design decision is required.
+
+Starting point
+==============
+
+HSR-AXIS-002N-FIX passed independent review. The exact 15-level Tingyun Ultimate DMG-increase table is now captured from two pinned repository snapshots, but the buff remains non-executable.
+
+Do not rewrite the historical 002M audit in place. Build a new consolidated 002O semantic-readiness artifact that consumes the existing evidence.
+
+Required inputs
+===============
+
+- `normalized_character_facts/tingyun_ultimate_damage_buff_review_v0_1.json`
+- `normalized_character_facts/tingyun_ultimate_damage_buff_magnitude_intake_v0_1.json`
+- `real_binding_audits/tingyun_ultimate_damage_buff_readiness_v0_1.json`
+- `real_binding_audits/tingyun_ultimate_damage_buff_magnitude_intake_v0_1.json`
+- accepted source registry and reviewed-binding registry
+- current Buff / duration / turn-boundary implementation and tests
+
+Goal
+====
+
+Create a deterministic, non-executable readiness review that answers two separate questions:
+
+1. Is a generic source-reviewed Tingyun Ultimate DMG-buff binding ready to be implemented when the caller supplies a legal ally target and an explicit trace level?
+2. Is the accepted real-video trace ready to bind to a concrete target and magnitude?
+
+The report must not conflate those two readiness axes.
+
+Evidence questions to investigate
+=================================
+
+A. Effect ordering
+- Does the game apply the target Energy restoration before or after the DMG buff?
+- Prefer a pinned release-data behavior/effect-sequence locator.
+- A prose description that merely lists both effects does not prove order.
+- If no exact source exists, keep order unresolved.
+
+B. Same-current-turn duration edge
+- If Tingyun casts the Ultimate during the selected ally's already-active normal turn, does that turn's end consume the first of the two duration counts?
+- Prefer exact release behavior data or a controlled interaction record with a reproducible protocol.
+- Do not infer this from the existing engine behavior.
+- If no exact evidence exists, keep the edge unresolved.
+
+C. Magnitude evidence integration
+- Treat the 002N captured table as source-backed evidence.
+- Validate its input path/digest or deterministic content before consuming it.
+- Do not copy a single level into executable code.
+- Do not infer the accepted video's Tingyun trace level.
+
+Required implementation
+=======================
+
+1. Add a new normalized evidence artifact, suggested name:
+   `tingyun_ultimate_damage_buff_semantic_readiness_v0_1.json`
+2. Add a validator/report tool and deterministic Markdown/JSON reports.
+3. Preserve explicit provenance for every resolved or unresolved semantic claim.
+4. Introduce two explicit readiness fields:
+   - `generic_binding_readiness`
+   - `accepted_video_binding_readiness`
+5. Generic binding readiness may become ready only if:
+   - target scope is verified;
+   - duration count is verified;
+   - the exact magnitude table is validated;
+   - effect order is resolved or explicitly proven semantically irrelevant to every current event/trigger contract;
+   - same-current-turn duration behavior is resolved or represented by an explicit source-backed policy.
+6. Accepted-video binding readiness must remain blocked while either the selected ally or the video's Tingyun trace level is unknown.
+7. If semantics remain unresolved, generate a controlled-interaction test protocol as evidence metadata only. Do not fabricate test results.
+8. Add malformed-input and deterministic-order tests.
+9. Keep historical 002M and 002N artifacts unchanged; the new report should reference them by path and digest.
+
+Readiness status suggestions
+============================
+
+Generic:
+- `ready_for_separate_binding_task`
+- `blocked_by_effect_order`
+- `blocked_by_duration_semantics`
+- `blocked_by_both_semantics`
+- `blocked_by_invalid_magnitude_evidence`
+
+Accepted video:
+- `ready_for_replay_binding`
+- `blocked_by_unknown_target`
+- `blocked_by_unknown_trace_level`
+- `blocked_by_unknown_target_and_trace_level`
+- semantic/evidence blockers may be represented separately rather than hidden.
+
+Strict safety boundaries
+========================
+
+Do not:
+
+- add an executable `AddBuff`;
+- change Tingyun's existing Energy/interrupt partial binding;
+- change Pela's binding;
+- add or change reviewed-registry entries;
+- select Lv. 10 or any other trace level for the video;
+- infer the video's selected ally;
+- treat video timestamps as AV;
+- change Buff duration behavior to match an assumption;
+- change simulator, search, evaluator, replay, or locked regression manifest;
+- begin HSR-AXIS-002P implementation.
+
+Required tests and gates
+========================
+
+Run:
+
+`python -m compileall -q hsr_axis_sim`
+`python -m pytest -q`
+`python -m hsr_axis_sim.regression.runner --manifest hsr_axis_sim/data/regression_manifest.json --format text`
+`python -m hsr_axis_sim.regression.runner --manifest hsr_axis_sim/data/regression_manifest.json --only trace_evidence --format text`
+
+Regenerate Markdown and JSON reports and verify byte identity.
+
+Required adversarial tests:
+
+- wrong magnitude-input digest/path;
+- magnitude table no longer `captured_exact_table`;
+- malformed readiness fields;
+- object/list/bool in every scalar semantic field;
+- duplicate provenance IDs;
+- conflicting semantic evidence;
+- reversed input ordering remains deterministic;
+- CLI invalid input returns controlled exit 1 without traceback;
+- missing input returns exit 2 without traceback.
+
+LUMEN_RESULT must state
+=======================
+
+- exact files added/changed;
+- whether effect order was resolved and by what exact evidence;
+- whether same-current-turn duration was resolved and by what exact evidence;
+- generic binding readiness;
+- accepted-video binding readiness;
+- confirmation that the exact 15-level table was consumed without selecting a level;
+- every remaining blocker;
+- exact test/regression results;
+- confirmation that no executable buff, registry change, or 002P work was added.

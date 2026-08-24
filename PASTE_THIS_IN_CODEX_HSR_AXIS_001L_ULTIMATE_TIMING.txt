@@ -1,0 +1,228 @@
+Task ID: HSR-AXIS-001L
+Task name: Ultimate / Interrupt Window MVP
+
+Codex Reasoning: High
+ChatGPT Model recommendation: GPT-5.5 Thinking
+Reason: This task changes turn-boundary semantics. If ultimate interrupts accidentally advance the timeline, reset AV, tick buffs, or end normal turns, later AI search will produce invalid axes.
+
+You are continuing the existing HSR Axis Simulator project.
+
+Current project status:
+- 001A–001J are accepted.
+- 001K added legal normal action generation and resource-gated skill legality.
+- Do not rewrite the simulator core.
+- Do not implement Beam Search yet.
+- Do not implement Huroka/Yatta importers yet.
+- Do not implement full HSR damage formula yet.
+
+Goal:
+Add a deterministic MVP for HSR-style ultimate / interrupt decision windows.
+
+The simulator must be able to answer:
+1. Which characters can legally use an ultimate at an interrupt window?
+2. What target choices are legal for those ultimates?
+3. Can an interrupt ultimate be executed without advancing global AV or resetting the actor's normal timeline position?
+4. Can replay validation include an interrupt step between normal turns?
+
+Scope:
+This task is only an MVP for off-turn ultimate timing. It is not AI search.
+
+Required behavior:
+
+1. Add an interrupt/ultimate window module
+
+Create a new module such as:
+
+```text
+hsr_axis_sim/sim/ultimate_windows.py
+```
+
+or another clear name.
+
+Implement:
+
+```python
+@dataclass
+class DecisionWindow:
+    window_type: str
+    active_actor_id: str | None = None
+    source: str | None = None
+```
+
+Recommended window types for MVP:
+
+```text
+manual_interrupt
+before_actor_action
+after_actor_action
+before_next_turn
+```
+
+The window type is mostly metadata in this task. Do not build search yet.
+
+2. Enumerate legal ultimate choices
+
+Implement a deterministic function similar to:
+
+```python
+def legal_ultimate_choices(
+    state: BattleState,
+    skill_lookup: dict[str, dict[str, SkillSpec]],
+    window: DecisionWindow | None = None,
+) -> list[ActionChoice]:
+    ...
+```
+
+Rules:
+- Iterate units in `state.units` order.
+- Skip dead units.
+- Only consider skills with `skill.skill_type == "ultimate"`.
+- Use existing affordability checks from 001K.
+- Use existing target legality from 001J.
+- Use existing `action_from_skill(..., validate_targets=True)`.
+- Preserve deterministic order: unit order, skill order, target group order.
+- Do not mutate battle state.
+
+3. Add interrupt execution helper
+
+Implement a helper similar to:
+
+```python
+def execute_interrupt_action(
+    state: BattleState,
+    action: Action,
+    forced_rng: dict | None = None,
+) -> TurnContext:
+    ...
+```
+
+Rules:
+- It must not call `Timeline.next_turn`.
+- It must not advance `state.global_av`.
+- It must not subtract AV from units.
+- It must not reset the actor's `current_av` by adding base AV.
+- It must not tick target-normal-turn buff/debuff durations.
+- It must not expire current-turn statuses.
+- It should execute the action effects and trigger normal action events.
+- It should use a `TurnContext` that clearly marks this as an interrupt if you add such a field.
+- Interrupt actions should normally have `ends_turn=False`. If an interrupt action has `ends_turn=True`, raise a clear error rather than accidentally ending a normal turn.
+
+You may extend `TurnContext` with:
+
+```python
+is_interrupt: bool = False
+```
+
+Do not treat interrupt actions as extra turns. They are not normal turns and not extra turns.
+
+4. Extend Replay Validator for interrupt steps
+
+Replay validation currently selects `Timeline.next_turn(state)` for each step. Extend it so a step can be marked as an interrupt step.
+
+Example schema:
+
+```json
+{
+  "step": 2,
+  "step_type": "interrupt",
+  "actor_id": "seele_like",
+  "skill_id": "ultimate",
+  "target_ids": ["enemy_1"],
+  "forced_rng": {"crit": true},
+  "expect": {
+    "global_av": 74.6268656716418,
+    "units": {
+      "seele_like": {"energy": 0},
+      "enemy_1": {"hp": 5000}
+    }
+  }
+}
+```
+
+Rules:
+- For normal steps, preserve old behavior.
+- For interrupt steps, do not call `Timeline.next_turn`.
+- The replay step must provide `actor_id` or `expected_actor`.
+- Use the loaded skill if `skill_id` is provided.
+- Validate that the skill is an ultimate unless the step explicitly opts out for a test-only action.
+- Use `execute_interrupt_action`.
+- Existing replay files must keep passing unchanged.
+
+5. Add a small data-loaded ultimate sample
+
+Update or add sample character data so at least one sample ally has an ultimate skill.
+
+The ultimate should be simple:
+- `skill_type`: `ultimate`
+- `target_type`: `single_enemy`
+- `energy_delta`: negative full energy cost, e.g. `-120`
+- `ends_turn`: `false`
+- effects include `ConsumeEnergy` and a simple `DealDamage`
+
+Do not attempt real HSR ultimate mechanics.
+
+6. Add a golden replay
+
+Add:
+
+```text
+hsr_axis_sim/data/golden_replays/ultimate_interrupt_mvp.json
+```
+
+It should demonstrate:
+
+- A normal action occurs.
+- A unit has enough energy for ultimate.
+- An interrupt ultimate is executed before the next normal actor moves.
+- `global_av` does not advance during the interrupt.
+- normal timeline `current_av` values are unchanged by the interrupt except effects that intentionally change them.
+- energy is consumed.
+- damage is applied.
+- the next normal step still selects the correct next actor.
+
+7. Add tests
+
+Add tests for:
+
+- `legal_ultimate_choices` returns only affordable ultimates.
+- insufficient energy excludes ultimate.
+- dead ultimate users are excluded.
+- dead targets are excluded.
+- ultimate target choices preserve deterministic order.
+- ultimate choice generation does not mutate state.
+- `execute_interrupt_action` does not advance global AV.
+- `execute_interrupt_action` does not reset actor current AV.
+- interrupt action with `ends_turn=True` fails clearly.
+- replay validator supports an interrupt step.
+- all existing golden replays still pass.
+
+8. Exports
+
+Export the new public helpers from `hsr_axis_sim.sim.__init__` if appropriate:
+
+- `DecisionWindow`
+- `legal_ultimate_choices`
+- `execute_interrupt_action`
+
+9. Deliverables
+
+Update `hsr_axis_sim/LUMEN_RESULT.md` with:
+
+- Files changed
+- Exact tests run
+- Exact test results
+- Golden replay CLI results
+- What was implemented
+- What is intentionally unsupported
+- Known limitations
+- Whether 001M is safe to begin
+
+Expected local commands:
+
+```bash
+python -m compileall -q hsr_axis_sim
+python -m pytest -q
+for f in hsr_axis_sim/data/golden_replays/*.json; do python -m hsr_axis_sim.sim.replay "$f"; done
+```
+
+Do not proceed to Beam Search, scoring, enemy AI, Huroka import, full damage formula, or real character batch import in this task.

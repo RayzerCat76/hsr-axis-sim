@@ -1,0 +1,33 @@
+"""Sidecar contracts for the future universal HSR runtime."""
+
+from .contexts import ActionContext, AttackContext, HitContext
+from .enums import (
+    ActionFamily,
+    BindingStatus,
+    BounceRepeatPolicy,
+    DamageFamily,
+    DefenseMechanism,
+    DotEvaluationPolicy,
+    EvidenceStatus,
+    LifecycleState,
+    MaxHpCouplingPolicy,
+    MultiHitContinuationPolicy,
+    PriorityClass,
+    QuantizationPolicy,
+    RemovalChannel,
+    RuntimeEventType,
+    SamePriorityPolicy,
+    StackPolicy,
+    TargetInvalidationPolicy,
+    TargetPolicyKind,
+    TargetRole,
+    TriggerScope,
+    TurnKind,
+    WavePolicy,
+)
+from .events import RuntimeEvent
+from .gates import SemanticContract, UnresolvedMechanicError
+from .serialization import canonical_json_bytes, canonical_json_dumps, to_canonical_data
+from .trace import RuntimeTraceRecord, TraceNumericValue
+
+__all__ = [name for name in globals() if not name.startswith("_")]

@@ -67,10 +67,20 @@ class LegacyEventTraceBridgeResult:
             raise RuntimeTraceBridgeInputError(
                 "artifact pretty flag must match bridge config"
             )
-        if document.records and document.first_sequence != self.config.start_sequence:
-            raise RuntimeTraceBridgeInputError(
-                "artifact first sequence must match bridge start_sequence"
+
+        for index, record in enumerate(document.records):
+            expected_sequence = self.config.start_sequence + index
+            if record.sequence != expected_sequence:
+                raise RuntimeTraceBridgeInputError(
+                    "artifact record sequences must match bridge start_sequence and source order"
+                )
+            expected_event_id = (
+                f"legacy:{self.config.adapter_config.stream_id}:{expected_sequence}"
             )
+            if record.event.event_id != expected_event_id:
+                raise RuntimeTraceBridgeInputError(
+                    "artifact event IDs must match adapter stream_id and sequence"
+                )
 
     @property
     def record_count(self) -> int:

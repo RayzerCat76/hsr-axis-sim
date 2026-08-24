@@ -17,6 +17,7 @@ from hsr_axis_sim.regression.runner import (
 
 
 MANIFEST_PATH = "hsr_axis_sim/data/regression_manifest.json"
+EXPECTED_SHA256 = "f672ffaac9ef9296e4982a6fb61f4d0257b5c0506412bcf54eb1768334118c66"
 
 
 def test_loading_default_manifest_succeeds():
@@ -28,6 +29,7 @@ def test_loading_default_manifest_succeeds():
         "manual": 1,
         "scenarios": 2,
         "action_sequence_traces": 1,
+        "runtime_action_sessions": 1,
         "trace_evidence": 2,
     }
     action_sequence_entries = manifest.groups["action_sequence_traces"]
@@ -35,6 +37,17 @@ def test_loading_default_manifest_succeeds():
         "real_video_trace_001_botu_dilemma_floor12_side1_action_sequence_only"
     )
     assert action_sequence_entries[0].checks == ["lint", "action_sequence"]
+    runtime_entries = manifest.groups["runtime_action_sessions"]
+    assert len(runtime_entries) == 1
+    assert runtime_entries[0].id == "arch-017-reviewed-static-action-session"
+    assert runtime_entries[0].expected_sha256 == EXPECTED_SHA256
+    assert runtime_entries[0].stream_id == "arch-017-reviewed-static"
+    assert runtime_entries[0].actor_id == "reviewed-actor"
+    assert [action.action_id for action in runtime_entries[0].actions] == [
+        "reviewed-action-a",
+        "reviewed-action-b",
+    ]
+    assert [action.ends_turn for action in runtime_entries[0].actions] == [False, False]
     assert {entry.check for entry in manifest.groups["trace_evidence"]} == {
         "semantic_map", "frame_anchors"
     }
@@ -46,7 +59,7 @@ def test_manifest_mode_regression_passes_with_default_manifest():
     report = run_regression(manifest=manifest)
 
     assert report.passed is True
-    assert report.total == 20
+    assert report.total == 21
     assert report.manifest_id == "HSR_AXIS_REGRESSION_BASELINE_001Z"
 
 
@@ -61,6 +74,7 @@ def test_manifest_cli_json_includes_metadata():
     assert payload["manifest_id"] == "HSR_AXIS_REGRESSION_BASELINE_001Z"
     assert payload["manifest_counts"]["replays"] == 12
     assert payload["manifest_counts"]["action_sequence_traces"] == 1
+    assert payload["manifest_counts"]["runtime_action_sessions"] == 1
     assert payload["manifest_counts"]["trace_evidence"] == 2
 
 
@@ -90,6 +104,22 @@ def test_manifest_only_action_sequence_traces_runs_lint_and_sequence_checks():
         result for result in report.results if result.details["check"] == "action_sequence"
     )
     assert action_sequence_result.details["checked_steps"] == 9
+
+
+def test_manifest_only_runtime_action_sessions_runs_arch_016_golden_check():
+    manifest = load_regression_manifest(MANIFEST_PATH)
+
+    report = run_regression(manifest=manifest, only="runtime_action_sessions")
+
+    assert report.passed is True
+    assert report.total == 1
+    assert {result.group for result in report.results} == {"runtime_action_sessions"}
+    result = report.results[0]
+    assert result.name == "arch-017-reviewed-static-action-session"
+    assert result.details["check"] == "runtime_action_session_golden"
+    assert result.details["action_count"] == 2
+    assert result.details["record_count"] == 4
+    assert result.details["expected_sha256"] == EXPECTED_SHA256
 
 
 def test_manifest_only_trace_evidence_runs_evidence_checks():
@@ -168,7 +198,7 @@ def test_invalid_group_name_is_rejected():
         raise AssertionError("Expected unsupported group failure.")
 
 
-def test_manifest_without_action_sequence_group_is_backward_compatible():
+def test_manifest_without_runtime_action_session_group_is_backward_compatible():
     data = {
         "manifest_id": "old",
         "project": "hsr-axis-simulator",
@@ -187,6 +217,7 @@ def test_manifest_without_action_sequence_group_is_backward_compatible():
         "manual": 0,
         "scenarios": 0,
         "action_sequence_traces": 0,
+        "runtime_action_sessions": 0,
         "trace_evidence": 0,
     }
 
@@ -215,6 +246,69 @@ def test_action_sequence_group_requires_supported_checks():
         raise AssertionError("Expected action_sequence check validation failure.")
 
 
+def test_runtime_action_session_requires_lowercase_sha256():
+    data = _runtime_action_session_manifest_entry()
+    data["groups"]["runtime_action_sessions"][0]["expected_sha256"] = "A" * 64
+
+    try:
+        regression_manifest_from_dict(data, manifest_path=Path("bad.json"))
+    except ValueError as exc:
+        assert "expected_sha256" in str(exc)
+    else:
+        raise AssertionError("Expected invalid digest failure.")
+
+
+def test_runtime_action_session_requires_nonempty_actions():
+    data = _runtime_action_session_manifest_entry()
+    data["groups"]["runtime_action_sessions"][0]["actions"] = []
+
+    try:
+        regression_manifest_from_dict(data, manifest_path=Path("bad.json"))
+    except ValueError as exc:
+        assert ".actions" in str(exc)
+    else:
+        raise AssertionError("Expected empty actions failure.")
+
+
+def test_runtime_action_session_action_object_is_strict():
+    data = _runtime_action_session_manifest_entry()
+    action = data["groups"]["runtime_action_sessions"][0]["actions"][0]
+    action["effects"] = []
+
+    try:
+        regression_manifest_from_dict(data, manifest_path=Path("bad.json"))
+    except ValueError as exc:
+        assert "unsupported field" in str(exc)
+    else:
+        raise AssertionError("Expected unsupported action field failure.")
+
+
+def test_runtime_action_session_ends_turn_requires_boolean():
+    data = _runtime_action_session_manifest_entry()
+    data["groups"]["runtime_action_sessions"][0]["actions"][0]["ends_turn"] = 0
+
+    try:
+        regression_manifest_from_dict(data, manifest_path=Path("bad.json"))
+    except ValueError as exc:
+        assert "ends_turn" in str(exc)
+    else:
+        raise AssertionError("Expected invalid ends_turn failure.")
+
+
+def test_runtime_action_session_missing_expected_path_is_rejected():
+    data = _runtime_action_session_manifest_entry()
+    data["groups"]["runtime_action_sessions"][0]["path"] = (
+        "hsr_axis_sim/data/runtime_golden_fixtures/not_here.json"
+    )
+
+    try:
+        regression_manifest_from_dict(data, manifest_path=Path("bad.json"))
+    except ValueError as exc:
+        assert "does not exist" in str(exc)
+    else:
+        raise AssertionError("Expected missing runtime fixture path failure.")
+
+
 def test_manifest_json_renderer_includes_metadata():
     report = run_regression(manifest=load_regression_manifest(MANIFEST_PATH))
 
@@ -223,15 +317,20 @@ def test_manifest_json_renderer_includes_metadata():
     assert payload["manifest_id"] == "HSR_AXIS_REGRESSION_BASELINE_001Z"
     assert payload["manifest_counts"]["scenarios"] == 2
     assert payload["manifest_counts"]["action_sequence_traces"] == 1
+    assert payload["manifest_counts"]["runtime_action_sessions"] == 1
     assert payload["manifest_counts"]["trace_evidence"] == 2
 
 
-def test_manifest_text_and_markdown_reports_include_trace_evidence():
+def test_manifest_text_and_markdown_reports_include_runtime_and_trace_evidence():
     report = run_regression(manifest=load_regression_manifest(MANIFEST_PATH))
 
-    assert "PASS 2/2 trace evidence checks" in format_regression_text(report)
+    text = format_regression_text(report)
+    assert "PASS 1/1 runtime action-session Golden checks" in text
+    assert "PASS 2/2 trace evidence checks" in text
     markdown = format_regression_markdown(report)
+    assert "| runtime_action_sessions | 1 | 0 | 1 |" in markdown
     assert "| trace_evidence | 2 | 0 | 2 |" in markdown
+    assert "runtime_action_sessions=1" in markdown
     assert "trace_evidence=2" in markdown
 
 
@@ -256,6 +355,37 @@ def test_trace_evidence_requires_source_trace_path():
         assert "source_trace_path" in str(exc)
     else:
         raise AssertionError("Expected missing source trace path failure.")
+
+
+def _runtime_action_session_manifest_entry():
+    return {
+        "manifest_id": "runtime",
+        "project": "hsr-axis-simulator",
+        "description": "runtime",
+        "groups": {
+            "runtime_action_sessions": [
+                {
+                    "id": "arch-017-reviewed-static-action-session",
+                    "path": "hsr_axis_sim/data/runtime_golden_fixtures/arch_017_reviewed_action_session_expected.json",
+                    "expected_sha256": EXPECTED_SHA256,
+                    "stream_id": "arch-017-reviewed-static",
+                    "actor_id": "reviewed-actor",
+                    "actions": [
+                        {
+                            "action_id": "reviewed-action-a",
+                            "name": "reviewed-action-a",
+                            "ends_turn": False,
+                        },
+                        {
+                            "action_id": "reviewed-action-b",
+                            "name": "reviewed-action-b",
+                            "ends_turn": False,
+                        },
+                    ],
+                }
+            ]
+        },
+    }
 
 
 def _trace_evidence_manifest_entry(check="semantic_map"):

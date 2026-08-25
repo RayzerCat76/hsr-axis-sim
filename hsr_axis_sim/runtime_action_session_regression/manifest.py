@@ -13,7 +13,8 @@ RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_1 = "1.1"
 RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_2 = "1.2"
 RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_3 = "1.3"
 RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_4 = "1.4"
-RUNTIME_ACTION_SESSION_REGRESSION_VERSION = "1.5"
+RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_5 = "1.5"
+RUNTIME_ACTION_SESSION_REGRESSION_VERSION = "1.6"
 RUNTIME_ACTION_SESSION_REGRESSION_LEGACY_VERSION = (
     RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_0
 )
@@ -23,6 +24,7 @@ RUNTIME_ACTION_SESSION_REGRESSION_SUPPORTED_VERSIONS = (
     RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_2,
     RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_3,
     RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_4,
+    RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_5,
     RUNTIME_ACTION_SESSION_REGRESSION_VERSION,
 )
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -87,6 +89,28 @@ class RuntimeActionSessionRegressionActionAdvanceSetup:
 
 
 @dataclass(frozen=True)
+class RuntimeActionSessionRegressionActionDelaySetup:
+    target_id: str
+    target_name: str
+    team: str
+    base_speed: float
+    initial_av: float
+    action_index: int
+    percent: float
+
+
+RuntimeActionSessionRegressionSetup = (
+    RuntimeActionSessionRegressionEnergyGainSetup
+    | RuntimeActionSessionRegressionEnergyConsumeSetup
+    | RuntimeActionSessionRegressionSkillPointGainSetup
+    | RuntimeActionSessionRegressionSkillPointConsumeSetup
+    | RuntimeActionSessionRegressionActionAdvanceSetup
+    | RuntimeActionSessionRegressionActionDelaySetup
+    | None
+)
+
+
+@dataclass(frozen=True)
 class RuntimeActionSessionRegressionCase:
     case_id: str
     expected_relative_path: str
@@ -95,14 +119,7 @@ class RuntimeActionSessionRegressionCase:
     stream_id: str
     actor_id: str
     actions: tuple[RuntimeActionSessionRegressionAction, ...]
-    setup: (
-        RuntimeActionSessionRegressionEnergyGainSetup
-        | RuntimeActionSessionRegressionEnergyConsumeSetup
-        | RuntimeActionSessionRegressionSkillPointGainSetup
-        | RuntimeActionSessionRegressionSkillPointConsumeSetup
-        | RuntimeActionSessionRegressionActionAdvanceSetup
-        | None
-    ) = None
+    setup: RuntimeActionSessionRegressionSetup = None
 
 
 @dataclass(frozen=True)
@@ -117,11 +134,15 @@ def load_runtime_action_session_regression_manifest(
 ) -> RuntimeActionSessionRegressionManifest:
     manifest_path = Path(path).resolve()
     if not manifest_path.is_file():
-        raise ValueError(f"Runtime action-session regression manifest is not a file: {manifest_path}")
+        raise ValueError(
+            f"Runtime action-session regression manifest is not a file: {manifest_path}"
+        )
     try:
         data = json.loads(manifest_path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
-        raise ValueError(f"Invalid runtime action-session regression manifest JSON: {exc}") from exc
+        raise ValueError(
+            f"Invalid runtime action-session regression manifest JSON: {exc}"
+        ) from exc
     return runtime_action_session_regression_manifest_from_dict(data, manifest_path)
 
 
@@ -143,7 +164,9 @@ def runtime_action_session_regression_manifest_from_dict(
             "manifest.version must be one of "
             f"{RUNTIME_ACTION_SESSION_REGRESSION_SUPPORTED_VERSIONS!r}."
         )
-    manifest_id = _require_non_empty_string(data["manifest_id"], "manifest.manifest_id")
+    manifest_id = _require_non_empty_string(
+        data["manifest_id"], "manifest.manifest_id"
+    )
     cases_data = data["cases"]
     if not isinstance(cases_data, list) or not cases_data:
         raise ValueError("manifest.cases must be a non-empty list.")
@@ -157,7 +180,9 @@ def runtime_action_session_regression_manifest_from_dict(
             version=version,
         )
         if case.case_id in seen_ids:
-            raise ValueError(f"Duplicate runtime action-session regression case id {case.case_id!r}.")
+            raise ValueError(
+                f"Duplicate runtime action-session regression case id {case.case_id!r}."
+            )
         seen_ids.add(case.case_id)
         cases.append(case)
 
@@ -189,8 +214,12 @@ def _case_from_dict(
     _require_exact_fields(data, expected_fields, label)
 
     case_id = _require_non_empty_string(data["id"], f"{label}.id")
-    relative_path = _require_non_empty_string(data["expected_path"], f"{label}.expected_path")
-    expected_path = _resolve_repo_relative_path(relative_path, f"{label}.expected_path")
+    relative_path = _require_non_empty_string(
+        data["expected_path"], f"{label}.expected_path"
+    )
+    expected_path = _resolve_repo_relative_path(
+        relative_path, f"{label}.expected_path"
+    )
     expected_sha256 = data["expected_sha256"]
     if not _is_lower_sha256(expected_sha256):
         raise ValueError(
@@ -207,7 +236,7 @@ def _case_from_dict(
         for index, action_data in enumerate(actions_data)
     )
 
-    setup = None
+    setup: RuntimeActionSessionRegressionSetup = None
     if version != RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_0:
         setup = _setup_from_dict(
             data["setup"],
@@ -246,14 +275,7 @@ def _setup_from_dict(
     *,
     action_count: int,
     version: str,
-) -> (
-    RuntimeActionSessionRegressionEnergyGainSetup
-    | RuntimeActionSessionRegressionEnergyConsumeSetup
-    | RuntimeActionSessionRegressionSkillPointGainSetup
-    | RuntimeActionSessionRegressionSkillPointConsumeSetup
-    | RuntimeActionSessionRegressionActionAdvanceSetup
-    | None
-):
+) -> RuntimeActionSessionRegressionSetup:
     if not isinstance(data, dict):
         raise ValueError(f"{label} must be an object.")
     kind = data.get("kind")
@@ -267,17 +289,21 @@ def _setup_from_dict(
             RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_2,
             RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_3,
             RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_4,
+            RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_5,
             RUNTIME_ACTION_SESSION_REGRESSION_VERSION,
         ):
             raise ValueError(
                 f"{label}.kind 'SKILL_POINT_GAIN' requires manifest version "
                 f"{RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_2!r} or later."
             )
-        return _skill_point_gain_setup_from_dict(data, label, action_count=action_count)
+        return _skill_point_gain_setup_from_dict(
+            data, label, action_count=action_count
+        )
     if kind == "ENERGY_CONSUME":
         if version not in (
             RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_3,
             RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_4,
+            RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_5,
             RUNTIME_ACTION_SESSION_REGRESSION_VERSION,
         ):
             raise ValueError(
@@ -288,6 +314,7 @@ def _setup_from_dict(
     if kind == "SKILL_POINT_CONSUME":
         if version not in (
             RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_4,
+            RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_5,
             RUNTIME_ACTION_SESSION_REGRESSION_VERSION,
         ):
             raise ValueError(
@@ -298,12 +325,24 @@ def _setup_from_dict(
             data, label, action_count=action_count
         )
     if kind == "ACTION_ADVANCE":
-        if version != RUNTIME_ACTION_SESSION_REGRESSION_VERSION:
+        if version not in (
+            RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_5,
+            RUNTIME_ACTION_SESSION_REGRESSION_VERSION,
+        ):
             raise ValueError(
                 f"{label}.kind 'ACTION_ADVANCE' requires manifest version "
-                f"{RUNTIME_ACTION_SESSION_REGRESSION_VERSION!r}."
+                f"{RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_5!r} or later."
             )
         return _action_advance_setup_from_dict(
+            data, label, action_count=action_count
+        )
+    if kind == "ACTION_DELAY":
+        if version != RUNTIME_ACTION_SESSION_REGRESSION_VERSION:
+            raise ValueError(
+                f"{label}.kind 'ACTION_DELAY' requires manifest version "
+                f"{RUNTIME_ACTION_SESSION_REGRESSION_VERSION!r}."
+            )
+        return _action_delay_setup_from_dict(
             data, label, action_count=action_count
         )
 
@@ -319,10 +358,15 @@ def _setup_from_dict(
             "'EMPTY', 'ENERGY_GAIN', 'SKILL_POINT_GAIN', 'ENERGY_CONSUME', "
             "or 'SKILL_POINT_CONSUME'"
         )
-    elif version == RUNTIME_ACTION_SESSION_REGRESSION_VERSION:
+    elif version == RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_5:
         allowed = (
             "'EMPTY', 'ENERGY_GAIN', 'SKILL_POINT_GAIN', 'ENERGY_CONSUME', "
             "'SKILL_POINT_CONSUME', or 'ACTION_ADVANCE'"
+        )
+    elif version == RUNTIME_ACTION_SESSION_REGRESSION_VERSION:
+        allowed = (
+            "'EMPTY', 'ENERGY_GAIN', 'SKILL_POINT_GAIN', 'ENERGY_CONSUME', "
+            "'SKILL_POINT_CONSUME', 'ACTION_ADVANCE', or 'ACTION_DELAY'"
         )
     raise ValueError(f"{label}.kind must be {allowed}.")
 
@@ -366,7 +410,9 @@ def _energy_unit_setup_values(
     }
     _require_exact_fields(data, expected_fields, label)
     target_id = _require_non_empty_string(data["target_id"], f"{label}.target_id")
-    target_name = _require_non_empty_string(data["target_name"], f"{label}.target_name")
+    target_name = _require_non_empty_string(
+        data["target_name"], f"{label}.target_name"
+    )
     team = _require_non_empty_string(data["team"], f"{label}.team")
     base_speed = _require_finite_number(data["base_speed"], f"{label}.base_speed")
     if base_speed <= 0:
@@ -444,6 +490,26 @@ def _action_advance_setup_from_dict(
     *,
     action_count: int,
 ) -> RuntimeActionSessionRegressionActionAdvanceSetup:
+    values = _action_axis_setup_values(data, label, action_count=action_count)
+    return RuntimeActionSessionRegressionActionAdvanceSetup(*values)
+
+
+def _action_delay_setup_from_dict(
+    data: dict[str, Any],
+    label: str,
+    *,
+    action_count: int,
+) -> RuntimeActionSessionRegressionActionDelaySetup:
+    values = _action_axis_setup_values(data, label, action_count=action_count)
+    return RuntimeActionSessionRegressionActionDelaySetup(*values)
+
+
+def _action_axis_setup_values(
+    data: dict[str, Any],
+    label: str,
+    *,
+    action_count: int,
+) -> tuple[str, str, str, float, float, int, float]:
     expected_fields = {
         "kind",
         "target_id",
@@ -456,7 +522,9 @@ def _action_advance_setup_from_dict(
     }
     _require_exact_fields(data, expected_fields, label)
     target_id = _require_non_empty_string(data["target_id"], f"{label}.target_id")
-    target_name = _require_non_empty_string(data["target_name"], f"{label}.target_name")
+    target_name = _require_non_empty_string(
+        data["target_name"], f"{label}.target_name"
+    )
     team = _require_non_empty_string(data["team"], f"{label}.team")
     base_speed = _require_finite_number(data["base_speed"], f"{label}.base_speed")
     if base_speed <= 0:
@@ -466,14 +534,14 @@ def _action_advance_setup_from_dict(
         data["action_index"], f"{label}.action_index", action_count=action_count
     )
     percent = _require_finite_number(data["percent"], f"{label}.percent")
-    return RuntimeActionSessionRegressionActionAdvanceSetup(
-        target_id=target_id,
-        target_name=target_name,
-        team=team,
-        base_speed=base_speed,
-        initial_av=initial_av,
-        action_index=action_index,
-        percent=percent,
+    return (
+        target_id,
+        target_name,
+        team,
+        base_speed,
+        initial_av,
+        action_index,
+        percent,
     )
 
 
@@ -494,8 +562,14 @@ def _resolve_repo_relative_path(value: str, label: str) -> Path:
     pure = PurePosixPath(value)
     if pure.is_absolute():
         raise ValueError(f"{label} must be repository-relative, not absolute.")
-    if pure.as_posix() != value or not pure.parts or any(part in {".", ".."} for part in pure.parts):
-        raise ValueError(f"{label} must be a canonical repository-relative POSIX path.")
+    if (
+        pure.as_posix() != value
+        or not pure.parts
+        or any(part in {".", ".."} for part in pure.parts)
+    ):
+        raise ValueError(
+            f"{label} must be a canonical repository-relative POSIX path."
+        )
 
     root = PROJECT_ROOT.resolve()
     resolved = (root / Path(*pure.parts)).resolve()
@@ -508,7 +582,9 @@ def _resolve_repo_relative_path(value: str, label: str) -> Path:
     return resolved
 
 
-def _require_exact_fields(data: dict[str, Any], expected: set[str], label: str) -> None:
+def _require_exact_fields(
+    data: dict[str, Any], expected: set[str], label: str
+) -> None:
     missing = sorted(expected - set(data))
     unknown = sorted(set(data) - expected)
     if missing:
@@ -524,7 +600,11 @@ def _require_non_empty_string(value: Any, label: str) -> str:
 
 
 def _require_finite_number(value: Any, label: str) -> float:
-    if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
+    if (
+        isinstance(value, bool)
+        or not isinstance(value, (int, float))
+        or not math.isfinite(value)
+    ):
         raise ValueError(f"{label} must be a finite number.")
     return value
 

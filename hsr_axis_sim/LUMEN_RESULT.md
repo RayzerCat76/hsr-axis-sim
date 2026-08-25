@@ -1,72 +1,86 @@
-# HSR-RUNTIME-ARCH-038 — Reviewed Static ChangeSpeed Golden Fixture
+# HSR-RUNTIME-ARCH-039 — ChangeSpeed Static Golden Regression Promotion
 
 ## Status
 
 PASS — proceed
 
+## Task ID
+
+`HSR-RUNTIME-ARCH-039`
+
 ## Implementation summary
 
-- Added one independently reviewed compact static Golden expectation for a deterministic positive production `ChangeSpeed` action.
-- The reviewed fixture uses explicit test inputs only:
-  - actor/target `speed-actor`;
-  - initial speed `100`;
-  - initial AV `80`;
-  - `ChangeSpeed(new_speed=200)`;
-  - final speed `200`;
-  - final AV `40.0`.
-- The expected trace is manually authored from the accepted schema/runtime observation contracts and committed as static bytes. It is not generated from the simulator, adapter, exporter, stitcher, or Golden pipeline at test runtime.
-- The fixture contains exactly three contiguous records: `ACTION_START -> SPEED_CHANGED -> ACTION_END`.
-- The speed observation locks both raw `legacy_data` and typed `payload["speed_change"]` with exact before/after speed and AV values.
-- Production validation runs one real production `Action` through accepted ARCH-016 `run_action_session_validation` against the static expected bytes.
-- A controlled `new_speed=160` run proves deterministic mismatch behavior with final speed `160` and AV `50.0`.
-- Existing comparator semantics are preserved. Because mapping keys are compared in sorted order and `legacy_data` precedes `speed_change`, the accepted first divergence is record `1`, path `/event/payload/legacy_data/after_av`, expected `40.0`, actual `50.0`. The focused test separately verifies the corresponding typed `speed_change` differences.
-- No regression promotion is included in this milestone.
-- No production code, runtime contract, adapter, loader/exporter/comparator/divergence/Golden implementation, schema, or manifest is changed.
-
-## Static fixture identity
-
-- File: `hsr_axis_sim/data/runtime_golden_fixtures/arch_038_reviewed_change_speed_expected.json`
-- Size: **2604 bytes**
-- SHA-256: **`c23b34e0afffdfe4bee53d028e5ff21d946623300b169ba57e5ddfb69478df2a`**
-- Canonical form: compact UTF-8 JSON
-- Trailing newline: none
-- Trace ID: `arch-038-reviewed-static-expected`
-- Fixture ID: `arch-038-reviewed-static-change-speed`
-- Construction metadata: `manual-reviewed`
+- Promoted the already accepted ARCH-038 reviewed static ChangeSpeed Golden into the standalone runtime action-session regression lane as the eighth locked reviewed case.
+- Evolved the runtime action-session regression manifest grammar from `1.6` to `1.7` while retaining an explicit historical `1.6` constant and preserving v1.0-v1.6 grammar semantics.
+- Added one frozen, explicit `RuntimeActionSessionRegressionChangeSpeedSetup` with exactly:
+  - `target_id`;
+  - `target_name`;
+  - `team`;
+  - `base_speed`;
+  - `initial_av`;
+  - `action_index`;
+  - `new_speed`.
+- `CHANGE_SPEED` is accepted only by manifest v1.7. v1.6 and earlier reject it.
+- `ACTION_ADVANCE` remains v1.5+ syntax; `ACTION_DELAY` remains v1.6+ syntax.
+- The regression runner reconstructs the ChangeSpeed case with the real production `ChangeSpeed(target_ids=[setup.target_id], new_speed=setup.new_speed)` effect at the declared action index.
+- Appended `arch-038-reviewed-static-change-speed` after the seven previously accepted runtime Golden cases; prior case order is unchanged.
+- Preserved the accepted ARCH-038 fixture byte identity exactly:
+  - file: `hsr_axis_sim/data/runtime_golden_fixtures/arch_038_reviewed_change_speed_expected.json`;
+  - size: **2604 bytes**;
+  - SHA-256: **`c23b34e0afffdfe4bee53d028e5ff21d946623300b169ba57e5ddfb69478df2a`**.
+- Preserved existing comparator ordering. A controlled harness-only `new_speed=160` mutation still reports the accepted first divergence at record `1`, path `/event/payload/legacy_data/after_av`.
+- Updated historical stage-boundary tests only where they had incorrectly frozen the global current manifest version or runtime-lane case count. Historical milestone semantics remain explicitly tested rather than forbidding later authorized promotions.
 
 ## Files added
 
-- `LUMEN_TASK_HSR_RUNTIME_ARCH_038.md`
-- `hsr_axis_sim/data/runtime_golden_fixtures/arch_038_reviewed_change_speed_expected.json`
-- `hsr_axis_sim/tests/test_runtime_arch_038_static_change_speed_golden_fixture.py`
+- `LUMEN_TASK_HSR_RUNTIME_ARCH_039.md`
+- `hsr_axis_sim/tests/test_runtime_arch_039_change_speed_regression_promotion.py`
 
 ## Files modified
 
 - `hsr_axis_sim/LUMEN_RESULT.md`
+- `hsr_axis_sim/data/runtime_action_session_regression_manifest.json`
+- `hsr_axis_sim/runtime_action_session_regression/manifest.py`
+- `hsr_axis_sim/runtime_action_session_regression/runner.py`
+- `hsr_axis_sim/tests/test_runtime_arch_018_standalone_regression.py`
+- `hsr_axis_sim/tests/test_runtime_arch_022_resource_regression_promotion.py`
+- `hsr_axis_sim/tests/test_runtime_arch_024_skill_point_regression_promotion.py`
+- `hsr_axis_sim/tests/test_runtime_arch_026_energy_consume_regression_promotion.py`
+- `hsr_axis_sim/tests/test_runtime_arch_028_skill_point_consume_regression_promotion.py`
+- `hsr_axis_sim/tests/test_runtime_arch_033_action_advance_regression_promotion.py`
+- `hsr_axis_sim/tests/test_runtime_arch_034_delay_action_observation.py`
+- `hsr_axis_sim/tests/test_runtime_arch_035_static_action_delay_golden_fixture.py`
+- `hsr_axis_sim/tests/test_runtime_arch_036_action_delay_regression_promotion.py`
+- `hsr_axis_sim/tests/test_runtime_arch_037_change_speed_observation.py`
+- `hsr_axis_sim/tests/test_runtime_arch_038_static_change_speed_golden_fixture.py`
 
-## Tests added
+## Tests added / updated
 
-Focused ARCH-038 coverage proves:
+Focused ARCH-039 coverage verifies:
 
-- exact 2604-byte fixture identity and pinned SHA-256;
-- no trailing newline and compact canonical form;
-- strict digest-matching loader acceptance;
-- unchanged schema name/version and contiguous `0,1,2` sequence;
-- exact event order `ACTION_START -> SPEED_CHANGED -> ACTION_END`;
-- exact action/actor/target/event-ID provenance;
-- exact raw `legacy_data` and typed `speed_change` payload;
-- empty schema-v1 `numeric_values` for all three records;
-- real ARCH-016 production ChangeSpeed matches the reviewed static fixture;
-- final production state is speed `200`, AV `40.0`, cursor `(3,3)`;
-- controlled `new_speed=160` produces speed `160`, AV `50.0` and the exact accepted first-divergence path/value;
-- compared typed `speed_change` payloads retain exact before values and deterministic changed after values;
-- test source contains no runtime expected-generation path;
-- ARCH-038 fixture is absent from both regression manifests;
-- all seven prior reviewed static fixture byte identities remain exact;
-- runtime action-session regression remains `7/7`;
+- supported manifest versions are exactly v1.0 through v1.7;
+- explicit historical v1.6 constant is retained;
+- v1.6 rejects `CHANGE_SPEED`;
+- v1.7 accepts the exact frozen ChangeSpeed setup;
+- unknown, missing, or extra setup fields are rejected;
+- target/name/team require non-empty strings;
+- `base_speed`, `initial_av`, and `new_speed` require finite non-boolean numbers;
+- `base_speed > 0` and `new_speed > 0`;
+- finite zero/negative `initial_av` remains representable without a new floor;
+- `action_index` is an exact in-range nonnegative integer;
+- `ACTION_ADVANCE` and `ACTION_DELAY` retain their previously accepted version boundaries;
+- current manifest is v1.7 with exactly eight ordered cases;
+- the first seven case identities and fixture digests remain unchanged;
+- eighth case is the exact ARCH-038 ChangeSpeed fixture and produces three records;
+- the standalone runtime lane passes `8/8` with record counts `[4, 3, 3, 3, 3, 3, 3, 3]`;
+- controlled `new_speed=160` reports the accepted first divergence at record 1, `/event/payload/legacy_data/after_av`;
+- all eight reviewed static Golden fixture byte identities remain exact;
+- the harness remains closed and explicit, with no generic effect DSL;
 - legacy regression remains `20/20`;
 - trace evidence remains `2/2`;
 - production extra-turn LIFO remains `third, second, first`.
+
+Historical stage-boundary tests were adjusted only to stop treating their then-current version/case count as a permanent global ceiling. Their original feature semantics and prefix identities remain covered.
 
 ## Exact commands executed by CI
 
@@ -80,52 +94,69 @@ python -m hsr_axis_sim.runtime_action_session_regression.runner --manifest hsr_a
 
 ## Real validation results
 
-GitHub Actions `HSR Axis Sim Validation`, PR #43, run #216, job `97700323840`:
+GitHub Actions `HSR Axis Sim Validation`, PR #44, run **#230**, job **`97708546285`**, on branch head `a763d1b9982c44ab010eeea14438f028acc7c5d3`:
 
 - compile: **PASS**;
-- pytest: **1538 passed in 9.46s**;
+- pytest: **1601 passed in 10.08s**;
 - legacy locked regression: **20/20**;
 - trace evidence: **2/2**;
-- standalone runtime action-session Golden regression: **7/7**.
+- standalone runtime action-session Golden regression: **8/8**.
 
-The seven already-promoted runtime Golden cases remained unchanged and PASS. The new ARCH-038 fixture is intentionally not part of that manifest yet.
+Runtime Golden case order and record counts:
+
+1. `arch-017-reviewed-static-action-session` — 4 records — PASS;
+2. `arch-021-reviewed-static-clamped-energy` — 3 records — PASS;
+3. `arch-023-reviewed-static-clamped-skill-point` — 3 records — PASS;
+4. `arch-025-reviewed-static-energy-consume` — 3 records — PASS;
+5. `arch-027-reviewed-static-skill-point-consume` — 3 records — PASS;
+6. `arch-032-reviewed-static-action-advance` — 3 records — PASS;
+7. `arch-035-reviewed-static-action-delay` — 3 records — PASS;
+8. `arch-038-reviewed-static-change-speed` — 3 records — PASS.
+
+The eighth production-generated actual trace passed comparison against the accepted ARCH-038 static expectation. Its expected SHA-256 remained `c23b34e0afffdfe4bee53d028e5ff21d946623300b169ba57e5ddfb69478df2a`.
+
+## Validation history / resolved failures
+
+Earlier PR CI runs failed only because older stage-boundary tests still hard-coded global current manifest version `1.6` or runtime case count `7`. Those failures were used to identify and narrow the stale assertions. No ChangeSpeed setup, production runner, Golden comparison, fixture identity, or divergence test failed in those runs.
+
+After the historical-boundary assertions were corrected, run #230 passed the complete workflow including all three regression lanes.
 
 ## Locked areas confirmed unchanged
 
 - `hsr_axis_sim/sim/**` unchanged.
 - `hsr_axis_sim/runtime_contracts/**` unchanged.
 - `hsr_axis_sim/runtime_adapters/**` unchanged.
-- loaders/exporters/comparators/divergence/Golden implementation unchanged.
+- Golden validator/comparator/divergence implementation unchanged.
+- trace loader/exporter/stitching implementation unchanged.
 - `hsr_axis_sim/data/regression_manifest.json` unchanged.
-- `hsr_axis_sim/data/runtime_action_session_regression_manifest.json` unchanged at seven cases.
-- All seven prior reviewed static Golden fixtures remain byte-identical.
-- AdvanceAction, DelayAction, and ChangeSpeed production semantics remain unchanged.
-- ImmediateAction and GrantExtraTurn remain unchanged.
-- Trace schema version remains `1.0`.
-- Production LIFO compatibility remains unchanged.
+- all files under `hsr_axis_sim/data/runtime_golden_fixtures/**` unchanged; ARCH-038 remains exactly 2604 bytes with the pinned SHA-256 above.
+- production `AdvanceAction`, `DelayAction`, and `ChangeSpeed` formulas/events unchanged.
+- `ImmediateAction` and `GrantExtraTurn` semantics unchanged.
+- trace schema/version unchanged.
+- production extra-turn LIFO behavior unchanged.
 
 ## Warnings / errors
 
-- No compile, pytest, legacy-regression, trace-evidence, or runtime-action-session-regression failure occurred.
+- No compile, pytest, legacy-regression, trace-evidence, or runtime-action-session-regression failure remains.
 - Nonblocking GitHub Actions warning remains: `actions/checkout@v4` and `actions/setup-python@v5` target Node 20 and are forced onto Node 24.
-- Upstream action setup emits Node `punycode` / `url.parse()` deprecation notices; these are unrelated to simulator correctness and were already present before ARCH-038.
+- Upstream action setup continues to emit Node `punycode` and `url.parse()` deprecation notices. These warnings predate ARCH-039 and are unrelated to simulator correctness.
 
 ## Unresolved issues
 
-None blocking HSR-RUNTIME-ARCH-038 acceptance.
+None blocking HSR-RUNTIME-ARCH-039 acceptance.
 
-The new ChangeSpeed fixture is intentionally not yet promoted into the standalone runtime action-session regression manifest. ImmediateAction and GrantExtraTurn still lack equivalent runtime observation contracts.
+`ImmediateAction` and `GrantExtraTurn` still do not have equivalent dedicated runtime observation contracts. They remain out of scope for this milestone.
 
-The Master Bible summary remains historically stale relative to the current narrow runtime frontier; this milestone intentionally did not broaden scope into governance synchronization.
+The Master Bible summary remains historically stale relative to the narrow runtime frontier; ARCH-039 intentionally does not broaden scope into governance synchronization.
 
 ## Exclusions confirmation
 
-Respected: no regression promotion, no production ChangeSpeed change, no non-positive-speed Golden case, no ImmediateAction observation, no GrantExtraTurn observation, no generic action-axis abstraction, no new production input validation, no video parsing, no scraping, no character database expansion, no AI optimization, and no unrelated UI/refactor work.
+Respected: no production simulator changes, no runtime observation-contract changes, no adapter/schema/comparator/divergence/Golden changes, no static fixture generation or modification, no legacy regression-manifest promotion, no generic effect/action-axis DSL, no `ImmediateAction` support, no `GrantExtraTurn` support, no automatic action selection, no video parsing/scraping, no character database work, no AI optimization, and no unrelated UI/refactor work.
 
 ## Suggested next milestone
 
-`HSR-RUNTIME-ARCH-039 — ChangeSpeed Golden Regression Promotion`
+`HSR-RUNTIME-ARCH-040 — ImmediateAction Runtime Observation Contract`
 
-Promote only the accepted ARCH-038 reviewed static ChangeSpeed fixture into the existing standalone `runtime_action_session_regression` lane, mirroring the accepted Advance/Delay promotion pattern. Preserve the legacy regression manifest, production semantics, fixture bytes, trace schema, comparator semantics, and LIFO behavior.
+Inspect and expose only the existing production `ImmediateAction` behavior through a dedicated deterministic runtime observation contract, preserving all accepted simulator semantics and keeping `GrantExtraTurn` separate. Do not create a static Golden or regression promotion until the observation contract itself is accepted.
 
-Recommended execution routing: ChatGPT **GPT-5.6 Terra**; Codex reasoning **Medium** if Codex is used.
+Recommended execution routing: ChatGPT **GPT-5.6 Sol**; Codex reasoning **High** because immediate-turn scheduling/ordering is deterministic core timeline behavior.

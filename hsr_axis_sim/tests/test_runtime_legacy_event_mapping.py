@@ -13,6 +13,14 @@ EXPECTED = {
     "action_finished": (RuntimeEventType.ACTION_END, {"action_id": "action_id", "actor_id": "actor_id"}),
     "action_started": (RuntimeEventType.ACTION_START, {"action_id": "action_id", "actor_id": "actor_id"}),
     "damage_dealt": (RuntimeEventType.DAMAGE_RESOLVED, {"source_id": "source_id", "target_id": "target_id"}),
+    "energy_changed": (
+        RuntimeEventType.ENERGY_CHANGED,
+        {"action_id": "action_id", "actor_id": "actor_id", "target_id": "unit_id"},
+    ),
+    "skill_points_changed": (
+        RuntimeEventType.SKILL_POINTS_CHANGED,
+        {"action_id": "action_id", "actor_id": "actor_id"},
+    ),
     "turn_ended": (RuntimeEventType.TURN_END, {"actor_id": "actor_id"}),
     "turn_started": (RuntimeEventType.TURN_START, {"actor_id": "actor_id"}),
     "unit_defeated": (RuntimeEventType.CONTENT_DEFINED, {"target_id": "target_id"}),
@@ -22,7 +30,7 @@ EXPECTED = {
 
 def test_exact_immutable_mapping_registry():
     assert list(LEGACY_EVENT_MAPPINGS) == sorted(EXPECTED)
-    assert len(LEGACY_EVENT_MAPPINGS) == 7
+    assert len(LEGACY_EVENT_MAPPINGS) == 9
     for legacy_type, (runtime_type, fields) in EXPECTED.items():
         mapping = LEGACY_EVENT_MAPPINGS[legacy_type]
         assert mapping.runtime_event_type is runtime_type
@@ -35,9 +43,9 @@ def test_exact_immutable_mapping_registry():
         LEGACY_EVENT_MAPPINGS["new"] = object()
 
 
-def test_six_bound_contracts_and_one_unresolved_lifecycle():
+def test_eight_bound_contracts_and_one_unresolved_lifecycle():
     bound = [mapping for mapping in LEGACY_EVENT_MAPPINGS.values() if mapping.legacy_event_type != "unit_defeated"]
-    assert len(bound) == 6
+    assert len(bound) == 8
     for mapping in bound:
         contract = mapping.semantic_contract
         assert contract.evidence_status is EvidenceStatus.CONFIRMED
@@ -54,7 +62,7 @@ def test_six_bound_contracts_and_one_unresolved_lifecycle():
 
 def test_mapping_document_is_exact_sorted_projection():
     document = json.loads((ROOT / "docs/runtime/LEGACY_EVENT_MAPPING_V1.json").read_text())
-    assert len(document) == 7
+    assert len(document) == 9
     assert [item["legacy_event_type"] for item in document] == sorted(EXPECTED)
     for item in document:
         mapping = LEGACY_EVENT_MAPPINGS[item["legacy_event_type"]]

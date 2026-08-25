@@ -146,7 +146,8 @@ Do not modify any static Golden fixture bytes.
 - Standalone manifest contains exactly seven cases, preserving the first six in exact accepted order and appending the ARCH-035 case as seventh.
 - ARCH-035 fixture remains exactly 2728 bytes with the pinned SHA-256 unchanged.
 - Standalone runtime action-session Golden regression passes exactly `7/7`.
-- Seventh case produces exactly three runtime records and actual SHA equals the pinned expected SHA.
+- Seventh case produces exactly three runtime records and passes the accepted Golden record comparison against the pinned expected fixture.
+- Seventh-case `expected_sha256` remains exactly the ARCH-035 fixture digest. `actual_sha256` remains an exposed deterministic identity of the generated actual trace artifact and is not required to equal the expected fixture digest because the accepted comparison permits differing trace/document metadata while comparing the canonical ordered runtime records.
 - A controlled Delay setup mutation produces a Golden mismatch with accepted first divergence at record index 1 under `/event/payload/action_delay/...`, proving the harness executes Delay rather than an empty action.
 - Legacy regression remains `20/20` and trace evidence remains `2/2`.
 - Existing production LIFO compatibility remains unchanged.
@@ -166,7 +167,7 @@ Add focused tests, preferably `hsr_axis_sim/tests/test_runtime_arch_036_action_d
 8. zero/negative percent and finite zero/negative initial AV remain representable at the manifest layer;
 9. `ACTION_ADVANCE` remains valid in v1.5 and v1.6 and invalid in v1.4;
 10. current manifest is v1.6 with exactly seven cases; first six identities/order unchanged; seventh case exact;
-11. runtime lane passes `7/7` with record counts `[4, 3, 3, 3, 3, 3, 3]` and expected digests;
+11. runtime lane passes `7/7` with record counts `[4, 3, 3, 3, 3, 3, 3]`, exact expected digests, and a well-formed deterministic actual artifact digest for the seventh case;
 12. controlled Delay percent mutation surfaces a structured Delay divergence;
 13. all seven reviewed fixture byte identities remain exact;
 14. harness remains closed and explicit with no generic effect DSL or ChangeSpeed/ImmediateAction/GrantExtraTurn support;

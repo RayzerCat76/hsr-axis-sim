@@ -443,7 +443,7 @@ def test_locked_static_fixtures_and_all_regression_lanes_remain_valid_after_prom
     assert runtime.failed_count == 0
 
 
-def test_arch_034_scope_preserves_later_authorized_change_speed_observation():
+def test_arch_034_scope_preserves_later_authorized_axis_observations():
     delay_source = inspect.getsource(DelayAction)
     advance_source = inspect.getsource(AdvanceAction)
     assert "action_delayed" in delay_source
@@ -456,11 +456,17 @@ def test_arch_034_scope_preserves_later_authorized_change_speed_observation():
     assert "speed_changed" in speed_source
     assert "emit_event" in speed_source
 
-    for effect_type in (ImmediateAction, GrantExtraTurn):
-        source = inspect.getsource(effect_type)
-        assert "action_delayed" not in source
-        assert "speed_changed" not in source
-        assert "emit_event" not in source
+    immediate_source = inspect.getsource(ImmediateAction)
+    assert "action_delayed" not in immediate_source
+    assert "speed_changed" not in immediate_source
+    assert "action_immediate" in immediate_source
+    assert "emit_event" in immediate_source
+
+    extra_turn_source = inspect.getsource(GrantExtraTurn)
+    assert "action_delayed" not in extra_turn_source
+    assert "speed_changed" not in extra_turn_source
+    assert "action_immediate" not in extra_turn_source
+    assert "emit_event" not in extra_turn_source
 
 
 def test_production_extra_turn_lifo_compatibility_is_unchanged():

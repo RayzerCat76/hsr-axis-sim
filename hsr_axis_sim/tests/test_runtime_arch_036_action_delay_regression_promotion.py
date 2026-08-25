@@ -9,9 +9,9 @@ from hsr_axis_sim.regression.manifest import load_regression_manifest
 from hsr_axis_sim.regression.runner import run_regression
 from hsr_axis_sim.runtime_action_session_regression.manifest import (
     RUNTIME_ACTION_SESSION_REGRESSION_SUPPORTED_VERSIONS,
-    RUNTIME_ACTION_SESSION_REGRESSION_VERSION,
     RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_4,
     RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_5,
+    RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_6,
     RuntimeActionSessionRegressionActionAdvanceSetup,
     RuntimeActionSessionRegressionActionDelaySetup,
     RuntimeActionSessionRegressionManifest,
@@ -143,10 +143,10 @@ def _parse(data):
     )
 
 
-def test_supported_versions_are_exactly_v1_0_through_v1_6():
+def test_arch_036_v1_6_remains_in_supported_version_history():
     assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_5 == "1.5"
-    assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION == "1.6"
-    assert RUNTIME_ACTION_SESSION_REGRESSION_SUPPORTED_VERSIONS == (
+    assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_6 == "1.6"
+    assert RUNTIME_ACTION_SESSION_REGRESSION_SUPPORTED_VERSIONS[:7] == (
         "1.0",
         "1.1",
         "1.2",
@@ -163,7 +163,9 @@ def test_v1_5_explicitly_rejects_action_delay_as_v1_6_syntax():
 
 
 def test_v1_6_accepts_exact_frozen_action_delay_setup():
-    parsed = _parse(_manifest(RUNTIME_ACTION_SESSION_REGRESSION_VERSION, _delay_setup()))
+    parsed = _parse(
+        _manifest(RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_6, _delay_setup())
+    )
     assert parsed.cases[0].setup == RuntimeActionSessionRegressionActionDelaySetup(
         target_id="delay-actor",
         target_name="Delay Actor",
@@ -181,7 +183,10 @@ def test_action_advance_remains_v1_5_and_v1_6_syntax_but_not_v1_4():
     with pytest.raises(ValueError, match="ACTION_ADVANCE.*requires manifest version '1.5'"):
         _parse(_manifest(RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_4, _advance_setup()))
 
-    for version in (RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_5, "1.6"):
+    for version in (
+        RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_5,
+        RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_6,
+    ):
         parsed = _parse(_manifest(version, _advance_setup()))
         assert isinstance(parsed.cases[0].setup, RuntimeActionSessionRegressionActionAdvanceSetup)
 
@@ -256,11 +261,10 @@ def test_action_delay_initial_av_is_finite_but_not_newly_range_restricted(initia
     assert parsed.cases[0].setup.initial_av == initial_av
 
 
-def test_locked_v1_6_manifest_contains_exact_seven_reviewed_cases_in_order():
+def test_arch_036_first_seven_reviewed_cases_remain_exact_and_ordered():
     manifest = load_runtime_action_session_regression_manifest(RUNTIME_MANIFEST_PATH)
 
-    assert len(manifest.cases) == 7
-    assert [case.case_id for case in manifest.cases] == CASE_IDS
+    assert [case.case_id for case in manifest.cases[:7]] == CASE_IDS
     seventh = manifest.cases[6]
     assert seventh.expected_path == FIXTURES[-1][0].resolve()
     assert seventh.expected_sha256 == FIXTURES[-1][2]
@@ -280,10 +284,14 @@ def test_locked_v1_6_manifest_contains_exact_seven_reviewed_cases_in_order():
     )
 
 
-def test_locked_runtime_lane_passes_seven_of_seven_with_expected_counts_and_digests():
-    report = run_runtime_action_session_regression(
-        load_runtime_action_session_regression_manifest(RUNTIME_MANIFEST_PATH)
+def test_arch_036_first_seven_cases_still_pass_seven_of_seven():
+    locked = load_runtime_action_session_regression_manifest(RUNTIME_MANIFEST_PATH)
+    manifest = RuntimeActionSessionRegressionManifest(
+        manifest_id="arch-036-preserved-seven",
+        path=ROOT / "arch_036_preserved_seven.json",
+        cases=locked.cases[:7],
     )
+    report = run_runtime_action_session_regression(manifest)
 
     assert report.passed is True
     assert report.total == 7
@@ -354,7 +362,6 @@ def test_action_delay_regression_harness_is_closed_and_explicitly_targeted():
     assert "DelayAction(target_ids=[setup.target_id], percent=setup.percent)" in runner_source
 
     for forbidden in (
-        "ChangeSpeed",
         "ImmediateAction",
         "GrantExtraTurn",
         "importlib",

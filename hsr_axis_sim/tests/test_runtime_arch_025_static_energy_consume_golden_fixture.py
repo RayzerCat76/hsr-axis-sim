@@ -343,13 +343,14 @@ def test_prior_static_fixtures_and_current_runtime_regression_lane_remain_accept
         load_runtime_action_session_regression_manifest(RUNTIME_REGRESSION_MANIFEST)
     )
     assert report.passed is True
-    assert report.total == 4
-    assert report.passed_count == 4
+    assert report.total == 5
+    assert report.passed_count == 5
     assert [result.case_id for result in report.results] == [
         "arch-017-reviewed-static-action-session",
         "arch-021-reviewed-static-clamped-energy",
         "arch-023-reviewed-static-clamped-skill-point",
         "arch-025-reviewed-static-energy-consume",
+        "arch-027-reviewed-static-skill-point-consume",
     ]
 
 

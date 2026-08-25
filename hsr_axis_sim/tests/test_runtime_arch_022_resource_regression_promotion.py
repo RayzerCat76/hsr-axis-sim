@@ -12,6 +12,7 @@ from hsr_axis_sim.runtime_action_session_regression.manifest import (
     RUNTIME_ACTION_SESSION_REGRESSION_VERSION,
     RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_1,
     RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_2,
+    RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_3,
     RuntimeActionSessionRegressionCase,
     RuntimeActionSessionRegressionEnergyGainSetup,
     RuntimeActionSessionRegressionManifest,
@@ -114,7 +115,8 @@ def test_manifest_versions_preserve_v1_0_and_explicit_v1_1_contract():
     assert RUNTIME_ACTION_SESSION_REGRESSION_LEGACY_VERSION == "1.0"
     assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_1 == "1.1"
     assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_2 == "1.2"
-    assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION == "1.3"
+    assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_3 == "1.3"
+    assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION == "1.4"
 
     parsed = _parse(_manifest("1.0"))
 
@@ -262,8 +264,8 @@ def test_current_runtime_regression_still_passes_arch022_first_two_cases():
     )
 
     assert report.passed is True
-    assert report.total == 4
-    assert report.passed_count == 4
+    assert report.total == 5
+    assert report.passed_count == 5
     assert report.failed_count == 0
     first, second = report.results[:2]
     assert first.case_id == "arch-017-reviewed-static-action-session"

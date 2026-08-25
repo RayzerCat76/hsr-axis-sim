@@ -135,14 +135,14 @@ _MAPPINGS = (
         "Validate and expose ARCH-034 action_delay while preserving raw legacy data.",
     ),
     _bound_mapping(
+        "action_finished", RuntimeEventType.ACTION_END,
+        "hsr_axis_sim/sim/action.py", {"action_id": "action_id", "actor_id": "actor_id"},
+    ),
+    _bound_mapping(
         "action_immediate", RuntimeEventType.ACTION_VALUE_IMMEDIATE,
         "hsr_axis_sim/sim/effects.py",
         {"action_id": "action_id", "actor_id": "actor_id", "target_id": "target_id"},
         "Validate and expose ARCH-040 immediate_action while preserving raw legacy data.",
-    ),
-    _bound_mapping(
-        "action_finished", RuntimeEventType.ACTION_END,
-        "hsr_axis_sim/sim/action.py", {"action_id": "action_id", "actor_id": "actor_id"},
     ),
     _bound_mapping(
         "action_started", RuntimeEventType.ACTION_START,

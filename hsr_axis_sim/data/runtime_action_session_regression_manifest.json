@@ -1,6 +1,6 @@
 {
   "schema": "hsr_runtime_action_session_regression",
-  "version": "1.0",
+  "version": "1.1",
   "manifest_id": "HSR_RUNTIME_ACTION_SESSION_REGRESSION_001",
   "cases": [
     {
@@ -20,7 +20,35 @@
           "name": "reviewed-action-b",
           "ends_turn": false
         }
-      ]
+      ],
+      "setup": {
+        "kind": "EMPTY"
+      }
+    },
+    {
+      "id": "arch-021-reviewed-static-clamped-energy",
+      "expected_path": "hsr_axis_sim/data/runtime_golden_fixtures/arch_021_reviewed_clamped_energy_expected.json",
+      "expected_sha256": "4fe2c8b3c9c22821a49ff380c9635828e36f3c4a3bbbc13d2cc077dd4d97e605",
+      "stream_id": "arch-021-reviewed-resource",
+      "actor_id": "resource-actor",
+      "actions": [
+        {
+          "action_id": "reviewed-clamped-energy",
+          "name": "reviewed-clamped-energy",
+          "ends_turn": false
+        }
+      ],
+      "setup": {
+        "kind": "ENERGY_GAIN",
+        "target_id": "resource-target",
+        "target_name": "resource-target",
+        "team": "ally",
+        "base_speed": 100,
+        "initial_energy": 90,
+        "max_energy": 100,
+        "action_index": 0,
+        "amount": 25
+      }
     }
   ]
 }

@@ -12,6 +12,7 @@ from hsr_axis_sim.runtime_action_session_regression.manifest import (
     RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_0,
     RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_1,
     RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_2,
+    RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_3,
     RuntimeActionSessionRegressionEnergyGainSetup,
     RuntimeActionSessionRegressionManifest,
     RuntimeActionSessionRegressionSkillPointGainSetup,
@@ -106,12 +107,14 @@ def test_manifest_versions_are_explicit_and_ordered():
     assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_0 == "1.0"
     assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_1 == "1.1"
     assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_2 == "1.2"
-    assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION == "1.3"
+    assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_3 == "1.3"
+    assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION == "1.4"
     assert RUNTIME_ACTION_SESSION_REGRESSION_SUPPORTED_VERSIONS == (
         "1.0",
         "1.1",
         "1.2",
         "1.3",
+        "1.4",
     )
 
 
@@ -237,14 +240,14 @@ def test_current_manifest_preserves_first_three_reviewed_cases():
     )
 
 
-def test_current_runtime_lane_passes_four_of_four_and_preserves_first_three():
+def test_current_runtime_lane_passes_five_of_five_and_preserves_first_three():
     report = run_runtime_action_session_regression(
         load_runtime_action_session_regression_manifest(RUNTIME_MANIFEST_PATH)
     )
 
     assert report.passed is True
-    assert report.total == 4
-    assert report.passed_count == 4
+    assert report.total == 5
+    assert report.passed_count == 5
     assert report.failed_count == 0
     assert [result.case_id for result in report.results[:3]] == [
         "arch-017-reviewed-static-action-session",

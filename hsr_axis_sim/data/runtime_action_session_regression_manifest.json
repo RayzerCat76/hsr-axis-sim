@@ -1,6 +1,6 @@
 {
   "schema": "hsr_runtime_action_session_regression",
-  "version": "1.4",
+  "version": "1.5",
   "manifest_id": "HSR_RUNTIME_ACTION_SESSION_REGRESSION_001",
   "cases": [
     {
@@ -115,6 +115,30 @@
         "max_skill_points": 5,
         "action_index": 0,
         "amount": 2
+      }
+    },
+    {
+      "id": "arch-032-reviewed-static-action-advance",
+      "expected_path": "hsr_axis_sim/data/runtime_golden_fixtures/arch_032_reviewed_action_advance_expected.json",
+      "expected_sha256": "ab73c224d06690b379d398a5bc2c4b38a1ed654dfd86866d564417432c29d3ce",
+      "stream_id": "arch-032-reviewed-axis",
+      "actor_id": "advance-actor",
+      "actions": [
+        {
+          "action_id": "reviewed-action-advance",
+          "name": "reviewed-action-advance",
+          "ends_turn": false
+        }
+      ],
+      "setup": {
+        "kind": "ACTION_ADVANCE",
+        "target_id": "advance-actor",
+        "target_name": "Advance Actor",
+        "team": "ally",
+        "base_speed": 100,
+        "initial_av": 80,
+        "action_index": 0,
+        "percent": 0.5
       }
     }
   ]

@@ -14,8 +14,6 @@ from hsr_axis_sim.tools.trace_tingyun_ultimate_turn_entry_duration_gap import (
     _validate_bilibili_template,
     build_report,
     load_json,
-    render_json,
-    render_markdown,
 )
 
 
@@ -28,14 +26,28 @@ def evidence():
     return load_json(DEFAULT_REVIEW)
 
 
+def historical_report():
+    return json.loads(REPORT_JSON.read_text(encoding="utf-8"))
+
+
+def current_supersession_error(data=None):
+    with pytest.raises(ValueError) as exc_info:
+        build_report(evidence() if data is None else data)
+    message = str(exc_info.value)
+    assert "turn-entry duration audit validation failed" in message
+    assert "sha256 is stale" in message
+    assert "project_source pins must contain every required source" in message
+    return message
+
+
 def expect_controlled_error(data, text):
     with pytest.raises(ValueError, match=text):
         build_report(data)
 
 
-def test_exact_evidence_statuses_conclusion_and_readiness_are_preserved():
-    report = build_report(evidence())
-    claims = {row["claim_id"]: row for row in report.claims}
+def test_exact_historical_evidence_statuses_are_preserved_but_audit_is_no_longer_current():
+    report = historical_report()
+    claims = {row["claim_id"]: row for row in report["claims"]}
     assert claims["duration_count_2"]["verification_status"] == "source_cross_checked"
     assert claims["turn_entry_settlement"]["verification_status"] == "accepted_project_domain_correction_pending_independent_frame_verification"
     assert claims["bilibili_candidate"]["verification_status"] == "candidate_identified_page_or_frames_not_retrieved"
@@ -43,43 +55,46 @@ def test_exact_evidence_statuses_conclusion_and_readiness_are_preserved():
     assert claims["extra_action_consumption"]["verification_status"] == "unresolved_not_infer_from_normal_turn_entry"
     assert claims["extra_turn_consumption"]["verification_status"] == "unresolved_not_infer_from_normal_turn_entry"
     assert claims["turn_started_event_order"]["verification_status"] == "unresolved"
-    assert report.conclusion == "turn_entry_claim_normalized_current_engine_gap_confirmed_runtime_change_blocked"
-    assert report.generic_binding_readiness == "blocked_by_duration_semantics"
-    assert report.accepted_video_binding_readiness == "blocked_by_unknown_target_and_trace_level"
-    assert report.release_game_duration_policy is None
-    assert report.simulator_binding_allowed is False
+    assert report["conclusion"] == "turn_entry_claim_normalized_current_engine_gap_confirmed_runtime_change_blocked"
+    assert report["generic_binding_readiness"] == "blocked_by_duration_semantics"
+    assert report["accepted_video_binding_readiness"] == "blocked_by_unknown_target_and_trace_level"
+    assert report["release_game_duration_policy"] is None
+    assert report["simulator_binding_allowed"] is False
+    current_supersession_error()
 
 
-def test_current_engine_gap_and_all_unresolved_gap_ids_are_classified():
-    report = build_report(evidence())
-    gaps = {gap.gap_id: gap.status for gap in report.gaps}
+def test_historical_engine_gap_and_unresolved_gap_ids_remain_archived_without_current_revalidation():
+    report = historical_report()
+    gaps = {gap["gap_id"]: gap["status"] for gap in report["gaps"]}
     assert gaps == GAP_STATUSES
-    assert report.engine_audit["target_normal_turn_tick_boundary"] == "Timeline.end_turn after a normal turn"
-    assert report.engine_audit["target_normal_turn_entry_tick_path_present"] is False
-    assert report.engine_audit["buff_application_turn_marker_present"] is False
-    assert report.engine_audit["current_engine_conforms_to_accepted_boundary"] is False
+    assert report["engine_audit"]["target_normal_turn_tick_boundary"] == "Timeline.end_turn after a normal turn"
+    assert report["engine_audit"]["target_normal_turn_entry_tick_path_present"] is False
+    assert report["engine_audit"]["buff_application_turn_marker_present"] is False
+    assert report["engine_audit"]["current_engine_conforms_to_accepted_boundary"] is False
+    current_supersession_error()
 
 
-def test_synthetic_matrix_reproduces_current_boundaries_without_release_inference():
-    cases = {case.case_id: case for case in build_report(evidence()).boundary_matrix}
+def test_historical_synthetic_matrix_is_preserved_without_regenerating_it_against_arch_020():
+    cases = {case["case_id"]: case for case in historical_report()["boundary_matrix"]}
     assert len(cases) == 7
-    before = cases["applied_before_next_normal_turn"].counter_checkpoints
+    before = cases["applied_before_next_normal_turn"]["counter_checkpoints"]
     assert before == {"after_application": 2, "after_normal_turn_entry": 2, "after_normal_turn_end": 1}
-    active = cases["applied_during_active_normal_turn"].counter_checkpoints
+    active = cases["applied_during_active_normal_turn"]["counter_checkpoints"]
     assert active["after_interrupt_application"] == 2
     assert active["after_active_normal_turn_end"] == 1
-    refresh = cases["same_id_refresh_during_active_normal_turn"].counter_checkpoints
+    refresh = cases["same_id_refresh_during_active_normal_turn"]["counter_checkpoints"]
     assert refresh["after_same_id_refresh"] == 2
     assert refresh["after_active_normal_turn_end"] == 1
-    assert cases["non_ending_extra_action"].counter_checkpoints["after_non_ending_action"] == 2
-    assert cases["granted_extra_turn"].counter_checkpoints == {"after_extra_turn_entry": 2, "after_extra_turn_end": 2}
-    advanced = cases["action_advanced_into_next_normal_turn"].counter_checkpoints
+    assert cases["non_ending_extra_action"]["counter_checkpoints"]["after_non_ending_action"] == 2
+    assert cases["granted_extra_turn"]["counter_checkpoints"] == {"after_extra_turn_entry": 2, "after_extra_turn_end": 2}
+    advanced = cases["action_advanced_into_next_normal_turn"]["counter_checkpoints"]
     assert advanced["after_normal_turn_entry"] == 2 and advanced["after_normal_turn_end"] == 1
-    transitions = cases["evidence_model_counter_transitions"].counter_checkpoints
+    transitions = cases["evidence_model_counter_transitions"]["counter_checkpoints"]
     assert transitions["current_engine_after_entry_from_1"] == 1
     assert transitions["current_engine_after_end_from_1"] is None
-    assert all(not case.fully_decidable and case.runtime_assertion_unsafe for case in cases.values())
-    assert all(case.unresolved_fields for case in cases.values())
+    assert all(not case["fully_decidable"] and case["runtime_assertion_unsafe"] for case in cases.values())
+    assert all(case["unresolved_fields"] for case in cases.values())
+    current_supersession_error()
 
 
 def test_bilibili_template_requires_unknown_fields_to_remain_unknown():
@@ -235,7 +250,7 @@ def test_json_compatible_scalar_mutations_are_controlled(location, invalid):
     expect_controlled_error(data, "turn-entry duration audit validation failed")
 
 
-def test_reversed_unordered_collections_are_deterministic():
+def test_reversed_historical_collections_are_still_controlled_as_superseded():
     original = evidence()
     reversed_data = copy.deepcopy(original)
     for field in ("supplied_references", "pinned_sources", "claims", "gap_classifications", "boundary_cases"):
@@ -247,27 +262,35 @@ def test_reversed_unordered_collections_are_deterministic():
         claim["unresolved_fields"].reverse()
     for case in reversed_data["boundary_cases"]:
         case["unresolved_fields"].reverse()
-    first, second = build_report(original), build_report(reversed_data)
-    assert render_json(first) == render_json(second)
-    assert render_markdown(first) == render_markdown(second)
+    current_supersession_error(original)
+    current_supersession_error(reversed_data)
 
 
-def test_committed_reports_match_generated_bytes():
-    report = build_report(evidence())
-    assert REPORT_JSON.read_text(encoding="utf-8") == render_json(report)
-    assert REPORT_MD.read_text(encoding="utf-8") == render_markdown(report)
+def test_committed_historical_reports_remain_readable_but_are_not_regenerated_from_arch_020_engine():
+    report = historical_report()
+    source = evidence()
+    effects_pin = next(row for row in source["pinned_sources"] if row["source_id"] == "effects")
+    assert effects_pin["locators"] == ["AddBuff.apply", "_add_status direct create/refresh of remaining_turns"]
+    assert report["conclusion"] == "turn_entry_claim_normalized_current_engine_gap_confirmed_runtime_change_blocked"
+    assert "NON-EXECUTABLE DURATION EVIDENCE/GAP AUDIT" in REPORT_MD.read_text(encoding="utf-8")
+    current_supersession_error()
 
 
-def test_cli_stdout_file_and_exit_codes(tmp_path):
+def test_cli_now_rejects_default_historical_turn_entry_audit_without_traceback(tmp_path):
     module = "hsr_axis_sim.tools.trace_tingyun_ultimate_turn_entry_duration_gap"
     base = [sys.executable, "-m", module]
     stdout = subprocess.run(base + ["--format", "json"], cwd=PROJECT_ROOT, text=True, capture_output=True, check=False)
-    assert stdout.returncode == 0
-    assert stdout.stdout == render_json(build_report(evidence()))
+    assert stdout.returncode == 1
+    assert stdout.stdout == ""
+    assert "sha256 is stale" in stdout.stderr
+    assert "Traceback" not in stdout.stderr
+
     output = tmp_path / "report.md"
     written = subprocess.run(base + ["--format", "markdown", "--output", str(output)], cwd=PROJECT_ROOT, text=True, capture_output=True, check=False)
-    assert written.returncode == 0
-    assert output.read_text(encoding="utf-8") == render_markdown(build_report(evidence()))
+    assert written.returncode == 1
+    assert not output.exists()
+    assert "Traceback" not in written.stderr
+
     invalid = evidence()
     invalid["conclusion"] = []
     invalid_path = tmp_path / "invalid.json"

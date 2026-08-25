@@ -46,6 +46,7 @@ FIXTURE_ID = "arch-017-reviewed-static-action-session"
 
 
 def _valid_manifest_data():
+    """Legacy v1.0 fixture proving the original exact manifest remains accepted."""
     return {
         "schema": "hsr_runtime_action_session_regression",
         "version": "1.0",
@@ -100,11 +101,11 @@ def _mismatch_case() -> RuntimeActionSessionRegressionCase:
     )
 
 
-def test_locked_standalone_manifest_loads_one_reviewed_case_in_declared_order():
+def test_locked_standalone_manifest_loads_two_reviewed_cases_in_declared_order():
     manifest = load_runtime_action_session_regression_manifest(RUNTIME_MANIFEST_PATH)
 
     assert manifest.manifest_id == "HSR_RUNTIME_ACTION_SESSION_REGRESSION_001"
-    assert len(manifest.cases) == 1
+    assert len(manifest.cases) == 2
     case = manifest.cases[0]
     assert case.case_id == FIXTURE_ID
     assert case.expected_relative_path == EXPECTED_RELATIVE_PATH
@@ -112,30 +113,39 @@ def test_locked_standalone_manifest_loads_one_reviewed_case_in_declared_order():
     assert case.expected_sha256 == EXPECTED_SHA256
     assert case.stream_id == "arch-017-reviewed-static"
     assert case.actor_id == "reviewed-actor"
+    assert case.setup is None
     assert [action.action_id for action in case.actions] == [
         "reviewed-action-a",
         "reviewed-action-b",
     ]
     assert [action.ends_turn for action in case.actions] == [False, False]
+    assert [item.case_id for item in manifest.cases] == [
+        "arch-017-reviewed-static-action-session",
+        "arch-021-reviewed-static-clamped-energy",
+    ]
 
 
-def test_locked_standalone_runtime_regression_passes_one_of_one():
+def test_locked_standalone_runtime_regression_passes_two_of_two():
     manifest = load_runtime_action_session_regression_manifest(RUNTIME_MANIFEST_PATH)
 
     report = run_runtime_action_session_regression(manifest)
 
     assert report.passed is True
-    assert report.total == 1
-    assert report.passed_count == 1
+    assert report.total == 2
+    assert report.passed_count == 2
     assert report.failed_count == 0
-    result = report.results[0]
-    assert result.case_id == FIXTURE_ID
-    assert result.expected_path == EXPECTED_RELATIVE_PATH
-    assert result.passed is True
-    assert result.details["action_count"] == 2
-    assert result.details["record_count"] == 4
-    assert result.details["expected_sha256"] == EXPECTED_SHA256
-    assert len(result.details["actual_sha256"]) == 64
+    first, second = report.results
+    assert first.case_id == FIXTURE_ID
+    assert first.expected_path == EXPECTED_RELATIVE_PATH
+    assert first.passed is True
+    assert first.details["action_count"] == 2
+    assert first.details["record_count"] == 4
+    assert first.details["expected_sha256"] == EXPECTED_SHA256
+    assert len(first.details["actual_sha256"]) == 64
+    assert second.case_id == "arch-021-reviewed-static-clamped-energy"
+    assert second.passed is True
+    assert second.details["action_count"] == 1
+    assert second.details["record_count"] == 3
 
 
 def test_controlled_mismatch_surfaces_existing_first_divergence_provenance():
@@ -187,12 +197,15 @@ def test_text_and_json_reports_are_deterministic_and_runtime_specific():
 
     assert text_first == text_second
     assert json_first == json_second
-    assert "PASS 1/1 runtime action-session Golden checks" in text_first
+    assert "PASS 2/2 runtime action-session Golden checks" in text_first
     assert "HSR Axis Regression Report" not in text_first
     payload = json.loads(json_first)
-    assert payload["total"] == 1
-    assert payload["passed_count"] == 1
-    assert payload["results"][0]["case_id"] == FIXTURE_ID
+    assert payload["total"] == 2
+    assert payload["passed_count"] == 2
+    assert [item["case_id"] for item in payload["results"]] == [
+        "arch-017-reviewed-static-action-session",
+        "arch-021-reviewed-static-clamped-energy",
+    ]
 
 
 def test_cli_runs_standalone_runtime_lane_without_legacy_runner_output():
@@ -210,7 +223,7 @@ def test_cli_runs_standalone_runtime_lane_without_legacy_runner_output():
 
     assert code == 0
     rendered = stdout.getvalue()
-    assert "PASS 1/1 runtime action-session Golden checks" in rendered
+    assert "PASS 2/2 runtime action-session Golden checks" in rendered
     assert "PASS 12/12 golden replays" not in rendered
 
 

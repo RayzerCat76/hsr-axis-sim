@@ -257,11 +257,16 @@ def test_changed_requested_gain_reports_first_resource_divergence_against_same_f
     assert actual_resource["requested_delta"] == 20
 
 
-def test_resource_fixture_is_not_promoted_into_either_regression_manifest():
-    for manifest in (LEGACY_REGRESSION_MANIFEST, RUNTIME_REGRESSION_MANIFEST):
-        text = manifest.read_text(encoding="utf-8")
-        assert FIXTURE_ID not in text
-        assert EXPECTED_PATH.name not in text
+def test_resource_fixture_is_promoted_only_into_runtime_regression_manifest():
+    legacy = LEGACY_REGRESSION_MANIFEST.read_text(encoding="utf-8")
+    runtime = RUNTIME_REGRESSION_MANIFEST.read_text(encoding="utf-8")
+
+    assert FIXTURE_ID not in legacy
+    assert EXPECTED_PATH.name not in legacy
+    assert FIXTURE_ID in runtime
+    assert EXPECTED_PATH.name in runtime
+    assert runtime.count(FIXTURE_ID) == 1
+    assert runtime.count(EXPECTED_PATH.name) == 1
 
 
 def test_arch_021_test_source_has_no_runtime_expected_generation_path():

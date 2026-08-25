@@ -154,9 +154,11 @@ def _runtime_inputs(*, consume_amount: float = 30):
 
 def test_static_energy_consume_fixture_has_exact_reviewed_bytes_digest_and_schema():
     expected = _expected_bytes()
+
     assert len(expected) == EXPECTED_SIZE_BYTES
     assert hashlib.sha256(expected).hexdigest() == EXPECTED_SHA256
     assert not expected.endswith(b"\n")
+
     loaded = load_runtime_trace_bytes(
         expected,
         config=RuntimeTraceLoadConfig(
@@ -166,6 +168,7 @@ def test_static_energy_consume_fixture_has_exact_reviewed_bytes_digest_and_schem
             100_000,
         ),
     )
+
     assert loaded.canonical_form is TraceCanonicalForm.COMPACT
     assert loaded.digest_status is TraceDigestStatus.MATCHED
     document = loaded.artifact.document
@@ -175,24 +178,70 @@ def test_static_energy_consume_fixture_has_exact_reviewed_bytes_digest_and_schem
     assert document.sequence_policy is TraceSequencePolicy.CONTIGUOUS
     assert document.record_count == 3
     assert [record.sequence for record in document.records] == [0, 1, 2]
-    assert [record.event.event_type for record in document.records] == [RuntimeEventType.ACTION_START, RuntimeEventType.ENERGY_CHANGED, RuntimeEventType.ACTION_END]
-    assert [record.event.action_id for record in document.records] == [ACTION_ID, ACTION_ID, ACTION_ID]
-    assert [record.event.actor_id for record in document.records] == [ACTOR_ID, ACTOR_ID, ACTOR_ID]
+    assert [record.event.event_type for record in document.records] == [
+        RuntimeEventType.ACTION_START,
+        RuntimeEventType.ENERGY_CHANGED,
+        RuntimeEventType.ACTION_END,
+    ]
+    assert [record.event.action_id for record in document.records] == [
+        ACTION_ID,
+        ACTION_ID,
+        ACTION_ID,
+    ]
+    assert [record.event.actor_id for record in document.records] == [
+        ACTOR_ID,
+        ACTOR_ID,
+        ACTOR_ID,
+    ]
     assert all(dict(record.numeric_values) == {} for record in document.records)
+
     resource = document.records[1].event
     assert resource.target_id == TARGET_ID
-    assert dict(resource.payload["resource_change"]) == {"resource_kind": "ENERGY", "scope": "UNIT", "before": 80, "after": 50, "requested_delta": -30, "applied_delta": -30, "cap": 100, "unit_id": TARGET_ID}
-    assert dict(resource.payload["legacy_data"]) == {"actor_id": ACTOR_ID, "action_id": ACTION_ID, "resource_kind": "ENERGY", "scope": "UNIT", "before": 80, "after": 50, "requested_delta": -30, "applied_delta": -30, "cap": 100, "unit_id": TARGET_ID}
+    assert dict(resource.payload["resource_change"]) == {
+        "resource_kind": "ENERGY",
+        "scope": "UNIT",
+        "before": 80,
+        "after": 50,
+        "requested_delta": -30,
+        "applied_delta": -30,
+        "cap": 100,
+        "unit_id": TARGET_ID,
+    }
+    assert dict(resource.payload["legacy_data"]) == {
+        "actor_id": ACTOR_ID,
+        "action_id": ACTION_ID,
+        "resource_kind": "ENERGY",
+        "scope": "UNIT",
+        "before": 80,
+        "after": 50,
+        "requested_delta": -30,
+        "applied_delta": -30,
+        "cap": 100,
+        "unit_id": TARGET_ID,
+    }
 
 
 def test_arch_016_production_successful_energy_consume_matches_static_fixture():
     expected = _expected_bytes()
     steps, session_config, stitch_config, golden_config = _runtime_inputs()
     state = _state()
-    result = run_action_session_validation(state, steps, session_config=session_config, stitch_config=stitch_config, expected_payload_bytes=expected, golden_config=golden_config)
+
+    result = run_action_session_validation(
+        state,
+        steps,
+        session_config=session_config,
+        stitch_config=stitch_config,
+        expected_payload_bytes=expected,
+        golden_config=golden_config,
+    )
+
     assert result.matches is True
     assert state.get_unit(TARGET_ID).energy == 50
-    assert [event.type for event in state.pending_events] == ["action_started", "energy_changed", "action_finished"]
+    assert [event.type for event in state.pending_events] == [
+        "action_started",
+        "energy_changed",
+        "action_finished",
+    ]
     assert result.session_result.final_cursor == PendingEventCaptureCursor(3, 3)
     golden = result.validation_result.validation_result.validation_result
     assert golden.expected_sha256 == EXPECTED_SHA256
@@ -202,9 +251,20 @@ def test_arch_016_production_successful_energy_consume_matches_static_fixture():
 
 def test_changed_consume_amount_reports_resource_divergence_and_signed_values():
     expected = _expected_bytes()
-    steps, session_config, stitch_config, golden_config = _runtime_inputs(consume_amount=25)
+    steps, session_config, stitch_config, golden_config = _runtime_inputs(
+        consume_amount=25
+    )
     state = _state()
-    result = run_action_session_validation(state, steps, session_config=session_config, stitch_config=stitch_config, expected_payload_bytes=expected, golden_config=golden_config)
+
+    result = run_action_session_validation(
+        state,
+        steps,
+        session_config=session_config,
+        stitch_config=stitch_config,
+        expected_payload_bytes=expected,
+        golden_config=golden_config,
+    )
+
     assert result.matches is False
     assert state.get_unit(TARGET_ID).energy == 55
     golden = result.validation_result.validation_result.validation_result
@@ -215,8 +275,13 @@ def test_changed_consume_amount_reports_resource_divergence_and_signed_values():
     assert divergence.first_field_difference.path == "/event/payload/legacy_data/after"
     assert divergence.first_field_difference.expected_value == 50
     assert divergence.first_field_difference.actual_value == 55
-    expected_resource = golden.comparison.records[1].expected_record.event.payload["resource_change"]
-    actual_resource = golden.comparison.records[1].actual_record.event.payload["resource_change"]
+
+    expected_resource = golden.comparison.records[1].expected_record.event.payload[
+        "resource_change"
+    ]
+    actual_resource = golden.comparison.records[1].actual_record.event.payload[
+        "resource_change"
+    ]
     assert expected_resource["before"] == actual_resource["before"] == 80
     assert expected_resource["after"] == 50
     assert actual_resource["after"] == 55
@@ -231,6 +296,7 @@ def test_changed_consume_amount_reports_resource_divergence_and_signed_values():
 def test_energy_consume_fixture_is_promoted_only_into_runtime_regression_manifest():
     legacy = LEGACY_REGRESSION_MANIFEST.read_text(encoding="utf-8")
     runtime = RUNTIME_REGRESSION_MANIFEST.read_text(encoding="utf-8")
+
     assert FIXTURE_ID not in legacy
     assert EXPECTED_PATH.name not in legacy
     assert FIXTURE_ID in runtime
@@ -248,7 +314,20 @@ def test_arch_025_test_source_has_no_runtime_expected_generation_path():
                 called_names.add(node.func.id)
             elif isinstance(node.func, ast.Attribute):
                 called_names.add(node.func.attr)
-    forbidden_calls = {"build_runtime_trace_document", "build_runtime_trace_artifact", "canonical_json_bytes", "canonical_json_dumps", "adapt_legacy_event", "adapt_legacy_event_stream", "run_multi_action_capture_session", "stitch_successful_action_session", "validate_successful_session_against_golden", "write_bytes", "write_text"}
+
+    forbidden_calls = {
+        "build_runtime_trace_document",
+        "build_runtime_trace_artifact",
+        "canonical_json_bytes",
+        "canonical_json_dumps",
+        "adapt_legacy_event",
+        "adapt_legacy_event_stream",
+        "run_multi_action_capture_session",
+        "stitch_successful_action_session",
+        "validate_successful_session_against_golden",
+        "write_bytes",
+        "write_text",
+    }
     assert called_names.isdisjoint(forbidden_calls)
 
 
@@ -259,17 +338,26 @@ def test_prior_static_fixtures_and_arch025_prefix_remain_accepted():
     assert hashlib.sha256(ARCH_021_PATH.read_bytes()).hexdigest() == ARCH_021_SHA256
     assert len(ARCH_023_PATH.read_bytes()) == 2744
     assert hashlib.sha256(ARCH_023_PATH.read_bytes()).hexdigest() == ARCH_023_SHA256
-    report = run_runtime_action_session_regression(load_runtime_action_session_regression_manifest(RUNTIME_REGRESSION_MANIFEST))
+
+    report = run_runtime_action_session_regression(
+        load_runtime_action_session_regression_manifest(RUNTIME_REGRESSION_MANIFEST)
+    )
     assert report.passed is True
     assert report.total >= 4
     assert report.passed_count == report.total
-    assert [result.case_id for result in report.results[:4]] == ["arch-017-reviewed-static-action-session", "arch-021-reviewed-static-clamped-energy", "arch-023-reviewed-static-clamped-skill-point", "arch-025-reviewed-static-energy-consume"]
+    assert [result.case_id for result in report.results[:4]] == [
+        "arch-017-reviewed-static-action-session",
+        "arch-021-reviewed-static-clamped-energy",
+        "arch-023-reviewed-static-clamped-skill-point",
+        "arch-025-reviewed-static-energy-consume",
+    ]
 
 
 def test_legacy_regression_and_trace_evidence_remain_unchanged():
     legacy = load_regression_manifest(LEGACY_REGRESSION_MANIFEST)
     complete = run_regression(manifest=legacy)
     trace = run_regression(manifest=legacy, only="trace_evidence")
+
     assert complete.passed is True
     assert complete.total == 20
     assert complete.passed_count == 20
@@ -281,4 +369,9 @@ def test_legacy_regression_and_trace_evidence_remain_unchanged():
 def test_production_lifo_compatibility_remains_unchanged():
     units = [Unit(name, name, "ally", 100) for name in ("first", "second", "third")]
     state = BattleState(units=units, extra_turn_stack=["first", "second", "third"])
-    assert [Timeline.next_turn(state).actor_id for _ in range(3)] == ["third", "second", "first"]
+
+    assert [Timeline.next_turn(state).actor_id for _ in range(3)] == [
+        "third",
+        "second",
+        "first",
+    ]

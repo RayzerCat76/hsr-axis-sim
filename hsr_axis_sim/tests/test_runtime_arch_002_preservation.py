@@ -18,7 +18,7 @@ CONTRACT_HASHES = {
     "contexts.py": "b2cd5c4783dc5fced63a206fcc9723f2c53d499265c2f66870847b25715a3c71",
     "events.py": "4146e68bbb27b733db13355334d4263e920af7c15a814e2df4a738d018798b43",
     "gates.py": "529b9bc8233e556902f60a821db5719451c0d5b595616be872e71eb17e4b4941",
-    "serialization.py": "626a885857b5e7fd90ae5f56ec0ee712bbdf8be12c0937d",
+    "serialization.py": "626a885857b5e7fd90ae5f56ec0ee712bbdca2f28b4f28ea33bbf8be12c0937d",
     "trace.py": "ca14ac00a999c3c9ab7dc2ed5e2c9442d4926494feffa2cd4575457fafeb061e",
 }
 ARCH_001_RUNTIME_EVENT_VALUES = [

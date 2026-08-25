@@ -308,14 +308,14 @@ def test_changed_requested_speed_reports_existing_first_structured_divergence():
     assert actual_speed["after_av"] == 50.0
 
 
-def test_arch_038_fixture_remains_outside_both_regression_manifests():
+def test_arch_038_fixture_is_promoted_only_into_runtime_regression_manifest():
     legacy = LEGACY_REGRESSION_MANIFEST.read_text(encoding="utf-8")
     runtime = RUNTIME_REGRESSION_MANIFEST.read_text(encoding="utf-8")
 
     assert FIXTURE_ID not in legacy
     assert EXPECTED_PATH.name not in legacy
-    assert FIXTURE_ID not in runtime
-    assert EXPECTED_PATH.name not in runtime
+    assert runtime.count(FIXTURE_ID) == 1
+    assert runtime.count(EXPECTED_PATH.name) == 1
 
 
 def test_arch_038_test_source_has_no_runtime_expected_generation_path():
@@ -356,8 +356,8 @@ def test_prior_static_fixture_identities_and_runtime_lane_remain_accepted():
         load_runtime_action_session_regression_manifest(RUNTIME_REGRESSION_MANIFEST)
     )
     assert report.passed is True
-    assert report.total == 7
-    assert report.passed_count == 7
+    assert report.total == 8
+    assert report.passed_count == 8
     assert [result.case_id for result in report.results] == [
         "arch-017-reviewed-static-action-session",
         "arch-021-reviewed-static-clamped-energy",
@@ -366,6 +366,7 @@ def test_prior_static_fixture_identities_and_runtime_lane_remain_accepted():
         "arch-027-reviewed-static-skill-point-consume",
         "arch-032-reviewed-static-action-advance",
         "arch-035-reviewed-static-action-delay",
+        "arch-038-reviewed-static-change-speed",
     ]
 
 

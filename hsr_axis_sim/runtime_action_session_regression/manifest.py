@@ -477,26 +477,6 @@ def _action_advance_setup_from_dict(
     *,
     action_count: int,
 ) -> RuntimeActionSessionRegressionActionAdvanceSetup:
-    values = _action_axis_setup_values(data, label, action_count=action_count)
-    return RuntimeActionSessionRegressionActionAdvanceSetup(*values)
-
-
-def _action_delay_setup_from_dict(
-    data: dict[str, Any],
-    label: str,
-    *,
-    action_count: int,
-) -> RuntimeActionSessionRegressionActionDelaySetup:
-    values = _action_axis_setup_values(data, label, action_count=action_count)
-    return RuntimeActionSessionRegressionActionDelaySetup(*values)
-
-
-def _action_axis_setup_values(
-    data: dict[str, Any],
-    label: str,
-    *,
-    action_count: int,
-) -> tuple[str, str, str, float, float, int, float]:
     expected_fields = {
         "kind",
         "target_id",
@@ -519,7 +499,54 @@ def _action_axis_setup_values(
         data["action_index"], f"{label}.action_index", action_count=action_count
     )
     percent = _require_finite_number(data["percent"], f"{label}.percent")
-    return target_id, target_name, team, base_speed, initial_av, action_index, percent
+    return RuntimeActionSessionRegressionActionAdvanceSetup(
+        target_id=target_id,
+        target_name=target_name,
+        team=team,
+        base_speed=base_speed,
+        initial_av=initial_av,
+        action_index=action_index,
+        percent=percent,
+    )
+
+
+def _action_delay_setup_from_dict(
+    data: dict[str, Any],
+    label: str,
+    *,
+    action_count: int,
+) -> RuntimeActionSessionRegressionActionDelaySetup:
+    expected_fields = {
+        "kind",
+        "target_id",
+        "target_name",
+        "team",
+        "base_speed",
+        "initial_av",
+        "action_index",
+        "percent",
+    }
+    _require_exact_fields(data, expected_fields, label)
+    target_id = _require_non_empty_string(data["target_id"], f"{label}.target_id")
+    target_name = _require_non_empty_string(data["target_name"], f"{label}.target_name")
+    team = _require_non_empty_string(data["team"], f"{label}.team")
+    base_speed = _require_finite_number(data["base_speed"], f"{label}.base_speed")
+    if base_speed <= 0:
+        raise ValueError(f"{label}.base_speed must be greater than zero.")
+    initial_av = _require_finite_number(data["initial_av"], f"{label}.initial_av")
+    action_index = _require_action_index(
+        data["action_index"], f"{label}.action_index", action_count=action_count
+    )
+    percent = _require_finite_number(data["percent"], f"{label}.percent")
+    return RuntimeActionSessionRegressionActionDelaySetup(
+        target_id=target_id,
+        target_name=target_name,
+        team=team,
+        base_speed=base_speed,
+        initial_av=initial_av,
+        action_index=action_index,
+        percent=percent,
+    )
 
 
 def _require_action_index(value: Any, label: str, *, action_count: int) -> int:

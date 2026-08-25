@@ -14,6 +14,7 @@ from hsr_axis_sim.runtime_action_session_regression.manifest import (
     RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_2,
     RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_3,
     RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_4,
+    RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_5,
     RuntimeActionSessionRegressionCase,
     RuntimeActionSessionRegressionEnergyGainSetup,
     RuntimeActionSessionRegressionManifest,
@@ -118,7 +119,8 @@ def test_manifest_versions_preserve_v1_0_and_explicit_v1_1_contract():
     assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_2 == "1.2"
     assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_3 == "1.3"
     assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_4 == "1.4"
-    assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION == "1.5"
+    assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_5 == "1.5"
+    assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION == "1.6"
 
     parsed = _parse(_manifest("1.0"))
 

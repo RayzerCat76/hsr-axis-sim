@@ -306,7 +306,7 @@ def test_arch_023_test_source_has_no_runtime_expected_generation_path():
     assert called_names.isdisjoint(forbidden_calls)
 
 
-def test_prior_static_fixtures_and_runtime_regression_lane_remain_unchanged():
+def test_prior_static_fixtures_and_current_runtime_regression_lane_remain_accepted():
     assert len(ARCH_017_PATH.read_bytes()) == 3013
     assert hashlib.sha256(ARCH_017_PATH.read_bytes()).hexdigest() == ARCH_017_SHA256
     assert len(ARCH_021_PATH.read_bytes()) == 2759
@@ -316,12 +316,13 @@ def test_prior_static_fixtures_and_runtime_regression_lane_remain_unchanged():
         load_runtime_action_session_regression_manifest(RUNTIME_REGRESSION_MANIFEST)
     )
     assert report.passed is True
-    assert report.total == 3
-    assert report.passed_count == 3
+    assert report.total == 4
+    assert report.passed_count == 4
     assert [result.case_id for result in report.results] == [
         "arch-017-reviewed-static-action-session",
         "arch-021-reviewed-static-clamped-energy",
         "arch-023-reviewed-static-clamped-skill-point",
+        "arch-025-reviewed-static-energy-consume",
     ]
 
 

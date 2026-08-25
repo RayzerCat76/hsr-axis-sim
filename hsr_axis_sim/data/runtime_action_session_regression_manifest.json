@@ -1,6 +1,6 @@
 {
   "schema": "hsr_runtime_action_session_regression",
-  "version": "1.5",
+  "version": "1.6",
   "manifest_id": "HSR_RUNTIME_ACTION_SESSION_REGRESSION_001",
   "cases": [
     {
@@ -139,6 +139,30 @@
         "initial_av": 80,
         "action_index": 0,
         "percent": 0.5
+      }
+    },
+    {
+      "id": "arch-035-reviewed-static-action-delay",
+      "expected_path": "hsr_axis_sim/data/runtime_golden_fixtures/arch_035_reviewed_action_delay_expected.json",
+      "expected_sha256": "9efbb65defb5eacc12150d31d0530d9a94b43a42e2303ebca643911f98094c4d",
+      "stream_id": "arch-035-reviewed-axis",
+      "actor_id": "delay-actor",
+      "actions": [
+        {
+          "action_id": "reviewed-action-delay",
+          "name": "reviewed-action-delay",
+          "ends_turn": false
+        }
+      ],
+      "setup": {
+        "kind": "ACTION_DELAY",
+        "target_id": "delay-actor",
+        "target_name": "Delay Actor",
+        "team": "ally",
+        "base_speed": 100,
+        "initial_av": 30,
+        "action_index": 0,
+        "percent": 0.25
       }
     }
   ]

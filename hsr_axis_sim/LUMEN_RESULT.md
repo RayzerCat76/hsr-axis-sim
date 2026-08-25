@@ -1,4 +1,4 @@
-# HSR-RUNTIME-ARCH-033 — Advance Static Golden Regression Promotion
+# HSR-RUNTIME-ARCH-034 — Delay Action Runtime Observation Contract
 
 ## Status
 
@@ -6,123 +6,124 @@ PASS — proceed
 
 ## Implementation summary
 
-- Promoted the accepted ARCH-032 reviewed static `AdvanceAction` Golden fixture into the standalone runtime action-session regression lane as the sixth locked case.
-- Evolved the strict standalone manifest grammar from v1.4 to v1.5 while preserving historical v1.0-v1.4 grammars explicitly.
-- Added `RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_4 = "1.4"` and made the current version `"1.5"` with supported versions exactly `1.0` through `1.5`.
-- Added frozen `RuntimeActionSessionRegressionActionAdvanceSetup` with exact fields:
-  - `target_id`;
-  - `target_name`;
-  - `team`;
-  - `base_speed`;
-  - `initial_av`;
-  - `action_index`;
-  - `percent`.
-- Added only the new closed v1.5 setup kind `ACTION_ADVANCE`.
-- Historical grammar remains strict:
-  - v1.0: no `setup` field;
-  - v1.1: `EMPTY | ENERGY_GAIN`;
-  - v1.2 adds `SKILL_POINT_GAIN`;
-  - v1.3 adds `ENERGY_CONSUME`;
-  - v1.4 adds `SKILL_POINT_CONSUME`;
-  - v1.5 adds `ACTION_ADVANCE` only.
-- v1.4 explicitly rejects `ACTION_ADVANCE` as requiring v1.5.
-- `ACTION_ADVANCE` setup validation requires non-empty identity/team strings, finite non-boolean `base_speed`, `initial_av`, and `percent`, positive `base_speed`, and an exact in-range nonnegative integer `action_index`.
-- The regression grammar does not silently restrict `percent` to positive values and does not invent a new `initial_av` range rule.
-- Runner support constructs one explicit production `Unit` with caller-declared `base_speed` and `current_av`, then injects exactly `AdvanceAction(target_ids=[setup.target_id], percent=setup.percent)` at the declared action index.
-- Appended exact sixth locked case:
-  - case id `arch-032-reviewed-static-action-advance`;
-  - expected fixture `hsr_axis_sim/data/runtime_golden_fixtures/arch_032_reviewed_action_advance_expected.json`;
-  - expected SHA-256 `ab73c224d06690b379d398a5bc2c4b38a1ed654dfd86866d564417432c29d3ce`;
-  - stream `arch-032-reviewed-axis`;
-  - actor/target `advance-actor`;
-  - action `reviewed-action-advance`;
-  - speed `100`;
-  - initial AV `80`;
-  - percent `0.5`.
-- The locked standalone runtime lane is now exactly `6/6`, with record counts `4,3,3,3,3,3`.
-- Controlled regression mutation `percent=0.5 -> 0.4` fails normally at record index `1`, first divergence `/event/payload/action_advance/after_av`.
-- Existing historical tests were changed from stale current-count aliases into explicit historical grammar/prefix assertions. No historical behavior coverage was removed.
-- During review, full-file replacement formatting noise in ARCH-025/026/027 tests was detected and removed before final validation; their final diffs contain only the intended append-safe assertion changes.
-- No simulator `AdvanceAction` semantics, reviewed fixture bytes, legacy regression manifest, runtime observation contract, adapter, trace schema, or LIFO behavior changed.
+- Added the smallest dedicated runtime observation path for the existing production `DelayAction` AV mutation.
+- Preserved the production formula exactly:
+  - `requested_delta_av = base_av * percent`;
+  - `after_av = before_av + requested_delta_av`;
+  - `applied_delta_av = after_av - before_av`.
+- `DelayAction` now emits one legacy `action_delayed` event after each target Unit's `current_av` is updated.
+- The emitted event contains exact actor/action/target provenance plus `before_av`, `after_av`, `base_av`, `requested_percent`, `requested_delta_av`, and `applied_delta_av`.
+- Added dedicated `RuntimeEventType.ACTION_VALUE_DELAYED`; Delay does not reuse `ACTION_VALUE_ADVANCED` or `CONTENT_DEFINED`.
+- Added frozen `RuntimeActionDelayObservation` with strict schema-v1-compatible validation:
+  - non-empty target ID;
+  - finite non-boolean numeric values;
+  - positive `base_av`;
+  - exact requested-delta equation;
+  - exact after-AV equation;
+  - exact applied-delta equation.
+- Did not add an AV zero floor, clamp flag, positive-percent restriction, or nonnegative-AV restriction. Existing signed `DelayAction` behavior remains representable, including `percent=-0.5` producing a negative AV result.
+- Bound legacy `action_delayed` through the accepted one-way adapter to `ACTION_VALUE_DELAYED`.
+- Preserved raw legacy data under `payload["legacy_data"]` and added the validated typed structure under `payload["action_delay"]`.
+- Malformed Delay observations raise `LegacyEventSchemaError`; they are not silently degraded.
+- Confirmed standard trigger dispatch: an `action_delayed` listener sees the post-mutation target AV because the event is emitted after state mutation through `BattleState.emit_event`.
+- Confirmed ARCH-012 capture produces exactly `ACTION_START -> ACTION_VALUE_DELAYED -> ACTION_END` for one non-ending Delay action.
+- Kept Advance semantics and payload unchanged.
+- Kept ChangeSpeed, ImmediateAction, and GrantExtraTurn eventless in this milestone.
+- Kept both regression manifests unchanged; runtime action-session manifest remains schema/version `1.5` and `6/6`.
+- Kept all six reviewed static Golden fixtures byte-identical.
+- Kept production extra-turn LIFO unchanged.
 
 ## Files added
 
-- `LUMEN_TASK_HSR_RUNTIME_ARCH_033.md`
-- `hsr_axis_sim/tests/test_runtime_arch_033_action_advance_regression_promotion.py`
+- `LUMEN_TASK_HSR_RUNTIME_ARCH_034.md`
+- `docs/runtime/ACTION_DELAY_OBSERVATION_V1.md`
+- `hsr_axis_sim/tests/test_runtime_arch_034_delay_action_observation.py`
 
 ## Files modified
 
-- `hsr_axis_sim/data/runtime_action_session_regression_manifest.json`
-- `hsr_axis_sim/runtime_action_session_regression/manifest.py`
-- `hsr_axis_sim/runtime_action_session_regression/runner.py`
-- `hsr_axis_sim/tests/test_runtime_arch_018_standalone_regression.py`
-- `hsr_axis_sim/tests/test_runtime_arch_022_resource_regression_promotion.py`
-- `hsr_axis_sim/tests/test_runtime_arch_023_static_skill_point_golden_fixture.py`
-- `hsr_axis_sim/tests/test_runtime_arch_024_skill_point_regression_promotion.py`
-- `hsr_axis_sim/tests/test_runtime_arch_025_static_energy_consume_golden_fixture.py`
-- `hsr_axis_sim/tests/test_runtime_arch_026_energy_consume_regression_promotion.py`
-- `hsr_axis_sim/tests/test_runtime_arch_027_static_skill_point_consume_golden_fixture.py`
-- `hsr_axis_sim/tests/test_runtime_arch_028_skill_point_consume_regression_promotion.py`
-- `hsr_axis_sim/tests/test_runtime_arch_029_insufficient_skill_point_failure_contract.py`
-- `hsr_axis_sim/tests/test_runtime_arch_030_insufficient_energy_failure_contract.py`
-- `hsr_axis_sim/tests/test_runtime_arch_032_static_action_advance_golden_fixture.py`
+- `hsr_axis_sim/sim/effects.py`
+- `hsr_axis_sim/runtime_contracts/action_axis_observations.py`
+- `hsr_axis_sim/runtime_contracts/enums.py`
+- `hsr_axis_sim/runtime_contracts/__init__.py`
+- `hsr_axis_sim/runtime_adapters/legacy_events.py`
+- `hsr_axis_sim/tests/test_runtime_arch_002_preservation.py`
+- `hsr_axis_sim/tests/test_runtime_arch_031_advance_action_observation.py`
+- `hsr_axis_sim/tests/test_runtime_contract_enums.py`
+- `hsr_axis_sim/tests/test_runtime_legacy_event_mapping.py`
 - `hsr_axis_sim/LUMEN_RESULT.md`
 
-No `hsr_axis_sim/sim/**`, reviewed static Golden fixture, `hsr_axis_sim/data/regression_manifest.json`, runtime adapter, runtime trace contract/schema, loader/exporter/comparator/divergence implementation, Golden validator, Delay/ChangeSpeed/ImmediateAction/GrantExtraTurn behavior, or extra-turn/LIFO implementation was modified.
+No reviewed static Golden fixture, regression manifest, runtime action-session regression grammar/version, trace schema, loader/exporter/comparator/divergence/Golden implementation, Advance production behavior, ChangeSpeed behavior, ImmediateAction behavior, GrantExtraTurn behavior, or extra-turn/LIFO implementation was modified.
 
 ## Tests added / updated
 
-ARCH-033 coverage proves:
+ARCH-034 coverage proves:
 
-- supported standalone manifest versions are exactly `1.0` through `1.5`;
-- v1.0-v1.4 historical setup grammars remain accepted/rejected exactly as previously locked;
-- v1.4 rejects `ACTION_ADVANCE` as v1.5-only syntax;
-- v1.5 requires `setup` and accepts the new closed `ACTION_ADVANCE` setup;
-- `RuntimeActionSessionRegressionActionAdvanceSetup` is frozen;
-- setup fields are exact and unknown fields/kinds are rejected;
-- target identity/team values require non-empty strings;
-- numeric fields require finite non-boolean numbers;
-- `base_speed` must be positive;
-- `action_index` must be an exact in-range nonnegative integer;
-- zero/negative `percent` remains parseable because the regression grammar does not narrow accepted production input semantics;
-- finite zero/negative `initial_av` is not newly range-restricted by this promotion layer;
-- current manifest case order is exactly ARCH-017, ARCH-021, ARCH-023, ARCH-025, ARCH-027, ARCH-032;
-- sixth case fields/setup/digest/path are exact;
-- runtime regression passes exactly `6/6` with record counts `4,3,3,3,3,3`;
-- controlled percent `0.4` mismatch reports record `1` and `/event/payload/action_advance/after_av`;
-- all six reviewed fixture byte identities remain unchanged;
-- runner uses an explicit target and remains a closed typed harness rather than a generic effect DSL;
-- no Delay/ChangeSpeed/ImmediateAction/GrantExtraTurn support is introduced;
-- historical milestone tests preserve their own prefix/grammar contracts without freezing the current lane count permanently;
+- `RuntimeActionDelayObservation` is frozen and serializes the exact seven-field typed payload;
+- empty target IDs, booleans, non-finite values, non-positive base AV, and inconsistent delta/after equations are rejected;
+- signed negative `requested_percent` is valid when mathematically consistent;
+- speed/base AV `100`, before AV `30`, percent `0.25` produces after AV `55`;
+- percent `-0.5` from before AV `30` produces after AV `-20` with no clamp field;
+- `action_delayed` maps exactly to `ACTION_VALUE_DELAYED` with action/actor/target normalization;
+- malformed legacy Delay observations raise `LegacyEventSchemaError`;
+- production event order is `action_started`, `action_delayed`, `action_finished`;
+- trigger dispatch occurs after the AV mutation and the listener sees `55.0` in the positive fixture;
+- ARCH-012 typed trace order is exactly `ACTION_START`, `ACTION_VALUE_DELAYED`, `ACTION_END`;
+- Delay typed runtime event has the target Unit ID and empty schema-v1 `numeric_values`;
+- ARCH-031 Advance observation, clamp field, production event type, and formula remain unchanged;
+- ChangeSpeed, ImmediateAction, and GrantExtraTurn do not gain Delay/Advance observation emission;
+- historical ARCH-001/002 vocabulary evidence remains pinned while explicitly excluding later authorized additive runtime types;
+- current enum registry includes `ACTION_VALUE_DELAYED` in exact order;
+- legacy mapping registry now contains 11 mappings total: 10 bound plus the existing unresolved `unit_defeated` lifecycle mapping;
+- the historical ARCH-002 mapping document remains exactly nine entries and is not backfilled with ARCH-031/034 additions;
+- all six previously reviewed static fixture byte lengths and SHA-256 digests remain exact;
 - legacy regression remains `20/20`;
 - trace evidence remains `2/2`;
-- production LIFO remains `third, second, first`.
+- standalone runtime action-session Golden regression remains `6/6` and version `1.5`;
+- production extra-turn LIFO remains `third, second, first`.
 
 ## Exact validation commands and real results
 
-### First PR CI — stale historical count/version pins exposed
+### First PR CI — closed registry / historical scope pins exposed
 
-GitHub Actions workflow `HSR Axis Sim Validation`, PR #38, run #168, job `validate` (`97667940147`).
-
-1. `python -m compileall -q hsr_axis_sim`
-   - PASS.
-2. `python -m pytest -q`
-   - `1394 passed, 15 failed in 8.83s`.
-   - All 15 failures were historical tests that had encoded an earlier milestone's then-current state as a permanent assertion, including `current version == 1.4`, `total == 5`, or text `PASS 5/5`.
-   - The new sixth `ACTION_ADVANCE` regression case itself executed successfully in the failing run and produced a three-record actual trace.
-   - No ARCH-033 parser, runner, fixture digest, production Advance behavior, or controlled mismatch test failed.
-3. Later regression workflow steps were skipped only because the complete pytest step failed.
-
-Corrections changed only historical test boundaries: each earlier milestone now locks its own historical version/prefix while allowing later reviewed cases to append. No production or fixture behavior was changed to satisfy these failures.
-
-### Corrected clean-head PR CI
-
-GitHub Actions workflow `HSR Axis Sim Validation`, PR #38, run #180, job `validate` (`97669992751`).
+GitHub Actions workflow `HSR Axis Sim Validation`, PR #39, run #183, job `validate` (`97674520437`).
 
 1. `python -m compileall -q hsr_axis_sim`
    - PASS.
 2. `python -m pytest -q`
-   - PASS: `1409 passed in 9.52s`.
+   - `1428 passed, 5 failed in 9.14s`.
+   - All five failures were stale registry/scope expectations:
+     - ARCH-001 vocabulary preservation did not exclude the newly authorized `ACTION_VALUE_DELAYED` addition;
+     - ARCH-031's milestone-local scope guard still treated `DelayAction` as permanently eventless;
+     - the exact current RuntimeEventType list did not yet include `ACTION_VALUE_DELAYED`;
+     - the exact legacy mapping registry did not yet include `action_delayed`;
+     - the bound mapping count was still `9` rather than `10`.
+   - No new Delay contract validation, production formula, adapter payload, trigger ordering, ARCH-012 capture, static-fixture digest, or Advance-preservation test failed.
+3. Later regression workflow steps were skipped only because the full pytest step failed.
+
+The five failures were corrected by updating closed registries and historical scope boundaries. Production code was not changed in response.
+
+### Second PR CI — one preservation-hash test constant typo
+
+GitHub Actions workflow `HSR Axis Sim Validation`, PR #39, run #187, job `validate` (`97675071805`).
+
+1. `python -m compileall -q hsr_axis_sim`
+   - PASS.
+2. `python -m pytest -q`
+   - `1432 passed, 1 failed in 8.75s`.
+   - The only failure was `test_runtime_arch_002_preservation.py` because the expected SHA-256 string for unchanged `serialization.py` was mistyped while updating the historical preservation test.
+   - CI showed the actual unchanged accepted digest as `626a885857b5e7fd90ae5f56ec0ee712bbdca2f28b4f28ea33bbf8be12c0937d`.
+3. Later regression workflow steps were skipped only because the full pytest step failed.
+
+The SHA test constant was corrected exactly; no runtime or simulator code changed.
+
+### Corrected green PR CI
+
+GitHub Actions workflow `HSR Axis Sim Validation`, PR #39, run #188, job `validate` (`97675392026`).
+
+1. `python -m compileall -q hsr_axis_sim`
+   - PASS.
+2. `python -m pytest -q`
+   - PASS: `1433 passed in 8.87s`.
 3. `python -m hsr_axis_sim.regression.runner --manifest hsr_axis_sim/data/regression_manifest.json --format text`
    - PASS legacy locked regression `20/20`:
      - 12/12 golden replays;
@@ -134,43 +135,43 @@ GitHub Actions workflow `HSR Axis Sim Validation`, PR #38, run #180, job `valida
    - PASS `2/2` trace-evidence checks.
 5. `python -m hsr_axis_sim.runtime_action_session_regression.runner --manifest hsr_axis_sim/data/runtime_action_session_regression_manifest.json --format text`
    - PASS `6/6` runtime action-session Golden checks.
-   - Record counts: `4,3,3,3,3,3`.
-   - Sixth case expected SHA-256: `ab73c224d06690b379d398a5bc2c4b38a1ed654dfd86866d564417432c29d3ce`.
-   - Sixth case actual SHA-256: `13d26b8efcb0db450445c036f49b31eec4ca346ca9d714f7e221bc084941a6ca`.
-   - Sixth case record count: `3`.
+   - Existing record counts remain `4,3,3,3,3,3`.
 
 ## Warnings / errors
 
-- First CI exposed 15 stale historical version/count assertions; all were corrected without altering production Advance semantics or reviewed fixture bytes.
-- Review also caught temporary formatting-only diff noise in three historical test files; it was removed before the corrected clean-head validation.
-- No remaining compile, manifest-v1.5, ActionAdvance setup, runner construction, fixture digest, Golden comparison, legacy-regression, trace-evidence, or runtime-regression error is known.
-- Existing GitHub Actions Node 20 deprecation warning remains nonblocking and unrelated to ARCH-033 correctness.
+- First CI exposed five stale closed-registry / prior-milestone scope assertions; none represented a Delay behavior failure.
+- Second CI exposed one mistyped preservation-test SHA string; the protected production file itself was unchanged.
+- No remaining compile, Delay formula, typed observation, adapter mapping, trigger dispatch, ARCH-012 capture, Advance preservation, static-fixture integrity, legacy-regression, trace-evidence, or runtime-regression error is known.
+- Existing GitHub Actions Node 20 deprecation warning remains nonblocking and unrelated to ARCH-034 correctness.
 
 ## Acceptance review
 
-- ARCH-032 fixture bytes and SHA remain unchanged.
-- The sixth locked runtime case uses the accepted static fixture rather than generating expected bytes dynamically.
-- Manifest evolution is explicit and versioned; old grammars remain strict rather than being silently broadened.
-- Runner construction is deterministic and explicitly targeted.
-- `ACTION_ADVANCE` is the only new setup kind; no adjacent action-axis mechanism was introduced early.
-- Regression mutation proves first-divergence behavior at the typed structured observation field.
-- Legacy regression remains separate and unchanged at `20/20`.
-- Runtime action-session regression is now independently locked at `6/6`.
-- No hidden HSR values or release-game semantics were inferred; speed `100`, AV `80`, and percent `0.5` are explicit reviewed fixture inputs.
+- The only production semantic addition is observation: `DelayAction` still computes the same AV result from the same inputs.
+- The event is emitted after mutation and uses the accepted legacy event/trigger path rather than a side channel.
+- Delay has its own dedicated runtime event and typed payload; Advance is not overloaded and no generic action-axis DSL was introduced.
+- Signed negative Delay behavior remains representable rather than being silently clamped or rejected.
+- Malformed observation data fails closed at the adapter boundary.
+- Existing schema-v1 trace behavior remains valid; no trace schema bump occurred.
+- Both regression manifests remain unchanged.
+- All six reviewed static fixtures remain byte-identical.
+- Runtime Golden regression remains exactly `6/6`, so ARCH-034 observation is not prematurely promoted into that lane.
+- No hidden HSR values or release-game semantics were inferred; numeric examples are deterministic contract fixtures only.
 - Production LIFO compatibility remains unchanged.
 
 ## Unresolved issues
 
-None blocking HSR-RUNTIME-ARCH-033 acceptance.
+None blocking HSR-RUNTIME-ARCH-034 acceptance.
 
-The Advance observation path is now complete through production emission, typed adaptation, independently reviewed static Golden validation, and locked runtime regression promotion.
+Delay now has production emission, typed runtime adaptation, strict malformed-data rejection, trigger-order coverage, and ARCH-012 capture coverage. It intentionally does not yet have an independently reviewed static Golden fixture or a locked runtime regression case.
 
-The next unobserved deterministic action-axis mutation should be handled as a separate mechanic rather than extending the Advance contract generically.
+ChangeSpeed, ImmediateAction, and GrantExtraTurn remain unobserved deterministic action-axis mechanics and must be handled in separate milestones.
+
+The Master Bible's top-level current-baseline section is historically stale and should be synchronized in a separate governance-focused change rather than mixed into this Delay observation milestone.
 
 ## Suggested next milestone
 
-`HSR-RUNTIME-ARCH-034 — Delay Action Runtime Observation Contract`
+`HSR-RUNTIME-ARCH-035 — Reviewed Static Delay Action Golden Fixture`
 
-ARCH-034 should inspect the existing production `DelayAction` formula and add the smallest dedicated typed runtime observation for one delay transition, preserving the current simulator formula/input semantics exactly. It should remain separate from ChangeSpeed, ImmediateAction, and GrantExtraTurn, and should not create a generic action-axis event DSL.
+ARCH-035 should manually author and review one static canonical expected runtime trace for a deterministic non-clamped positive Delay action, pin its exact byte length and SHA-256, validate production output through the accepted ARCH-016 path, and prove one controlled percent mutation reports the earliest typed `action_delay` divergence. It should not yet promote the fixture into the runtime regression manifest.
 
-Recommended execution routing: ChatGPT **GPT-5.6 Sol**; Codex reasoning **High** if Codex is used, because this changes deterministic action-axis observation semantics and must preserve exact timeline behavior.
+Recommended execution routing: ChatGPT **GPT-5.6 Sol**; Codex reasoning **High** if Codex is used, because the reviewed fixture will lock deterministic action-axis observation semantics.

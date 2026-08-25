@@ -197,7 +197,28 @@ class DelayAction(UnitEffect):
 
     def apply(self, state: BattleState, action: object, turn_context: TurnContext) -> None:
         for unit in self.target_units(state, action):
-            unit.current_av += unit.base_av * self.percent
+            before_av = unit.current_av
+            base_av = unit.base_av
+            requested_delta_av = base_av * self.percent
+            unit.current_av += requested_delta_av
+            after_av = unit.current_av
+            state.emit_event(
+                Event(
+                    "action_delayed",
+                    {
+                        "actor_id": getattr(action, "actor_id"),
+                        "action_id": getattr(action, "id"),
+                        "target_id": unit.id,
+                        "before_av": before_av,
+                        "after_av": after_av,
+                        "base_av": base_av,
+                        "requested_percent": self.percent,
+                        "requested_delta_av": requested_delta_av,
+                        "applied_delta_av": after_av - before_av,
+                    },
+                ),
+                turn_context,
+            )
 
 
 @dataclass

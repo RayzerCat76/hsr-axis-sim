@@ -10,7 +10,7 @@ REFERENCE_HASHES = {
     "REFERENCE_LEGACY_EVENT_SURFACE_HSR_RUNTIME_ARCH_002.md": "6d28569b81c11c6620c6bb69984e3cf9da1162f2169fc4b1022198519abbb7fe",
     "REFERENCE_LEGACY_EVENT_SURFACE_HSR_RUNTIME_ARCH_002.json": "97142cfc8e8834c99f53ae9bf133e73b723e96fefe30b9c4649c92304e2d4b19",
 }
-# ARCH-019 and ARCH-031 explicitly authorize additive changes to
+# ARCH-019, ARCH-031, and ARCH-034 explicitly authorize additive changes to
 # runtime_contracts/__init__.py and runtime_contracts/enums.py. Historical
 # ARCH-002 evidence remains pinned, while every untouched runtime-contract
 # source stays byte-for-byte protected.
@@ -44,7 +44,7 @@ def test_supplied_reference_hashes_are_exact():
     assert {name: digest(directory / name) for name in REFERENCE_HASHES} == REFERENCE_HASHES
 
 
-def test_runtime_contract_sources_not_authorized_by_arch_019_or_031_are_unchanged():
+def test_runtime_contract_sources_not_authorized_by_arch_019_031_or_034_are_unchanged():
     directory = ROOT / "hsr_axis_sim/runtime_contracts"
     assert {name: digest(directory / name) for name in CONTRACT_HASHES} == CONTRACT_HASHES
 
@@ -55,6 +55,7 @@ def test_arch_001_runtime_event_vocabulary_is_preserved_in_original_order():
         for member in RuntimeEventType
         if member not in {
             RuntimeEventType.ACTION_VALUE_ADVANCED,
+            RuntimeEventType.ACTION_VALUE_DELAYED,
             RuntimeEventType.ENERGY_CHANGED,
             RuntimeEventType.SKILL_POINTS_CHANGED,
         }

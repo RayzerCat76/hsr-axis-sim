@@ -79,6 +79,64 @@ class RuntimeActionAdvanceObservation:
         }
 
 
+@dataclass(frozen=True)
+class RuntimeActionDelayObservation:
+    """One completed production DelayAction mutation for one target Unit."""
+
+    target_id: str
+    before_av: Number
+    after_av: Number
+    base_av: Number
+    requested_percent: Number
+    requested_delta_av: Number
+    applied_delta_av: Number
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.target_id, str) or not self.target_id.strip():
+            raise ValueError("target_id must be a non-empty string")
+
+        for name in (
+            "before_av",
+            "after_av",
+            "base_av",
+            "requested_percent",
+            "requested_delta_av",
+            "applied_delta_av",
+        ):
+            _require_finite_number(getattr(self, name), name)
+
+        if self.base_av <= 0:
+            raise ValueError("base_av must be positive")
+
+        expected_requested_delta = self.base_av * self.requested_percent
+        if self.requested_delta_av != expected_requested_delta:
+            raise ValueError(
+                "requested_delta_av must equal base_av * requested_percent"
+            )
+
+        expected_after = self.before_av + self.requested_delta_av
+        if self.after_av != expected_after:
+            raise ValueError(
+                "after_av must equal before_av + requested_delta_av"
+            )
+
+        if self.applied_delta_av != self.after_av - self.before_av:
+            raise ValueError("applied_delta_av must equal after_av - before_av")
+
+    def to_payload(self) -> dict[str, Any]:
+        """Return the exact schema-v1 event-payload representation."""
+
+        return {
+            "target_id": self.target_id,
+            "before_av": self.before_av,
+            "after_av": self.after_av,
+            "base_av": self.base_av,
+            "requested_percent": self.requested_percent,
+            "requested_delta_av": self.requested_delta_av,
+            "applied_delta_av": self.applied_delta_av,
+        }
+
+
 def _require_finite_number(value: object, name: str) -> None:
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise TypeError(f"{name} must be a finite int or float")

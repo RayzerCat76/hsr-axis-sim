@@ -1,6 +1,9 @@
 """Sidecar contracts for the future universal HSR runtime."""
 
-from .action_axis_observations import RuntimeActionAdvanceObservation
+from .action_axis_observations import (
+    RuntimeActionAdvanceObservation,
+    RuntimeActionDelayObservation,
+)
 from .contexts import ActionContext, AttackContext, HitContext
 from .enums import (
     ActionFamily,

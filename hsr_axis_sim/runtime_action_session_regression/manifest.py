@@ -10,13 +10,15 @@ from typing import Any
 RUNTIME_ACTION_SESSION_REGRESSION_SCHEMA = "hsr_runtime_action_session_regression"
 RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_0 = "1.0"
 RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_1 = "1.1"
-RUNTIME_ACTION_SESSION_REGRESSION_VERSION = "1.2"
+RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_2 = "1.2"
+RUNTIME_ACTION_SESSION_REGRESSION_VERSION = "1.3"
 RUNTIME_ACTION_SESSION_REGRESSION_LEGACY_VERSION = (
     RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_0
 )
 RUNTIME_ACTION_SESSION_REGRESSION_SUPPORTED_VERSIONS = (
     RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_0,
     RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_1,
+    RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_2,
     RUNTIME_ACTION_SESSION_REGRESSION_VERSION,
 )
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -31,6 +33,18 @@ class RuntimeActionSessionRegressionAction:
 
 @dataclass(frozen=True)
 class RuntimeActionSessionRegressionEnergyGainSetup:
+    target_id: str
+    target_name: str
+    team: str
+    base_speed: float
+    initial_energy: float
+    max_energy: float
+    action_index: int
+    amount: float
+
+
+@dataclass(frozen=True)
+class RuntimeActionSessionRegressionEnergyConsumeSetup:
     target_id: str
     target_name: str
     team: str
@@ -60,6 +74,7 @@ class RuntimeActionSessionRegressionCase:
     actions: tuple[RuntimeActionSessionRegressionAction, ...]
     setup: (
         RuntimeActionSessionRegressionEnergyGainSetup
+        | RuntimeActionSessionRegressionEnergyConsumeSetup
         | RuntimeActionSessionRegressionSkillPointGainSetup
         | None
     ) = None
@@ -208,6 +223,7 @@ def _setup_from_dict(
     version: str,
 ) -> (
     RuntimeActionSessionRegressionEnergyGainSetup
+    | RuntimeActionSessionRegressionEnergyConsumeSetup
     | RuntimeActionSessionRegressionSkillPointGainSetup
     | None
 ):
@@ -220,16 +236,30 @@ def _setup_from_dict(
     if kind == "ENERGY_GAIN":
         return _energy_gain_setup_from_dict(data, label, action_count=action_count)
     if kind == "SKILL_POINT_GAIN":
-        if version != RUNTIME_ACTION_SESSION_REGRESSION_VERSION:
+        if version not in (
+            RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_2,
+            RUNTIME_ACTION_SESSION_REGRESSION_VERSION,
+        ):
             raise ValueError(
                 f"{label}.kind 'SKILL_POINT_GAIN' requires manifest version "
-                f"{RUNTIME_ACTION_SESSION_REGRESSION_VERSION!r}."
+                f"{RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_2!r} or later."
             )
         return _skill_point_gain_setup_from_dict(data, label, action_count=action_count)
+    if kind == "ENERGY_CONSUME":
+        if version != RUNTIME_ACTION_SESSION_REGRESSION_VERSION:
+            raise ValueError(
+                f"{label}.kind 'ENERGY_CONSUME' requires manifest version "
+                f"{RUNTIME_ACTION_SESSION_REGRESSION_VERSION!r}."
+            )
+        return _energy_consume_setup_from_dict(data, label, action_count=action_count)
 
     allowed = "'EMPTY' or 'ENERGY_GAIN'"
-    if version == RUNTIME_ACTION_SESSION_REGRESSION_VERSION:
+    if version == RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_2:
         allowed = "'EMPTY', 'ENERGY_GAIN', or 'SKILL_POINT_GAIN'"
+    elif version == RUNTIME_ACTION_SESSION_REGRESSION_VERSION:
+        allowed = (
+            "'EMPTY', 'ENERGY_GAIN', 'SKILL_POINT_GAIN', or 'ENERGY_CONSUME'"
+        )
     raise ValueError(f"{label}.kind must be {allowed}.")
 
 
@@ -239,6 +269,26 @@ def _energy_gain_setup_from_dict(
     *,
     action_count: int,
 ) -> RuntimeActionSessionRegressionEnergyGainSetup:
+    values = _energy_unit_setup_values(data, label, action_count=action_count)
+    return RuntimeActionSessionRegressionEnergyGainSetup(*values)
+
+
+def _energy_consume_setup_from_dict(
+    data: dict[str, Any],
+    label: str,
+    *,
+    action_count: int,
+) -> RuntimeActionSessionRegressionEnergyConsumeSetup:
+    values = _energy_unit_setup_values(data, label, action_count=action_count)
+    return RuntimeActionSessionRegressionEnergyConsumeSetup(*values)
+
+
+def _energy_unit_setup_values(
+    data: dict[str, Any],
+    label: str,
+    *,
+    action_count: int,
+) -> tuple[str, str, str, float, float, float, int, float]:
     expected_fields = {
         "kind",
         "target_id",
@@ -265,16 +315,15 @@ def _energy_gain_setup_from_dict(
     action_index = _require_action_index(
         data["action_index"], f"{label}.action_index", action_count=action_count
     )
-
-    return RuntimeActionSessionRegressionEnergyGainSetup(
-        target_id=target_id,
-        target_name=target_name,
-        team=team,
-        base_speed=base_speed,
-        initial_energy=initial_energy,
-        max_energy=max_energy,
-        action_index=action_index,
-        amount=amount,
+    return (
+        target_id,
+        target_name,
+        team,
+        base_speed,
+        initial_energy,
+        max_energy,
+        action_index,
+        amount,
     )
 
 

@@ -1,6 +1,6 @@
 {
   "schema": "hsr_runtime_action_session_regression",
-  "version": "1.2",
+  "version": "1.3",
   "manifest_id": "HSR_RUNTIME_ACTION_SESSION_REGRESSION_001",
   "cases": [
     {
@@ -69,6 +69,31 @@
         "max_skill_points": 5,
         "action_index": 0,
         "amount": 3
+      }
+    },
+    {
+      "id": "arch-025-reviewed-static-energy-consume",
+      "expected_path": "hsr_axis_sim/data/runtime_golden_fixtures/arch_025_reviewed_energy_consume_expected.json",
+      "expected_sha256": "7d61528687a5a2f499249e0f914f6f2f50975c7c153165eddd5e116f3ed19a75",
+      "stream_id": "arch-025-reviewed-resource",
+      "actor_id": "consume-actor",
+      "actions": [
+        {
+          "action_id": "reviewed-energy-consume",
+          "name": "reviewed-energy-consume",
+          "ends_turn": false
+        }
+      ],
+      "setup": {
+        "kind": "ENERGY_CONSUME",
+        "target_id": "consume-target",
+        "target_name": "consume-target",
+        "team": "ally",
+        "base_speed": 100,
+        "initial_energy": 80,
+        "max_energy": 100,
+        "action_index": 0,
+        "amount": 30
       }
     }
   ]

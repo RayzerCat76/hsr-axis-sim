@@ -1,6 +1,6 @@
 {
   "schema": "hsr_runtime_action_session_regression",
-  "version": "1.1",
+  "version": "1.2",
   "manifest_id": "HSR_RUNTIME_ACTION_SESSION_REGRESSION_001",
   "cases": [
     {
@@ -48,6 +48,27 @@
         "max_energy": 100,
         "action_index": 0,
         "amount": 25
+      }
+    },
+    {
+      "id": "arch-023-reviewed-static-clamped-skill-point",
+      "expected_path": "hsr_axis_sim/data/runtime_golden_fixtures/arch_023_reviewed_clamped_skill_point_expected.json",
+      "expected_sha256": "fc359b367c2922ed39e059f89ad16845ba215508292cfa43ca2ab6031c4c9ba9",
+      "stream_id": "arch-023-reviewed-resource",
+      "actor_id": "sp-actor",
+      "actions": [
+        {
+          "action_id": "reviewed-clamped-skill-point",
+          "name": "reviewed-clamped-skill-point",
+          "ends_turn": false
+        }
+      ],
+      "setup": {
+        "kind": "SKILL_POINT_GAIN",
+        "initial_skill_points": 4,
+        "max_skill_points": 5,
+        "action_index": 0,
+        "amount": 3
       }
     }
   ]

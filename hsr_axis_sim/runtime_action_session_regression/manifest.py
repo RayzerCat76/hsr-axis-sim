@@ -8,10 +8,15 @@ from typing import Any
 
 
 RUNTIME_ACTION_SESSION_REGRESSION_SCHEMA = "hsr_runtime_action_session_regression"
-RUNTIME_ACTION_SESSION_REGRESSION_VERSION = "1.1"
-RUNTIME_ACTION_SESSION_REGRESSION_LEGACY_VERSION = "1.0"
+RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_0 = "1.0"
+RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_1 = "1.1"
+RUNTIME_ACTION_SESSION_REGRESSION_VERSION = "1.2"
+RUNTIME_ACTION_SESSION_REGRESSION_LEGACY_VERSION = (
+    RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_0
+)
 RUNTIME_ACTION_SESSION_REGRESSION_SUPPORTED_VERSIONS = (
-    RUNTIME_ACTION_SESSION_REGRESSION_LEGACY_VERSION,
+    RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_0,
+    RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_1,
     RUNTIME_ACTION_SESSION_REGRESSION_VERSION,
 )
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -37,6 +42,14 @@ class RuntimeActionSessionRegressionEnergyGainSetup:
 
 
 @dataclass(frozen=True)
+class RuntimeActionSessionRegressionSkillPointGainSetup:
+    initial_skill_points: int
+    max_skill_points: int
+    action_index: int
+    amount: int
+
+
+@dataclass(frozen=True)
 class RuntimeActionSessionRegressionCase:
     case_id: str
     expected_relative_path: str
@@ -45,7 +58,11 @@ class RuntimeActionSessionRegressionCase:
     stream_id: str
     actor_id: str
     actions: tuple[RuntimeActionSessionRegressionAction, ...]
-    setup: RuntimeActionSessionRegressionEnergyGainSetup | None = None
+    setup: (
+        RuntimeActionSessionRegressionEnergyGainSetup
+        | RuntimeActionSessionRegressionSkillPointGainSetup
+        | None
+    ) = None
 
 
 @dataclass(frozen=True)
@@ -127,7 +144,7 @@ def _case_from_dict(
         "actor_id",
         "actions",
     }
-    if version == RUNTIME_ACTION_SESSION_REGRESSION_VERSION:
+    if version != RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_0:
         expected_fields = expected_fields | {"setup"}
     _require_exact_fields(data, expected_fields, label)
 
@@ -151,8 +168,13 @@ def _case_from_dict(
     )
 
     setup = None
-    if version == RUNTIME_ACTION_SESSION_REGRESSION_VERSION:
-        setup = _setup_from_dict(data["setup"], f"{label}.setup", action_count=len(actions))
+    if version != RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_0:
+        setup = _setup_from_dict(
+            data["setup"],
+            f"{label}.setup",
+            action_count=len(actions),
+            version=version,
+        )
 
     return RuntimeActionSessionRegressionCase(
         case_id=case_id,
@@ -183,16 +205,40 @@ def _setup_from_dict(
     label: str,
     *,
     action_count: int,
-) -> RuntimeActionSessionRegressionEnergyGainSetup | None:
+    version: str,
+) -> (
+    RuntimeActionSessionRegressionEnergyGainSetup
+    | RuntimeActionSessionRegressionSkillPointGainSetup
+    | None
+):
     if not isinstance(data, dict):
         raise ValueError(f"{label} must be an object.")
     kind = data.get("kind")
     if kind == "EMPTY":
         _require_exact_fields(data, {"kind"}, label)
         return None
-    if kind != "ENERGY_GAIN":
-        raise ValueError(f"{label}.kind must be 'EMPTY' or 'ENERGY_GAIN'.")
+    if kind == "ENERGY_GAIN":
+        return _energy_gain_setup_from_dict(data, label, action_count=action_count)
+    if kind == "SKILL_POINT_GAIN":
+        if version != RUNTIME_ACTION_SESSION_REGRESSION_VERSION:
+            raise ValueError(
+                f"{label}.kind 'SKILL_POINT_GAIN' requires manifest version "
+                f"{RUNTIME_ACTION_SESSION_REGRESSION_VERSION!r}."
+            )
+        return _skill_point_gain_setup_from_dict(data, label, action_count=action_count)
 
+    allowed = "'EMPTY' or 'ENERGY_GAIN'"
+    if version == RUNTIME_ACTION_SESSION_REGRESSION_VERSION:
+        allowed = "'EMPTY', 'ENERGY_GAIN', or 'SKILL_POINT_GAIN'"
+    raise ValueError(f"{label}.kind must be {allowed}.")
+
+
+def _energy_gain_setup_from_dict(
+    data: dict[str, Any],
+    label: str,
+    *,
+    action_count: int,
+) -> RuntimeActionSessionRegressionEnergyGainSetup:
     expected_fields = {
         "kind",
         "target_id",
@@ -216,14 +262,9 @@ def _setup_from_dict(
     )
     max_energy = _require_finite_number(data["max_energy"], f"{label}.max_energy")
     amount = _require_finite_number(data["amount"], f"{label}.amount")
-    action_index = data["action_index"]
-    if type(action_index) is not int or action_index < 0:
-        raise ValueError(f"{label}.action_index must be a nonnegative integer.")
-    if action_index >= action_count:
-        raise ValueError(
-            f"{label}.action_index must reference a declared action; "
-            f"got {action_index} for {action_count} action(s)."
-        )
+    action_index = _require_action_index(
+        data["action_index"], f"{label}.action_index", action_count=action_count
+    )
 
     return RuntimeActionSessionRegressionEnergyGainSetup(
         target_id=target_id,
@@ -235,6 +276,49 @@ def _setup_from_dict(
         action_index=action_index,
         amount=amount,
     )
+
+
+def _skill_point_gain_setup_from_dict(
+    data: dict[str, Any],
+    label: str,
+    *,
+    action_count: int,
+) -> RuntimeActionSessionRegressionSkillPointGainSetup:
+    expected_fields = {
+        "kind",
+        "initial_skill_points",
+        "max_skill_points",
+        "action_index",
+        "amount",
+    }
+    _require_exact_fields(data, expected_fields, label)
+    initial_skill_points = _require_exact_integer(
+        data["initial_skill_points"], f"{label}.initial_skill_points"
+    )
+    max_skill_points = _require_exact_integer(
+        data["max_skill_points"], f"{label}.max_skill_points"
+    )
+    amount = _require_exact_integer(data["amount"], f"{label}.amount")
+    action_index = _require_action_index(
+        data["action_index"], f"{label}.action_index", action_count=action_count
+    )
+    return RuntimeActionSessionRegressionSkillPointGainSetup(
+        initial_skill_points=initial_skill_points,
+        max_skill_points=max_skill_points,
+        action_index=action_index,
+        amount=amount,
+    )
+
+
+def _require_action_index(value: Any, label: str, *, action_count: int) -> int:
+    if type(value) is not int or value < 0:
+        raise ValueError(f"{label} must be a nonnegative integer.")
+    if value >= action_count:
+        raise ValueError(
+            f"{label} must reference a declared action; "
+            f"got {value} for {action_count} action(s)."
+        )
+    return value
 
 
 def _resolve_repo_relative_path(value: str, label: str) -> Path:
@@ -275,6 +359,12 @@ def _require_non_empty_string(value: Any, label: str) -> str:
 def _require_finite_number(value: Any, label: str) -> float:
     if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
         raise ValueError(f"{label} must be a finite number.")
+    return value
+
+
+def _require_exact_integer(value: Any, label: str) -> int:
+    if type(value) is not int:
+        raise ValueError(f"{label} must be an integer.")
     return value
 
 

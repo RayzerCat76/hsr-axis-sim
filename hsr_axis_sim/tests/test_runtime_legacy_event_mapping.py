@@ -44,17 +44,24 @@ ARCH_037_EXPECTED = {
         {"action_id": "action_id", "actor_id": "actor_id", "target_id": "target_id"},
     ),
 }
+ARCH_040_EXPECTED = {
+    "action_immediate": (
+        RuntimeEventType.ACTION_VALUE_IMMEDIATE,
+        {"action_id": "action_id", "actor_id": "actor_id", "target_id": "target_id"},
+    ),
+}
 CURRENT_EXPECTED = {
     **HISTORICAL_EXPECTED,
     **ARCH_031_EXPECTED,
     **ARCH_034_EXPECTED,
     **ARCH_037_EXPECTED,
+    **ARCH_040_EXPECTED,
 }
 
 
 def test_exact_immutable_mapping_registry():
     assert list(LEGACY_EVENT_MAPPINGS) == sorted(CURRENT_EXPECTED)
-    assert len(LEGACY_EVENT_MAPPINGS) == 12
+    assert len(LEGACY_EVENT_MAPPINGS) == 13
     for legacy_type, (runtime_type, fields) in CURRENT_EXPECTED.items():
         mapping = LEGACY_EVENT_MAPPINGS[legacy_type]
         assert mapping.runtime_event_type is runtime_type
@@ -67,9 +74,9 @@ def test_exact_immutable_mapping_registry():
         LEGACY_EVENT_MAPPINGS["new"] = object()
 
 
-def test_eleven_bound_contracts_and_one_unresolved_lifecycle():
+def test_twelve_bound_contracts_and_one_unresolved_lifecycle():
     bound = [mapping for mapping in LEGACY_EVENT_MAPPINGS.values() if mapping.legacy_event_type != "unit_defeated"]
-    assert len(bound) == 11
+    assert len(bound) == 12
     for mapping in bound:
         contract = mapping.semantic_contract
         assert contract.evidence_status is EvidenceStatus.CONFIRMED
@@ -100,12 +107,14 @@ def test_arch_002_mapping_document_remains_exact_historical_projection():
         assert item["source_refs"] == list(contract.source_refs)
 
 
-def test_arch_031_034_and_037_mappings_are_additive_not_backfilled_into_arch_002_document():
+def test_arch_031_034_037_and_040_mappings_are_additive_not_backfilled_into_arch_002_document():
     assert "action_advanced" in LEGACY_EVENT_MAPPINGS
     assert "action_delayed" in LEGACY_EVENT_MAPPINGS
     assert "speed_changed" in LEGACY_EVENT_MAPPINGS
+    assert "action_immediate" in LEGACY_EVENT_MAPPINGS
     document = json.loads((ROOT / "docs/runtime/LEGACY_EVENT_MAPPING_V1.json").read_text())
     historical_types = {item["legacy_event_type"] for item in document}
     assert "action_advanced" not in historical_types
     assert "action_delayed" not in historical_types
     assert "speed_changed" not in historical_types
+    assert "action_immediate" not in historical_types

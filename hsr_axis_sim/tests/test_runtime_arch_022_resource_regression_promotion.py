@@ -10,6 +10,7 @@ from hsr_axis_sim.regression.runner import run_regression
 from hsr_axis_sim.runtime_action_session_regression.manifest import (
     RUNTIME_ACTION_SESSION_REGRESSION_LEGACY_VERSION,
     RUNTIME_ACTION_SESSION_REGRESSION_VERSION,
+    RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_1,
     RuntimeActionSessionRegressionCase,
     RuntimeActionSessionRegressionEnergyGainSetup,
     RuntimeActionSessionRegressionManifest,
@@ -108,9 +109,10 @@ def _parse(data):
     )
 
 
-def test_manifest_versions_are_explicit_and_v1_0_remains_accepted():
+def test_manifest_versions_preserve_v1_0_and_explicit_v1_1_contract():
     assert RUNTIME_ACTION_SESSION_REGRESSION_LEGACY_VERSION == "1.0"
-    assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION == "1.1"
+    assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_1 == "1.1"
+    assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION == "1.2"
 
     parsed = _parse(_manifest("1.0"))
 
@@ -222,14 +224,14 @@ def test_energy_gain_string_fields_must_be_nonempty_strings(field, invalid):
         _parse(_manifest("1.1", setup_marker=setup))
 
 
-def test_locked_v1_1_manifest_contains_exact_two_reviewed_cases_in_declared_order():
+def test_current_locked_manifest_preserves_arch022_first_two_cases_unchanged():
     manifest = load_runtime_action_session_regression_manifest(RUNTIME_MANIFEST_PATH)
 
-    assert [case.case_id for case in manifest.cases] == [
+    assert [case.case_id for case in manifest.cases[:2]] == [
         "arch-017-reviewed-static-action-session",
         "arch-021-reviewed-static-clamped-energy",
     ]
-    first, second = manifest.cases
+    first, second = manifest.cases[:2]
     assert first.setup is None
     assert first.expected_sha256 == ARCH_017_SHA256
     assert first.expected_relative_path == ARCH_017_RELATIVE
@@ -252,20 +254,18 @@ def test_locked_v1_1_manifest_contains_exact_two_reviewed_cases_in_declared_orde
     )
 
 
-def test_locked_runtime_regression_promotes_resource_fixture_and_passes_two_of_two():
+def test_current_runtime_regression_still_passes_arch022_first_two_cases():
     report = run_runtime_action_session_regression(
         load_runtime_action_session_regression_manifest(RUNTIME_MANIFEST_PATH)
     )
 
     assert report.passed is True
-    assert report.total == 2
-    assert report.passed_count == 2
+    assert report.total == 3
+    assert report.passed_count == 3
     assert report.failed_count == 0
-    assert [result.case_id for result in report.results] == [
-        "arch-017-reviewed-static-action-session",
-        "arch-021-reviewed-static-clamped-energy",
-    ]
-    first, second = report.results
+    first, second = report.results[:2]
+    assert first.case_id == "arch-017-reviewed-static-action-session"
+    assert second.case_id == "arch-021-reviewed-static-clamped-energy"
     assert first.details["record_count"] == 4
     assert first.details["expected_sha256"] == ARCH_017_SHA256
     assert second.details["record_count"] == 3

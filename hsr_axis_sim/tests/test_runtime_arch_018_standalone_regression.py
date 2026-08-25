@@ -43,6 +43,14 @@ EXPECTED_RELATIVE_PATH = (
 EXPECTED_SHA256 = "f672ffaac9ef9296e4982a6fb61f4d0257b5c0506412bcf54eb1768334118c66"
 EXPECTED_SIZE_BYTES = 3013
 FIXTURE_ID = "arch-017-reviewed-static-action-session"
+CURRENT_CASE_IDS = [
+    "arch-017-reviewed-static-action-session",
+    "arch-021-reviewed-static-clamped-energy",
+    "arch-023-reviewed-static-clamped-skill-point",
+    "arch-025-reviewed-static-energy-consume",
+    "arch-027-reviewed-static-skill-point-consume",
+    "arch-032-reviewed-static-action-advance",
+]
 
 
 def _valid_manifest_data():
@@ -101,11 +109,11 @@ def _mismatch_case() -> RuntimeActionSessionRegressionCase:
     )
 
 
-def test_locked_standalone_manifest_loads_five_reviewed_cases_in_declared_order():
+def test_locked_standalone_manifest_preserves_arch018_first_case_and_current_order():
     manifest = load_runtime_action_session_regression_manifest(RUNTIME_MANIFEST_PATH)
 
     assert manifest.manifest_id == "HSR_RUNTIME_ACTION_SESSION_REGRESSION_001"
-    assert len(manifest.cases) == 5
+    assert len(manifest.cases) == 6
     case = manifest.cases[0]
     assert case.case_id == FIXTURE_ID
     assert case.expected_relative_path == EXPECTED_RELATIVE_PATH
@@ -119,25 +127,19 @@ def test_locked_standalone_manifest_loads_five_reviewed_cases_in_declared_order(
         "reviewed-action-b",
     ]
     assert [action.ends_turn for action in case.actions] == [False, False]
-    assert [item.case_id for item in manifest.cases] == [
-        "arch-017-reviewed-static-action-session",
-        "arch-021-reviewed-static-clamped-energy",
-        "arch-023-reviewed-static-clamped-skill-point",
-        "arch-025-reviewed-static-energy-consume",
-        "arch-027-reviewed-static-skill-point-consume",
-    ]
+    assert [item.case_id for item in manifest.cases] == CURRENT_CASE_IDS
 
 
-def test_locked_standalone_runtime_regression_passes_five_of_five():
+def test_locked_standalone_runtime_regression_passes_current_six_of_six():
     manifest = load_runtime_action_session_regression_manifest(RUNTIME_MANIFEST_PATH)
 
     report = run_runtime_action_session_regression(manifest)
 
     assert report.passed is True
-    assert report.total == 5
-    assert report.passed_count == 5
+    assert report.total == 6
+    assert report.passed_count == 6
     assert report.failed_count == 0
-    first, second, third, fourth, fifth = report.results
+    first, second, third, fourth, fifth, sixth = report.results
     assert first.case_id == FIXTURE_ID
     assert first.expected_path == EXPECTED_RELATIVE_PATH
     assert first.passed is True
@@ -161,6 +163,10 @@ def test_locked_standalone_runtime_regression_passes_five_of_five():
     assert fifth.passed is True
     assert fifth.details["action_count"] == 1
     assert fifth.details["record_count"] == 3
+    assert sixth.case_id == "arch-032-reviewed-static-action-advance"
+    assert sixth.passed is True
+    assert sixth.details["action_count"] == 1
+    assert sixth.details["record_count"] == 3
 
 
 def test_controlled_mismatch_surfaces_existing_first_divergence_provenance():
@@ -212,18 +218,12 @@ def test_text_and_json_reports_are_deterministic_and_runtime_specific():
 
     assert text_first == text_second
     assert json_first == json_second
-    assert "PASS 5/5 runtime action-session Golden checks" in text_first
+    assert "PASS 6/6 runtime action-session Golden checks" in text_first
     assert "HSR Axis Regression Report" not in text_first
     payload = json.loads(json_first)
-    assert payload["total"] == 5
-    assert payload["passed_count"] == 5
-    assert [item["case_id"] for item in payload["results"]] == [
-        "arch-017-reviewed-static-action-session",
-        "arch-021-reviewed-static-clamped-energy",
-        "arch-023-reviewed-static-clamped-skill-point",
-        "arch-025-reviewed-static-energy-consume",
-        "arch-027-reviewed-static-skill-point-consume",
-    ]
+    assert payload["total"] == 6
+    assert payload["passed_count"] == 6
+    assert [item["case_id"] for item in payload["results"]] == CURRENT_CASE_IDS
 
 
 def test_cli_runs_standalone_runtime_lane_without_legacy_runner_output():
@@ -241,7 +241,7 @@ def test_cli_runs_standalone_runtime_lane_without_legacy_runner_output():
 
     assert code == 0
     rendered = stdout.getvalue()
-    assert "PASS 5/5 runtime action-session Golden checks" in rendered
+    assert "PASS 6/6 runtime action-session Golden checks" in rendered
     assert "PASS 12/12 golden replays" not in rendered
 
 

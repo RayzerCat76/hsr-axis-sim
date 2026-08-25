@@ -307,7 +307,7 @@ def test_arch_027_test_source_has_no_runtime_expected_generation_path():
     assert called_names.isdisjoint(forbidden_calls)
 
 
-def test_prior_static_fixtures_and_current_runtime_regression_lane_remain_accepted():
+def test_prior_static_fixtures_and_arch027_prefix_remain_accepted():
     expected = (
         (ARCH_017_PATH, 3013, ARCH_017_SHA256),
         (ARCH_021_PATH, 2759, ARCH_021_SHA256),
@@ -323,9 +323,9 @@ def test_prior_static_fixtures_and_current_runtime_regression_lane_remain_accept
         load_runtime_action_session_regression_manifest(RUNTIME_REGRESSION_MANIFEST)
     )
     assert report.passed is True
-    assert report.total == 5
-    assert report.passed_count == 5
-    assert [result.case_id for result in report.results] == [
+    assert report.total >= 5
+    assert report.passed_count == report.total
+    assert [result.case_id for result in report.results[:5]] == [
         "arch-017-reviewed-static-action-session",
         "arch-021-reviewed-static-clamped-energy",
         "arch-023-reviewed-static-clamped-skill-point",

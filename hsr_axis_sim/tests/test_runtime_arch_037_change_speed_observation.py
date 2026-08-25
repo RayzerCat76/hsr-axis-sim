@@ -361,10 +361,16 @@ def test_arch_012_capture_contains_exact_typed_three_record_speed_trace():
 def test_arch_037_scope_preserves_other_axis_effect_observations_and_exclusions():
     assert "action_advanced" in inspect.getsource(AdvanceAction)
     assert "action_delayed" in inspect.getsource(DelayAction)
-    for effect_type in (ImmediateAction, GrantExtraTurn):
-        source = inspect.getsource(effect_type)
-        assert "speed_changed" not in source
-        assert "emit_event" not in source
+
+    immediate_source = inspect.getsource(ImmediateAction)
+    assert "speed_changed" not in immediate_source
+    assert "action_immediate" in immediate_source
+    assert "emit_event" in immediate_source
+
+    extra_turn_source = inspect.getsource(GrantExtraTurn)
+    assert "speed_changed" not in extra_turn_source
+    assert "action_immediate" not in extra_turn_source
+    assert "emit_event" not in extra_turn_source
 
 
 def test_all_seven_reviewed_fixture_byte_identities_remain_exact():

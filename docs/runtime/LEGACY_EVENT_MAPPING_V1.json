@@ -53,6 +53,41 @@
   {
     "binding_status": "BOUND",
     "evidence_status": "CONFIRMED",
+    "legacy_event_type": "energy_changed",
+    "mapping_status": "BOUND",
+    "mechanic_id": "LEGACY_EVENT.ENERGY_CHANGED",
+    "normalized_field_map": {
+      "action_id": "action_id",
+      "actor_id": "actor_id",
+      "target_id": "unit_id"
+    },
+    "notes": "Validate and expose ARCH-019 resource_change while preserving raw legacy data.",
+    "runtime_event_type": "ENERGY_CHANGED",
+    "selected_policy": "ENERGY_CHANGED",
+    "source_refs": [
+      "hsr_axis_sim/sim/effects.py"
+    ]
+  },
+  {
+    "binding_status": "BOUND",
+    "evidence_status": "CONFIRMED",
+    "legacy_event_type": "skill_points_changed",
+    "mapping_status": "BOUND",
+    "mechanic_id": "LEGACY_EVENT.SKILL_POINTS_CHANGED",
+    "normalized_field_map": {
+      "action_id": "action_id",
+      "actor_id": "actor_id"
+    },
+    "notes": "Validate and expose ARCH-019 resource_change while preserving raw legacy data.",
+    "runtime_event_type": "SKILL_POINTS_CHANGED",
+    "selected_policy": "SKILL_POINTS_CHANGED",
+    "source_refs": [
+      "hsr_axis_sim/sim/effects.py"
+    ]
+  },
+  {
+    "binding_status": "BOUND",
+    "evidence_status": "CONFIRMED",
     "legacy_event_type": "turn_ended",
     "mapping_status": "BOUND",
     "mechanic_id": "LEGACY_EVENT.TURN_ENDED",

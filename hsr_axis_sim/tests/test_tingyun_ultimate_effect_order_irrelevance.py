@@ -17,8 +17,6 @@ from hsr_axis_sim.tools.trace_tingyun_ultimate_effect_order_irrelevance import (
     _validate_snapshot,
     build_report,
     load_json,
-    render_json,
-    render_markdown,
     run_comparison_case,
 )
 
@@ -32,29 +30,44 @@ def evidence():
     return load_json(DEFAULT_REVIEW)
 
 
+def historical_report():
+    return json.loads(REPORT_JSON.read_text(encoding="utf-8"))
+
+
+def current_supersession_error(data=None):
+    with pytest.raises(ValueError) as exc_info:
+        build_report(evidence() if data is None else data)
+    message = str(exc_info.value)
+    assert "effect-order proof validation failed" in message
+    assert "sha256 is stale" in message
+    assert "pinned_sources must contain every required current-contract source" in message
+    return message
+
+
 def expect_controlled_error(data, text):
     with pytest.raises(ValueError, match=text):
         build_report(data)
 
 
-def test_every_required_comparison_is_equal_and_readiness_overlay_is_limited():
-    report = build_report(evidence())
-    assert report.conclusion == "proven_irrelevant_under_current_simulator_contract"
-    assert report.every_case_equal is True
-    assert len(report.comparison_results) == 6
-    assert all(item.equal for item in report.comparison_results)
-    assert report.derived_generic_readiness == "blocked_by_duration_semantics"
-    assert report.accepted_video_binding_readiness == "blocked_by_unknown_target_and_trace_level"
-    assert report.release_game_order_known is False
-    assert report.same_current_turn_duration_resolved is False
-    assert report.accepted_video_target is None
-    assert report.accepted_video_trace_level is None
-    assert report.simulator_binding_allowed is False
+def test_every_required_comparison_is_preserved_as_historical_but_no_longer_current():
+    report = historical_report()
+    assert report["conclusion"] == "proven_irrelevant_under_current_simulator_contract"
+    assert report["every_case_equal"] is True
+    assert len(report["comparison_results"]) == 6
+    assert all(item["equal"] for item in report["comparison_results"])
+    assert report["derived_generic_readiness"] == "blocked_by_duration_semantics"
+    assert report["accepted_video_binding_readiness"] == "blocked_by_unknown_target_and_trace_level"
+    assert report["release_game_order_known"] is False
+    assert report["same_current_turn_duration_resolved"] is False
+    assert report["accepted_video_target"] is None
+    assert report["accepted_video_trace_level"] is None
+    assert report["simulator_binding_allowed"] is False
+    current_supersession_error()
 
 
-def test_complete_snapshot_contract_covers_state_units_statuses_events_triggers_and_context():
-    report = build_report(evidence())
-    contract = report.observation_contract
+def test_complete_historical_snapshot_contract_is_preserved_while_current_validation_rejects():
+    report = historical_report()
+    contract = report["observation_contract"]
     assert set(contract["state_fields"]) == set(STATE_FIELDS)
     assert set(contract["unit_fields"]) == set(UNIT_FIELDS)
     assert set(contract["buff_fields"]) == set(BUFF_FIELDS)
@@ -62,13 +75,14 @@ def test_complete_snapshot_contract_covers_state_units_statuses_events_triggers_
     assert set(contract["trigger_fields"]) == set(TRIGGER_FIELDS)
     assert set(contract["turn_context_fields"]) == set(TURN_CONTEXT_FIELDS)
     assert contract["excluded_fields"] == []
-    snapshot = report.comparison_results[0].order_a_snapshot
+    snapshot = report["comparison_results"][0]["order_a_snapshot"]
     assert snapshot["turn_context"]["is_interrupt"] is True
     assert snapshot["turn_context"]["should_end_turn"] is False
     assert snapshot["action_result"] == {"return_type": "TurnContext", "returned_same_context": True}
     assert [event["type"] for event in snapshot["state"]["pending_events"]][-2:] == ["action_started", "action_finished"]
     assert snapshot["state"]["trigger_fire_counts"] == {"order_probe_action_finished": 1, "order_probe_action_started": 1}
     assert snapshot["state"]["event_dispatch_count"] == 2
+    current_supersession_error()
 
 
 def test_positive_conclusion_rejects_missing_or_failed_case():
@@ -189,7 +203,7 @@ def test_snapshot_validator_rejects_omissions_and_malformed_nested_data():
             _validate_snapshot(mutation, f"mutation[{index}]")
 
 
-def test_reversed_unordered_inputs_are_deterministic():
+def test_reversed_historical_input_is_still_controlled_as_superseded():
     original = evidence()
     reversed_data = copy.deepcopy(original)
     for field in ("pinned_sources", "implementation_locators", "comparison_cases", "proof_boundaries"):
@@ -198,27 +212,36 @@ def test_reversed_unordered_inputs_are_deterministic():
         source["locators"].reverse()
     for values in reversed_data["observation_contract"].values():
         values.reverse()
-    first, second = build_report(original), build_report(reversed_data)
-    assert render_json(first) == render_json(second)
-    assert render_markdown(first) == render_markdown(second)
+    current_supersession_error(original)
+    current_supersession_error(reversed_data)
 
 
-def test_committed_reports_match_generated_bytes():
-    report = build_report(evidence())
-    assert REPORT_JSON.read_text(encoding="utf-8") == render_json(report)
-    assert REPORT_MD.read_text(encoding="utf-8") == render_markdown(report)
+def test_committed_historical_reports_remain_readable_but_are_not_regenerated_from_current_engine():
+    report = historical_report()
+    source = evidence()
+    effects_pin = next(row for row in source["pinned_sources"] if row["source_id"] == "effects")
+    assert "GainEnergy.apply: max-Energy clamp assignment with no event emission" in effects_pin["locators"]
+    assert any("No current primitive event exposes intermediate state" in item for item in source["proof_boundaries"])
+    assert report["conclusion"] == "proven_irrelevant_under_current_simulator_contract"
+    assert "NON-EXECUTABLE CURRENT-CONTRACT PROOF" in REPORT_MD.read_text(encoding="utf-8")
+    current_supersession_error()
 
 
-def test_cli_stdout_file_exit_1_and_exit_2(tmp_path):
+def test_cli_now_rejects_default_historical_current_contract_proof_without_traceback(tmp_path):
     module = "hsr_axis_sim.tools.trace_tingyun_ultimate_effect_order_irrelevance"
     base = [sys.executable, "-m", module]
     stdout = subprocess.run(base + ["--format", "json"], cwd=ROOT.parent, text=True, capture_output=True, check=False)
-    assert stdout.returncode == 0
-    assert stdout.stdout == render_json(build_report(evidence()))
+    assert stdout.returncode == 1
+    assert stdout.stdout == ""
+    assert "sha256 is stale" in stdout.stderr
+    assert "Traceback" not in stdout.stderr
+
     output = tmp_path / "report.md"
     written = subprocess.run(base + ["--format", "markdown", "--output", str(output)], cwd=ROOT.parent, text=True, capture_output=True, check=False)
-    assert written.returncode == 0
-    assert output.read_text(encoding="utf-8") == render_markdown(build_report(evidence()))
+    assert written.returncode == 1
+    assert not output.exists()
+    assert "Traceback" not in written.stderr
+
     invalid = evidence()
     invalid["conclusion"] = []
     invalid_path = tmp_path / "invalid.json"

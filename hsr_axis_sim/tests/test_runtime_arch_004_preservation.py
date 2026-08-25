@@ -9,8 +9,9 @@ REFERENCE_HASHES = {
     "REFERENCE_RUNTIME_TRACE_LOAD_VALIDATE_HSR_RUNTIME_ARCH_004.md": "09734938828c8cc44e0d9cd776b9ec8738ae39dd7a4d62a0df714c646bce5241",
     "REFERENCE_RUNTIME_TRACE_LOAD_VALIDATE_HSR_RUNTIME_ARCH_004.json": "548313a263f05891b432b51d5833009341f481291f8a30d3a96108f24fcef4f4",
 }
-# ARCH-019 explicitly authorizes additive changes to runtime_contracts/__init__.py
-# and runtime_contracts/enums.py. All other ARCH-004 upstream sources stay pinned.
+# ARCH-019 explicitly authorized runtime_contracts/__init__.py and enums.py.
+# ARCH-020 explicitly authorizes runtime_adapters/legacy_events.py. Historical
+# ARCH-004 evidence remains pinned and every other upstream source stays exact.
 SOURCE_HASHES = {
     "runtime_contracts/contexts.py": "b2cd5c4783dc5fced63a206fcc9723f2c53d499265c2f66870847b25715a3c71",
     "runtime_contracts/events.py": "4146e68bbb27b733db13355334d4263e920af7c15a814e2df4a738d018798b43",
@@ -18,7 +19,6 @@ SOURCE_HASHES = {
     "runtime_contracts/serialization.py": "626a885857b5e7fd90ae5f56ec0ee712bbdca2f28b4f28ea33bbf8be12c0937d",
     "runtime_contracts/trace.py": "ca14ac00a999c3c9ab7dc2ed5e2c9442d4926494feffa2cd4575457fafeb061e",
     "runtime_adapters/__init__.py": "03a14b2c6519750b304e98e437ffe5b3da3efc4e316dd6ce4aae0ab028ad47ad",
-    "runtime_adapters/legacy_events.py": "fcc6ba8367b0ec39324670c159d80640ed7819aadf439df733d116bd9baf2605",
     "runtime_exports/__init__.py": "e447a9ad009d05301c7658bd1f81d14e5c956c1eb0732f756bcc6c96a2271177",
     "runtime_exports/enums.py": "488f5d72a3c6b72f9a79aba72947b1c5466cab67c8c0c82618055fc0c575b6a8",
     "runtime_exports/files.py": "79c964d48eb39f0384d1460c472025ffed1b78081f23bf5ddc26c8b2eaa7e6b9",
@@ -46,7 +46,7 @@ def test_reference_hashes_and_prior_documents():
     assert all((ROOT / "docs/runtime" / name).is_file() for name in PRIOR_DOCS)
 
 
-def test_existing_sidecars_not_authorized_by_arch_019_are_unchanged_and_no_production_import():
+def test_existing_sidecars_not_authorized_by_arch_019_or_arch_020_are_unchanged_and_no_production_import():
     assert {name: digest(ROOT / "hsr_axis_sim" / name) for name in SOURCE_HASHES} == SOURCE_HASHES
     hits = []
     for area in ("sim", "search", "regression", "adapters", "real_bindings", "data", "runtime_contracts", "runtime_adapters", "runtime_exports"):

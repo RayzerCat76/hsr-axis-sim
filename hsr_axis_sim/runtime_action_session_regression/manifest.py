@@ -13,7 +13,8 @@ RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_1 = "1.1"
 RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_2 = "1.2"
 RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_3 = "1.3"
 RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_4 = "1.4"
-RUNTIME_ACTION_SESSION_REGRESSION_VERSION = "1.5"
+RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_5 = "1.5"
+RUNTIME_ACTION_SESSION_REGRESSION_VERSION = "1.6"
 RUNTIME_ACTION_SESSION_REGRESSION_LEGACY_VERSION = (
     RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_0
 )
@@ -23,6 +24,7 @@ RUNTIME_ACTION_SESSION_REGRESSION_SUPPORTED_VERSIONS = (
     RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_2,
     RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_3,
     RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_4,
+    RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_5,
     RUNTIME_ACTION_SESSION_REGRESSION_VERSION,
 )
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -87,6 +89,17 @@ class RuntimeActionSessionRegressionActionAdvanceSetup:
 
 
 @dataclass(frozen=True)
+class RuntimeActionSessionRegressionActionDelaySetup:
+    target_id: str
+    target_name: str
+    team: str
+    base_speed: float
+    initial_av: float
+    action_index: int
+    percent: float
+
+
+@dataclass(frozen=True)
 class RuntimeActionSessionRegressionCase:
     case_id: str
     expected_relative_path: str
@@ -101,6 +114,7 @@ class RuntimeActionSessionRegressionCase:
         | RuntimeActionSessionRegressionSkillPointGainSetup
         | RuntimeActionSessionRegressionSkillPointConsumeSetup
         | RuntimeActionSessionRegressionActionAdvanceSetup
+        | RuntimeActionSessionRegressionActionDelaySetup
         | None
     ) = None
 
@@ -252,6 +266,7 @@ def _setup_from_dict(
     | RuntimeActionSessionRegressionSkillPointGainSetup
     | RuntimeActionSessionRegressionSkillPointConsumeSetup
     | RuntimeActionSessionRegressionActionAdvanceSetup
+    | RuntimeActionSessionRegressionActionDelaySetup
     | None
 ):
     if not isinstance(data, dict):
@@ -267,6 +282,7 @@ def _setup_from_dict(
             RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_2,
             RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_3,
             RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_4,
+            RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_5,
             RUNTIME_ACTION_SESSION_REGRESSION_VERSION,
         ):
             raise ValueError(
@@ -278,6 +294,7 @@ def _setup_from_dict(
         if version not in (
             RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_3,
             RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_4,
+            RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_5,
             RUNTIME_ACTION_SESSION_REGRESSION_VERSION,
         ):
             raise ValueError(
@@ -288,6 +305,7 @@ def _setup_from_dict(
     if kind == "SKILL_POINT_CONSUME":
         if version not in (
             RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_4,
+            RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_5,
             RUNTIME_ACTION_SESSION_REGRESSION_VERSION,
         ):
             raise ValueError(
@@ -298,14 +316,24 @@ def _setup_from_dict(
             data, label, action_count=action_count
         )
     if kind == "ACTION_ADVANCE":
-        if version != RUNTIME_ACTION_SESSION_REGRESSION_VERSION:
+        if version not in (
+            RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_5,
+            RUNTIME_ACTION_SESSION_REGRESSION_VERSION,
+        ):
             raise ValueError(
                 f"{label}.kind 'ACTION_ADVANCE' requires manifest version "
-                f"{RUNTIME_ACTION_SESSION_REGRESSION_VERSION!r}."
+                f"{RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_5!r} or later."
             )
         return _action_advance_setup_from_dict(
             data, label, action_count=action_count
         )
+    if kind == "ACTION_DELAY":
+        if version != RUNTIME_ACTION_SESSION_REGRESSION_VERSION:
+            raise ValueError(
+                f"{label}.kind 'ACTION_DELAY' requires manifest version "
+                f"{RUNTIME_ACTION_SESSION_REGRESSION_VERSION!r}."
+            )
+        return _action_delay_setup_from_dict(data, label, action_count=action_count)
 
     allowed = "'EMPTY' or 'ENERGY_GAIN'"
     if version == RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_2:
@@ -319,10 +347,15 @@ def _setup_from_dict(
             "'EMPTY', 'ENERGY_GAIN', 'SKILL_POINT_GAIN', 'ENERGY_CONSUME', "
             "or 'SKILL_POINT_CONSUME'"
         )
-    elif version == RUNTIME_ACTION_SESSION_REGRESSION_VERSION:
+    elif version == RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_5:
         allowed = (
             "'EMPTY', 'ENERGY_GAIN', 'SKILL_POINT_GAIN', 'ENERGY_CONSUME', "
             "'SKILL_POINT_CONSUME', or 'ACTION_ADVANCE'"
+        )
+    elif version == RUNTIME_ACTION_SESSION_REGRESSION_VERSION:
+        allowed = (
+            "'EMPTY', 'ENERGY_GAIN', 'SKILL_POINT_GAIN', 'ENERGY_CONSUME', "
+            "'SKILL_POINT_CONSUME', 'ACTION_ADVANCE', or 'ACTION_DELAY'"
         )
     raise ValueError(f"{label}.kind must be {allowed}.")
 
@@ -467,6 +500,45 @@ def _action_advance_setup_from_dict(
     )
     percent = _require_finite_number(data["percent"], f"{label}.percent")
     return RuntimeActionSessionRegressionActionAdvanceSetup(
+        target_id=target_id,
+        target_name=target_name,
+        team=team,
+        base_speed=base_speed,
+        initial_av=initial_av,
+        action_index=action_index,
+        percent=percent,
+    )
+
+
+def _action_delay_setup_from_dict(
+    data: dict[str, Any],
+    label: str,
+    *,
+    action_count: int,
+) -> RuntimeActionSessionRegressionActionDelaySetup:
+    expected_fields = {
+        "kind",
+        "target_id",
+        "target_name",
+        "team",
+        "base_speed",
+        "initial_av",
+        "action_index",
+        "percent",
+    }
+    _require_exact_fields(data, expected_fields, label)
+    target_id = _require_non_empty_string(data["target_id"], f"{label}.target_id")
+    target_name = _require_non_empty_string(data["target_name"], f"{label}.target_name")
+    team = _require_non_empty_string(data["team"], f"{label}.team")
+    base_speed = _require_finite_number(data["base_speed"], f"{label}.base_speed")
+    if base_speed <= 0:
+        raise ValueError(f"{label}.base_speed must be greater than zero.")
+    initial_av = _require_finite_number(data["initial_av"], f"{label}.initial_av")
+    action_index = _require_action_index(
+        data["action_index"], f"{label}.action_index", action_count=action_count
+    )
+    percent = _require_finite_number(data["percent"], f"{label}.percent")
+    return RuntimeActionSessionRegressionActionDelaySetup(
         target_id=target_id,
         target_name=target_name,
         team=team,

@@ -297,13 +297,14 @@ def test_changed_delay_percent_reports_first_structured_divergence():
     assert "clamped_to_zero" not in actual_delay
 
 
-def test_arch_035_fixture_remains_absent_from_both_regression_manifests():
+def test_arch_035_fixture_is_promoted_only_into_runtime_regression_manifest():
     legacy = LEGACY_REGRESSION_MANIFEST.read_text(encoding="utf-8")
     runtime = RUNTIME_REGRESSION_MANIFEST.read_text(encoding="utf-8")
 
-    for manifest_text in (legacy, runtime):
-        assert FIXTURE_ID not in manifest_text
-        assert EXPECTED_PATH.name not in manifest_text
+    assert FIXTURE_ID not in legacy
+    assert EXPECTED_PATH.name not in legacy
+    assert runtime.count(FIXTURE_ID) == 1
+    assert runtime.count(EXPECTED_PATH.name) == 1
 
 
 def test_arch_035_test_source_has_no_runtime_expected_generation_path():
@@ -334,7 +335,7 @@ def test_arch_035_test_source_has_no_runtime_expected_generation_path():
     assert called_names.isdisjoint(forbidden_calls)
 
 
-def test_prior_static_fixture_identities_and_unpromoted_runtime_lane_remain_accepted():
+def test_prior_static_fixture_identities_and_promoted_runtime_lane_remain_accepted():
     for path, size, digest in PRIOR_FIXTURES:
         payload = path.read_bytes()
         assert len(payload) == size
@@ -344,8 +345,8 @@ def test_prior_static_fixture_identities_and_unpromoted_runtime_lane_remain_acce
         load_runtime_action_session_regression_manifest(RUNTIME_REGRESSION_MANIFEST)
     )
     assert report.passed is True
-    assert report.total == 6
-    assert report.passed_count == 6
+    assert report.total == 7
+    assert report.passed_count == 7
     assert [result.case_id for result in report.results] == [
         "arch-017-reviewed-static-action-session",
         "arch-021-reviewed-static-clamped-energy",
@@ -353,6 +354,7 @@ def test_prior_static_fixture_identities_and_unpromoted_runtime_lane_remain_acce
         "arch-025-reviewed-static-energy-consume",
         "arch-027-reviewed-static-skill-point-consume",
         "arch-032-reviewed-static-action-advance",
+        "arch-035-reviewed-static-action-delay",
     ]
 
 

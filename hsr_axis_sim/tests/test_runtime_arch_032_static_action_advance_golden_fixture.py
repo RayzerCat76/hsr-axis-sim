@@ -333,7 +333,7 @@ def test_arch_032_test_source_has_no_runtime_expected_generation_path():
     assert called_names.isdisjoint(forbidden_calls)
 
 
-def test_prior_static_fixture_identities_and_promoted_runtime_lane_remain_accepted():
+def test_prior_static_fixture_identities_and_arch032_runtime_prefix_remain_accepted():
     for path, size, digest in PRIOR_FIXTURES:
         payload = path.read_bytes()
         assert len(payload) == size
@@ -343,9 +343,9 @@ def test_prior_static_fixture_identities_and_promoted_runtime_lane_remain_accept
         load_runtime_action_session_regression_manifest(RUNTIME_REGRESSION_MANIFEST)
     )
     assert report.passed is True
-    assert report.total == 6
-    assert report.passed_count == 6
-    assert [result.case_id for result in report.results] == [
+    assert report.total >= 6
+    assert report.passed_count == report.total
+    assert [result.case_id for result in report.results[:6]] == [
         "arch-017-reviewed-static-action-session",
         "arch-021-reviewed-static-clamped-energy",
         "arch-023-reviewed-static-clamped-skill-point",

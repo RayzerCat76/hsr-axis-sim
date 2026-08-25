@@ -50,6 +50,7 @@ CURRENT_CASE_IDS = [
     "arch-025-reviewed-static-energy-consume",
     "arch-027-reviewed-static-skill-point-consume",
     "arch-032-reviewed-static-action-advance",
+    "arch-035-reviewed-static-action-delay",
 ]
 
 
@@ -113,7 +114,7 @@ def test_locked_standalone_manifest_preserves_arch018_first_case_and_current_ord
     manifest = load_runtime_action_session_regression_manifest(RUNTIME_MANIFEST_PATH)
 
     assert manifest.manifest_id == "HSR_RUNTIME_ACTION_SESSION_REGRESSION_001"
-    assert len(manifest.cases) == 6
+    assert len(manifest.cases) == 7
     case = manifest.cases[0]
     assert case.case_id == FIXTURE_ID
     assert case.expected_relative_path == EXPECTED_RELATIVE_PATH
@@ -130,16 +131,16 @@ def test_locked_standalone_manifest_preserves_arch018_first_case_and_current_ord
     assert [item.case_id for item in manifest.cases] == CURRENT_CASE_IDS
 
 
-def test_locked_standalone_runtime_regression_passes_current_six_of_six():
+def test_locked_standalone_runtime_regression_passes_current_seven_of_seven():
     manifest = load_runtime_action_session_regression_manifest(RUNTIME_MANIFEST_PATH)
 
     report = run_runtime_action_session_regression(manifest)
 
     assert report.passed is True
-    assert report.total == 6
-    assert report.passed_count == 6
+    assert report.total == 7
+    assert report.passed_count == 7
     assert report.failed_count == 0
-    first, second, third, fourth, fifth, sixth = report.results
+    first, second, third, fourth, fifth, sixth, seventh = report.results
     assert first.case_id == FIXTURE_ID
     assert first.expected_path == EXPECTED_RELATIVE_PATH
     assert first.passed is True
@@ -167,6 +168,10 @@ def test_locked_standalone_runtime_regression_passes_current_six_of_six():
     assert sixth.passed is True
     assert sixth.details["action_count"] == 1
     assert sixth.details["record_count"] == 3
+    assert seventh.case_id == "arch-035-reviewed-static-action-delay"
+    assert seventh.passed is True
+    assert seventh.details["action_count"] == 1
+    assert seventh.details["record_count"] == 3
 
 
 def test_controlled_mismatch_surfaces_existing_first_divergence_provenance():
@@ -218,11 +223,11 @@ def test_text_and_json_reports_are_deterministic_and_runtime_specific():
 
     assert text_first == text_second
     assert json_first == json_second
-    assert "PASS 6/6 runtime action-session Golden checks" in text_first
+    assert "PASS 7/7 runtime action-session Golden checks" in text_first
     assert "HSR Axis Regression Report" not in text_first
     payload = json.loads(json_first)
-    assert payload["total"] == 6
-    assert payload["passed_count"] == 6
+    assert payload["total"] == 7
+    assert payload["passed_count"] == 7
     assert [item["case_id"] for item in payload["results"]] == CURRENT_CASE_IDS
 
 
@@ -241,7 +246,7 @@ def test_cli_runs_standalone_runtime_lane_without_legacy_runner_output():
 
     assert code == 0
     rendered = stdout.getvalue()
-    assert "PASS 6/6 runtime action-session Golden checks" in rendered
+    assert "PASS 7/7 runtime action-session Golden checks" in rendered
     assert "PASS 12/12 golden replays" not in rendered
 
 

@@ -13,11 +13,8 @@ from hsr_axis_sim.runtime_action_session_regression.manifest import (
     RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_4,
     RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_5,
     RuntimeActionSessionRegressionActionAdvanceSetup,
-    RuntimeActionSessionRegressionEnergyConsumeSetup,
-    RuntimeActionSessionRegressionEnergyGainSetup,
+    RuntimeActionSessionRegressionActionDelaySetup,
     RuntimeActionSessionRegressionManifest,
-    RuntimeActionSessionRegressionSkillPointConsumeSetup,
-    RuntimeActionSessionRegressionSkillPointGainSetup,
     load_runtime_action_session_regression_manifest,
     runtime_action_session_regression_manifest_from_dict,
 )
@@ -65,6 +62,11 @@ FIXTURES = (
         2818,
         "ab73c224d06690b379d398a5bc2c4b38a1ed654dfd86866d564417432c29d3ce",
     ),
+    (
+        FIXTURE_DIR / "arch_035_reviewed_action_delay_expected.json",
+        2728,
+        "9efbb65defb5eacc12150d31d0530d9a94b43a42e2303ebca643911f98094c4d",
+    ),
 )
 
 CASE_IDS = [
@@ -74,50 +76,62 @@ CASE_IDS = [
     "arch-025-reviewed-static-energy-consume",
     "arch-027-reviewed-static-skill-point-consume",
     "arch-032-reviewed-static-action-advance",
+    "arch-035-reviewed-static-action-delay",
 ]
 
 
 def _base_case():
     return {
-        "id": "arch-032-reviewed-static-action-advance",
+        "id": "arch-035-reviewed-static-action-delay",
         "expected_path": (
             "hsr_axis_sim/data/runtime_golden_fixtures/"
-            "arch_032_reviewed_action_advance_expected.json"
+            "arch_035_reviewed_action_delay_expected.json"
         ),
         "expected_sha256": FIXTURES[-1][2],
-        "stream_id": "arch-032-reviewed-axis",
-        "actor_id": "advance-actor",
+        "stream_id": "arch-035-reviewed-axis",
+        "actor_id": "delay-actor",
         "actions": [
             {
-                "action_id": "reviewed-action-advance",
-                "name": "reviewed-action-advance",
+                "action_id": "reviewed-action-delay",
+                "name": "reviewed-action-delay",
                 "ends_turn": False,
             }
         ],
     }
 
 
-def _action_advance_setup(*, percent=0.5):
+def _delay_setup(*, percent=0.25, initial_av=30):
     return {
-        "kind": "ACTION_ADVANCE",
-        "target_id": "advance-actor",
-        "target_name": "Advance Actor",
+        "kind": "ACTION_DELAY",
+        "target_id": "delay-actor",
+        "target_name": "Delay Actor",
         "team": "ally",
         "base_speed": 100,
-        "initial_av": 80,
+        "initial_av": initial_av,
         "action_index": 0,
         "percent": percent,
     }
 
 
-def _manifest(version: str, setup_marker=...):
+def _advance_setup():
+    data = _delay_setup(percent=0.5, initial_av=80)
+    data.update(
+        {
+            "kind": "ACTION_ADVANCE",
+            "target_id": "advance-actor",
+            "target_name": "Advance Actor",
+        }
+    )
+    return data
+
+
+def _manifest(version: str, setup):
     case = _base_case()
-    if setup_marker is not ...:
-        case["setup"] = setup_marker
+    case["setup"] = setup
     return {
         "schema": "hsr_runtime_action_session_regression",
         "version": version,
-        "manifest_id": "arch-033-version-probe",
+        "manifest_id": "arch-036-version-probe",
         "cases": [case],
     }
 
@@ -125,108 +139,72 @@ def _manifest(version: str, setup_marker=...):
 def _parse(data):
     return runtime_action_session_regression_manifest_from_dict(
         data,
-        ROOT / "arch_033_synthetic_manifest.json",
+        ROOT / "arch_036_synthetic_manifest.json",
     )
 
 
-def test_arch_033_v1_5_remains_in_supported_version_history():
-    assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_4 == "1.4"
+def test_supported_versions_are_exactly_v1_0_through_v1_6():
     assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_5 == "1.5"
     assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION == "1.6"
-    assert RUNTIME_ACTION_SESSION_REGRESSION_SUPPORTED_VERSIONS[:6] == (
+    assert RUNTIME_ACTION_SESSION_REGRESSION_SUPPORTED_VERSIONS == (
         "1.0",
         "1.1",
         "1.2",
         "1.3",
         "1.4",
         "1.5",
+        "1.6",
     )
 
 
-def test_v1_4_explicitly_rejects_action_advance_as_v1_5_syntax():
-    with pytest.raises(ValueError, match="requires manifest version '1.5'"):
-        _parse(
-            _manifest(
-                RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_4,
-                _action_advance_setup(),
-            )
-        )
+def test_v1_5_explicitly_rejects_action_delay_as_v1_6_syntax():
+    with pytest.raises(ValueError, match="ACTION_DELAY.*requires manifest version '1.6'"):
+        _parse(_manifest(RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_5, _delay_setup()))
 
 
-def test_v1_5_requires_setup_and_accepts_sixth_closed_action_advance_kind():
-    with pytest.raises(ValueError, match="missing required field"):
-        _parse(_manifest(RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_5))
-
-    parsed = _parse(
-        _manifest(
-            RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_5,
-            _action_advance_setup(),
-        )
-    )
-    assert parsed.cases[0].setup == RuntimeActionSessionRegressionActionAdvanceSetup(
-        target_id="advance-actor",
-        target_name="Advance Actor",
+def test_v1_6_accepts_exact_frozen_action_delay_setup():
+    parsed = _parse(_manifest(RUNTIME_ACTION_SESSION_REGRESSION_VERSION, _delay_setup()))
+    assert parsed.cases[0].setup == RuntimeActionSessionRegressionActionDelaySetup(
+        target_id="delay-actor",
+        target_name="Delay Actor",
         team="ally",
         base_speed=100,
-        initial_av=80,
+        initial_av=30,
         action_index=0,
-        percent=0.5,
-    )
-
-    prior = load_runtime_action_session_regression_manifest(RUNTIME_MANIFEST_PATH)
-    assert isinstance(prior.cases[1].setup, RuntimeActionSessionRegressionEnergyGainSetup)
-    assert isinstance(
-        prior.cases[2].setup,
-        RuntimeActionSessionRegressionSkillPointGainSetup,
-    )
-    assert isinstance(
-        prior.cases[3].setup,
-        RuntimeActionSessionRegressionEnergyConsumeSetup,
-    )
-    assert isinstance(
-        prior.cases[4].setup,
-        RuntimeActionSessionRegressionSkillPointConsumeSetup,
-    )
-
-
-def test_action_advance_setup_is_frozen():
-    setup = RuntimeActionSessionRegressionActionAdvanceSetup(
-        target_id="advance-actor",
-        target_name="Advance Actor",
-        team="ally",
-        base_speed=100,
-        initial_av=80,
-        action_index=0,
-        percent=0.5,
+        percent=0.25,
     )
     with pytest.raises(FrozenInstanceError):
-        setup.percent = 0.4
+        parsed.cases[0].setup.percent = 0.2
 
 
-def test_action_advance_fields_are_exact_and_unknown_kind_is_rejected():
-    extra = _action_advance_setup()
-    extra["mode"] = "advance"
+def test_action_advance_remains_v1_5_and_v1_6_syntax_but_not_v1_4():
+    with pytest.raises(ValueError, match="ACTION_ADVANCE.*requires manifest version '1.5'"):
+        _parse(_manifest(RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_4, _advance_setup()))
+
+    for version in (RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_5, "1.6"):
+        parsed = _parse(_manifest(version, _advance_setup()))
+        assert isinstance(parsed.cases[0].setup, RuntimeActionSessionRegressionActionAdvanceSetup)
+
+
+def test_action_delay_fields_are_exact():
+    extra = _delay_setup()
+    extra["mode"] = "delay"
     with pytest.raises(ValueError, match="unsupported field"):
-        _parse(_manifest("1.5", extra))
+        _parse(_manifest("1.6", extra))
 
-    missing = _action_advance_setup()
+    missing = _delay_setup()
     missing.pop("percent")
     with pytest.raises(ValueError, match="missing required field"):
-        _parse(_manifest("1.5", missing))
-
-    unknown = _action_advance_setup()
-    unknown["kind"] = "GENERIC_AXIS_EFFECT"
-    with pytest.raises(ValueError, match="kind"):
-        _parse(_manifest("1.5", unknown))
+        _parse(_manifest("1.6", missing))
 
 
 @pytest.mark.parametrize("field", ["target_id", "target_name", "team"])
 @pytest.mark.parametrize("invalid", ["", None, 1, False])
-def test_action_advance_identity_fields_require_non_empty_strings(field, invalid):
-    setup = _action_advance_setup()
+def test_action_delay_identity_fields_require_non_empty_strings(field, invalid):
+    setup = _delay_setup()
     setup[field] = invalid
     with pytest.raises(ValueError, match=field):
-        _parse(_manifest("1.5", setup))
+        _parse(_manifest("1.6", setup))
 
 
 @pytest.mark.parametrize("field", ["base_speed", "initial_av", "percent"])
@@ -234,105 +212,111 @@ def test_action_advance_identity_fields_require_non_empty_strings(field, invalid
     "invalid",
     [True, False, "1", None, math.inf, -math.inf, math.nan],
 )
-def test_action_advance_numeric_fields_require_finite_non_boolean_numbers(field, invalid):
-    setup = _action_advance_setup()
+def test_action_delay_numeric_fields_require_finite_non_boolean_numbers(field, invalid):
+    setup = _delay_setup()
     setup[field] = invalid
     with pytest.raises(ValueError, match=field):
-        _parse(_manifest("1.5", setup))
+        _parse(_manifest("1.6", setup))
 
 
 @pytest.mark.parametrize("invalid", [0, 0.0, -1, -100.0])
-def test_action_advance_base_speed_must_be_positive(invalid):
-    setup = _action_advance_setup()
+def test_action_delay_base_speed_must_be_positive(invalid):
+    setup = _delay_setup()
     setup["base_speed"] = invalid
     with pytest.raises(ValueError, match="greater than zero"):
-        _parse(_manifest("1.5", setup))
+        _parse(_manifest("1.6", setup))
+
+
+@pytest.mark.parametrize("invalid", [True, False, -1, 0.0, "0", None])
+def test_action_delay_action_index_requires_exact_nonnegative_integer(invalid):
+    setup = _delay_setup()
+    setup["action_index"] = invalid
+    with pytest.raises(ValueError, match="action_index"):
+        _parse(_manifest("1.6", setup))
+
+
+def test_action_delay_action_index_must_address_declared_action():
+    setup = _delay_setup()
+    setup["action_index"] = 1
+    with pytest.raises(ValueError, match="declared action"):
+        _parse(_manifest("1.6", setup))
 
 
 @pytest.mark.parametrize("percent", [0, -0.1, -1.0])
-def test_action_advance_percent_is_not_silently_restricted_positive(percent):
-    parsed = _parse(_manifest("1.5", _action_advance_setup(percent=percent)))
+def test_action_delay_percent_is_not_silently_restricted_positive(percent):
+    parsed = _parse(_manifest("1.6", _delay_setup(percent=percent)))
     setup = parsed.cases[0].setup
-    assert isinstance(setup, RuntimeActionSessionRegressionActionAdvanceSetup)
+    assert isinstance(setup, RuntimeActionSessionRegressionActionDelaySetup)
     assert setup.percent == percent
 
 
 @pytest.mark.parametrize("initial_av", [0, -10.0])
-def test_action_advance_initial_av_is_finite_but_not_newly_range_restricted(initial_av):
-    setup = _action_advance_setup()
-    setup["initial_av"] = initial_av
-    parsed = _parse(_manifest("1.5", setup))
+def test_action_delay_initial_av_is_finite_but_not_newly_range_restricted(initial_av):
+    parsed = _parse(_manifest("1.6", _delay_setup(initial_av=initial_av)))
     assert parsed.cases[0].setup.initial_av == initial_av
 
 
-@pytest.mark.parametrize("invalid", [True, False, -1, 0.0, "0", None])
-def test_action_advance_action_index_requires_exact_nonnegative_integer(invalid):
-    setup = _action_advance_setup()
-    setup["action_index"] = invalid
-    with pytest.raises(ValueError, match="action_index"):
-        _parse(_manifest("1.5", setup))
-
-
-def test_action_advance_action_index_must_address_declared_action():
-    setup = _action_advance_setup()
-    setup["action_index"] = 1
-    with pytest.raises(ValueError, match="declared action"):
-        _parse(_manifest("1.5", setup))
-
-
-def test_arch_033_first_six_reviewed_cases_remain_exact_and_ordered():
+def test_locked_v1_6_manifest_contains_exact_seven_reviewed_cases_in_order():
     manifest = load_runtime_action_session_regression_manifest(RUNTIME_MANIFEST_PATH)
 
-    assert [case.case_id for case in manifest.cases[:6]] == CASE_IDS
-    sixth = manifest.cases[5]
-    assert sixth.expected_path == FIXTURES[-1][0].resolve()
-    assert sixth.expected_sha256 == FIXTURES[-1][2]
-    assert sixth.stream_id == "arch-032-reviewed-axis"
-    assert sixth.actor_id == "advance-actor"
-    assert [action.action_id for action in sixth.actions] == ["reviewed-action-advance"]
-    assert [action.name for action in sixth.actions] == ["reviewed-action-advance"]
-    assert [action.ends_turn for action in sixth.actions] == [False]
-    assert sixth.setup == RuntimeActionSessionRegressionActionAdvanceSetup(
-        target_id="advance-actor",
-        target_name="Advance Actor",
+    assert len(manifest.cases) == 7
+    assert [case.case_id for case in manifest.cases] == CASE_IDS
+    seventh = manifest.cases[6]
+    assert seventh.expected_path == FIXTURES[-1][0].resolve()
+    assert seventh.expected_sha256 == FIXTURES[-1][2]
+    assert seventh.stream_id == "arch-035-reviewed-axis"
+    assert seventh.actor_id == "delay-actor"
+    assert [action.action_id for action in seventh.actions] == ["reviewed-action-delay"]
+    assert [action.name for action in seventh.actions] == ["reviewed-action-delay"]
+    assert [action.ends_turn for action in seventh.actions] == [False]
+    assert seventh.setup == RuntimeActionSessionRegressionActionDelaySetup(
+        target_id="delay-actor",
+        target_name="Delay Actor",
         team="ally",
         base_speed=100,
-        initial_av=80,
+        initial_av=30,
         action_index=0,
-        percent=0.5,
+        percent=0.25,
     )
 
 
-def test_arch_033_first_six_cases_still_pass_six_of_six():
-    locked = load_runtime_action_session_regression_manifest(RUNTIME_MANIFEST_PATH)
-    manifest = RuntimeActionSessionRegressionManifest(
-        manifest_id="arch-033-preserved-six",
-        path=ROOT / "arch_033_preserved_six.json",
-        cases=locked.cases[:6],
+def test_locked_runtime_lane_passes_seven_of_seven_with_expected_counts_and_digests():
+    report = run_runtime_action_session_regression(
+        load_runtime_action_session_regression_manifest(RUNTIME_MANIFEST_PATH)
     )
-    report = run_runtime_action_session_regression(manifest)
 
     assert report.passed is True
-    assert report.total == 6
-    assert report.passed_count == 6
+    assert report.total == 7
+    assert report.passed_count == 7
     assert report.failed_count == 0
     assert [result.case_id for result in report.results] == CASE_IDS
-    assert [result.details["record_count"] for result in report.results] == [4, 3, 3, 3, 3, 3]
+    assert [result.details["record_count"] for result in report.results] == [
+        4,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+    ]
     assert [result.details["expected_sha256"] for result in report.results] == [
         item[2] for item in FIXTURES
     ]
+    actual_sha256 = report.results[6].details["actual_sha256"]
+    assert len(actual_sha256) == 64
+    assert all(character in "0123456789abcdef" for character in actual_sha256)
 
 
-def test_action_advance_harness_change_surfaces_structured_after_av_divergence():
+def test_action_delay_harness_change_surfaces_structured_after_av_divergence():
     locked = load_runtime_action_session_regression_manifest(RUNTIME_MANIFEST_PATH)
-    case = locked.cases[5]
-    assert isinstance(case.setup, RuntimeActionSessionRegressionActionAdvanceSetup)
-    changed = replace(case, setup=replace(case.setup, percent=0.4))
+    case = locked.cases[6]
+    assert isinstance(case.setup, RuntimeActionSessionRegressionActionDelaySetup)
+    changed = replace(case, setup=replace(case.setup, percent=0.2))
 
     report = run_runtime_action_session_regression(
         RuntimeActionSessionRegressionManifest(
-            manifest_id="arch-033-controlled-action-advance-mismatch",
-            path=ROOT / "arch_033_controlled_action_advance_mismatch.json",
+            manifest_id="arch-036-controlled-action-delay-mismatch",
+            path=ROOT / "arch_036_controlled_action_delay_mismatch.json",
             cases=(changed,),
         )
     )
@@ -344,18 +328,18 @@ def test_action_advance_harness_change_surfaces_structured_after_av_divergence()
     assert result.details["record_count"] == 3
     assert result.details["first_divergence_record_index"] == 1
     assert result.details["first_divergence_path"] == (
-        "/event/payload/action_advance/after_av"
+        "/event/payload/action_delay/after_av"
     )
 
 
-def test_all_six_arch_033_reviewed_fixture_byte_identities_remain_exact():
+def test_all_seven_reviewed_fixture_byte_identities_remain_exact():
     for path, size, digest in FIXTURES:
         payload = path.read_bytes()
         assert len(payload) == size
         assert hashlib.sha256(payload).hexdigest() == digest
 
 
-def test_action_advance_regression_harness_remains_closed_and_explicit():
+def test_action_delay_regression_harness_is_closed_and_explicitly_targeted():
     manifest_source = (
         ROOT / "hsr_axis_sim" / "runtime_action_session_regression" / "manifest.py"
     ).read_text(encoding="utf-8")
@@ -364,10 +348,10 @@ def test_action_advance_regression_harness_remains_closed_and_explicit():
     ).read_text(encoding="utf-8")
     combined = manifest_source + runner_source
 
-    assert "ACTION_ADVANCE" in manifest_source
-    assert "RuntimeActionSessionRegressionActionAdvanceSetup" in manifest_source
-    assert "AdvanceAction" in runner_source
-    assert "target_ids=[setup.target_id]" in runner_source
+    assert 'kind == "ACTION_DELAY"' in manifest_source
+    assert "RuntimeActionSessionRegressionActionDelaySetup" in manifest_source
+    assert "DelayAction" in runner_source
+    assert "DelayAction(target_ids=[setup.target_id], percent=setup.percent)" in runner_source
 
     for forbidden in (
         "ChangeSpeed",
@@ -383,6 +367,11 @@ def test_action_advance_regression_harness_remains_closed_and_explicit():
         "__import__",
     ):
         assert forbidden not in combined
+
+
+def test_arch_035_fixture_is_not_added_to_legacy_manifest():
+    legacy_text = LEGACY_MANIFEST_PATH.read_text(encoding="utf-8")
+    assert "arch_035_reviewed_action_delay_expected.json" not in legacy_text
 
 
 def test_legacy_regression_and_trace_evidence_remain_unchanged():

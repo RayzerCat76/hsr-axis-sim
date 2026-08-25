@@ -31,6 +31,7 @@ from hsr_axis_sim.sim.effects import (
     AdvanceAction,
     ConsumeEnergy,
     ConsumeSkillPoint,
+    DelayAction,
     GainEnergy,
     GainSkillPoint,
 )
@@ -39,6 +40,7 @@ from hsr_axis_sim.sim.unit import Unit
 
 from .manifest import (
     RuntimeActionSessionRegressionActionAdvanceSetup,
+    RuntimeActionSessionRegressionActionDelaySetup,
     RuntimeActionSessionRegressionCase,
     RuntimeActionSessionRegressionEnergyConsumeSetup,
     RuntimeActionSessionRegressionEnergyGainSetup,
@@ -273,7 +275,13 @@ def _build_state(case: RuntimeActionSessionRegressionCase) -> BattleState:
             skill_points=setup.initial_skill_points,
             max_skill_points=setup.max_skill_points,
         )
-    if isinstance(setup, RuntimeActionSessionRegressionActionAdvanceSetup):
+    if isinstance(
+        setup,
+        (
+            RuntimeActionSessionRegressionActionAdvanceSetup,
+            RuntimeActionSessionRegressionActionDelaySetup,
+        ),
+    ):
         return BattleState(
             [
                 Unit(
@@ -316,6 +324,11 @@ def _build_action(case: RuntimeActionSessionRegressionCase, index: int) -> Actio
         effects = [
             AdvanceAction(target_ids=[setup.target_id], percent=setup.percent)
         ]
+    elif (
+        isinstance(setup, RuntimeActionSessionRegressionActionDelaySetup)
+        and setup.action_index == index
+    ):
+        effects = [DelayAction(target_ids=[setup.target_id], percent=setup.percent)]
     return Action(
         action.action_id,
         action.name,

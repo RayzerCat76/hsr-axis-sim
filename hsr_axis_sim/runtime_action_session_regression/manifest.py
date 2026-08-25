@@ -1,13 +1,19 @@
 from __future__ import annotations
 
 import json
+import math
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Any
 
 
 RUNTIME_ACTION_SESSION_REGRESSION_SCHEMA = "hsr_runtime_action_session_regression"
-RUNTIME_ACTION_SESSION_REGRESSION_VERSION = "1.0"
+RUNTIME_ACTION_SESSION_REGRESSION_VERSION = "1.1"
+RUNTIME_ACTION_SESSION_REGRESSION_LEGACY_VERSION = "1.0"
+RUNTIME_ACTION_SESSION_REGRESSION_SUPPORTED_VERSIONS = (
+    RUNTIME_ACTION_SESSION_REGRESSION_LEGACY_VERSION,
+    RUNTIME_ACTION_SESSION_REGRESSION_VERSION,
+)
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -19,6 +25,18 @@ class RuntimeActionSessionRegressionAction:
 
 
 @dataclass(frozen=True)
+class RuntimeActionSessionRegressionEnergyGainSetup:
+    target_id: str
+    target_name: str
+    team: str
+    base_speed: float
+    initial_energy: float
+    max_energy: float
+    action_index: int
+    amount: float
+
+
+@dataclass(frozen=True)
 class RuntimeActionSessionRegressionCase:
     case_id: str
     expected_relative_path: str
@@ -27,6 +45,7 @@ class RuntimeActionSessionRegressionCase:
     stream_id: str
     actor_id: str
     actions: tuple[RuntimeActionSessionRegressionAction, ...]
+    setup: RuntimeActionSessionRegressionEnergyGainSetup | None = None
 
 
 @dataclass(frozen=True)
@@ -61,9 +80,11 @@ def runtime_action_session_regression_manifest_from_dict(
         raise ValueError(
             f"manifest.schema must be {RUNTIME_ACTION_SESSION_REGRESSION_SCHEMA!r}."
         )
-    if data["version"] != RUNTIME_ACTION_SESSION_REGRESSION_VERSION:
+    version = data["version"]
+    if version not in RUNTIME_ACTION_SESSION_REGRESSION_SUPPORTED_VERSIONS:
         raise ValueError(
-            f"manifest.version must be {RUNTIME_ACTION_SESSION_REGRESSION_VERSION!r}."
+            "manifest.version must be one of "
+            f"{RUNTIME_ACTION_SESSION_REGRESSION_SUPPORTED_VERSIONS!r}."
         )
     manifest_id = _require_non_empty_string(data["manifest_id"], "manifest.manifest_id")
     cases_data = data["cases"]
@@ -73,7 +94,11 @@ def runtime_action_session_regression_manifest_from_dict(
     cases: list[RuntimeActionSessionRegressionCase] = []
     seen_ids: set[str] = set()
     for index, case_data in enumerate(cases_data):
-        case = _case_from_dict(case_data, f"manifest.cases[{index}]")
+        case = _case_from_dict(
+            case_data,
+            f"manifest.cases[{index}]",
+            version=version,
+        )
         if case.case_id in seen_ids:
             raise ValueError(f"Duplicate runtime action-session regression case id {case.case_id!r}.")
         seen_ids.add(case.case_id)
@@ -86,7 +111,12 @@ def runtime_action_session_regression_manifest_from_dict(
     )
 
 
-def _case_from_dict(data: Any, label: str) -> RuntimeActionSessionRegressionCase:
+def _case_from_dict(
+    data: Any,
+    label: str,
+    *,
+    version: str,
+) -> RuntimeActionSessionRegressionCase:
     if not isinstance(data, dict):
         raise ValueError(f"{label} must be an object.")
     expected_fields = {
@@ -97,6 +127,8 @@ def _case_from_dict(data: Any, label: str) -> RuntimeActionSessionRegressionCase
         "actor_id",
         "actions",
     }
+    if version == RUNTIME_ACTION_SESSION_REGRESSION_VERSION:
+        expected_fields = expected_fields | {"setup"}
     _require_exact_fields(data, expected_fields, label)
 
     case_id = _require_non_empty_string(data["id"], f"{label}.id")
@@ -118,6 +150,10 @@ def _case_from_dict(data: Any, label: str) -> RuntimeActionSessionRegressionCase
         for index, action_data in enumerate(actions_data)
     )
 
+    setup = None
+    if version == RUNTIME_ACTION_SESSION_REGRESSION_VERSION:
+        setup = _setup_from_dict(data["setup"], f"{label}.setup", action_count=len(actions))
+
     return RuntimeActionSessionRegressionCase(
         case_id=case_id,
         expected_relative_path=relative_path,
@@ -126,6 +162,7 @@ def _case_from_dict(data: Any, label: str) -> RuntimeActionSessionRegressionCase
         stream_id=stream_id,
         actor_id=actor_id,
         actions=actions,
+        setup=setup,
     )
 
 
@@ -139,6 +176,65 @@ def _action_from_dict(data: Any, label: str) -> RuntimeActionSessionRegressionAc
     if type(ends_turn) is not bool:
         raise ValueError(f"{label}.ends_turn must be a boolean.")
     return RuntimeActionSessionRegressionAction(action_id, name, ends_turn)
+
+
+def _setup_from_dict(
+    data: Any,
+    label: str,
+    *,
+    action_count: int,
+) -> RuntimeActionSessionRegressionEnergyGainSetup | None:
+    if not isinstance(data, dict):
+        raise ValueError(f"{label} must be an object.")
+    kind = data.get("kind")
+    if kind == "EMPTY":
+        _require_exact_fields(data, {"kind"}, label)
+        return None
+    if kind != "ENERGY_GAIN":
+        raise ValueError(f"{label}.kind must be 'EMPTY' or 'ENERGY_GAIN'.")
+
+    expected_fields = {
+        "kind",
+        "target_id",
+        "target_name",
+        "team",
+        "base_speed",
+        "initial_energy",
+        "max_energy",
+        "action_index",
+        "amount",
+    }
+    _require_exact_fields(data, expected_fields, label)
+    target_id = _require_non_empty_string(data["target_id"], f"{label}.target_id")
+    target_name = _require_non_empty_string(data["target_name"], f"{label}.target_name")
+    team = _require_non_empty_string(data["team"], f"{label}.team")
+    base_speed = _require_finite_number(data["base_speed"], f"{label}.base_speed")
+    if base_speed <= 0:
+        raise ValueError(f"{label}.base_speed must be greater than zero.")
+    initial_energy = _require_finite_number(
+        data["initial_energy"], f"{label}.initial_energy"
+    )
+    max_energy = _require_finite_number(data["max_energy"], f"{label}.max_energy")
+    amount = _require_finite_number(data["amount"], f"{label}.amount")
+    action_index = data["action_index"]
+    if type(action_index) is not int or action_index < 0:
+        raise ValueError(f"{label}.action_index must be a nonnegative integer.")
+    if action_index >= action_count:
+        raise ValueError(
+            f"{label}.action_index must reference a declared action; "
+            f"got {action_index} for {action_count} action(s)."
+        )
+
+    return RuntimeActionSessionRegressionEnergyGainSetup(
+        target_id=target_id,
+        target_name=target_name,
+        team=team,
+        base_speed=base_speed,
+        initial_energy=initial_energy,
+        max_energy=max_energy,
+        action_index=action_index,
+        amount=amount,
+    )
 
 
 def _resolve_repo_relative_path(value: str, label: str) -> Path:
@@ -173,6 +269,12 @@ def _require_exact_fields(data: dict[str, Any], expected: set[str], label: str) 
 def _require_non_empty_string(value: Any, label: str) -> str:
     if not isinstance(value, str) or not value:
         raise ValueError(f"{label} must be a non-empty string.")
+    return value
+
+
+def _require_finite_number(value: Any, label: str) -> float:
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
+        raise ValueError(f"{label} must be a finite number.")
     return value
 
 

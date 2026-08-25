@@ -444,7 +444,7 @@ def test_locked_static_fixtures_and_all_regression_lanes_remain_valid_after_prom
     assert runtime.failed_count == 0
 
 
-def test_arch_034_scope_does_not_add_observation_emission_to_other_axis_effects():
+def test_arch_034_scope_preserves_later_authorized_change_speed_observation():
     delay_source = inspect.getsource(DelayAction)
     advance_source = inspect.getsource(AdvanceAction)
     assert "action_delayed" in delay_source
@@ -452,9 +452,15 @@ def test_arch_034_scope_does_not_add_observation_emission_to_other_axis_effects(
     assert "action_advanced" in advance_source
     assert "action_delayed" not in advance_source
 
-    for effect_type in (ChangeSpeed, ImmediateAction, GrantExtraTurn):
+    speed_source = inspect.getsource(ChangeSpeed)
+    assert "action_delayed" not in speed_source
+    assert "speed_changed" in speed_source
+    assert "emit_event" in speed_source
+
+    for effect_type in (ImmediateAction, GrantExtraTurn):
         source = inspect.getsource(effect_type)
         assert "action_delayed" not in source
+        assert "speed_changed" not in source
         assert "emit_event" not in source
 
 

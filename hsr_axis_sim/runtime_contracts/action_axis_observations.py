@@ -116,9 +116,7 @@ class RuntimeActionDelayObservation:
 
         expected_after = self.before_av + self.requested_delta_av
         if self.after_av != expected_after:
-            raise ValueError(
-                "after_av must equal before_av + requested_delta_av"
-            )
+            raise ValueError("after_av must equal before_av + requested_delta_av")
 
         if self.applied_delta_av != self.after_av - self.before_av:
             raise ValueError("applied_delta_av must equal after_av - before_av")
@@ -134,6 +132,51 @@ class RuntimeActionDelayObservation:
             "requested_percent": self.requested_percent,
             "requested_delta_av": self.requested_delta_av,
             "applied_delta_av": self.applied_delta_av,
+        }
+
+
+@dataclass(frozen=True)
+class RuntimeSpeedChangeObservation:
+    """One completed production ChangeSpeed mutation for one target Unit."""
+
+    target_id: str
+    before_speed: Number
+    after_speed: Number
+    before_av: Number
+    after_av: Number
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.target_id, str) or not self.target_id.strip():
+            raise ValueError("target_id must be a non-empty string")
+
+        for name in (
+            "before_speed",
+            "after_speed",
+            "before_av",
+            "after_av",
+        ):
+            _require_finite_number(getattr(self, name), name)
+
+        if self.before_speed <= 0:
+            raise ValueError("before_speed must be positive")
+        if self.after_speed <= 0:
+            raise ValueError("after_speed must be positive")
+
+        expected_after_av = self.before_av * self.before_speed / self.after_speed
+        if self.after_av != expected_after_av:
+            raise ValueError(
+                "after_av must equal before_av * before_speed / after_speed"
+            )
+
+    def to_payload(self) -> dict[str, Any]:
+        """Return the exact schema-v1 event-payload representation."""
+
+        return {
+            "target_id": self.target_id,
+            "before_speed": self.before_speed,
+            "after_speed": self.after_speed,
+            "before_av": self.before_av,
+            "after_av": self.after_av,
         }
 
 

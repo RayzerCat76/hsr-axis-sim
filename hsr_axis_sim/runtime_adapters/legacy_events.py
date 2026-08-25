@@ -11,6 +11,7 @@ from hsr_axis_sim.runtime_contracts import (
     BindingStatus,
     EvidenceStatus,
     RuntimeActionAdvanceObservation,
+    RuntimeActionDelayObservation,
     RuntimeEvent,
     RuntimeEventType,
     RuntimeResourceChangeObservation,
@@ -124,6 +125,12 @@ _MAPPINGS = (
         "hsr_axis_sim/sim/effects.py",
         {"action_id": "action_id", "actor_id": "actor_id", "target_id": "target_id"},
         "Validate and expose ARCH-031 action_advance while preserving raw legacy data.",
+    ),
+    _bound_mapping(
+        "action_delayed", RuntimeEventType.ACTION_VALUE_DELAYED,
+        "hsr_axis_sim/sim/effects.py",
+        {"action_id": "action_id", "actor_id": "actor_id", "target_id": "target_id"},
+        "Validate and expose ARCH-034 action_delay while preserving raw legacy data.",
     ),
     _bound_mapping(
         "action_finished", RuntimeEventType.ACTION_END,
@@ -267,6 +274,30 @@ def _action_advance_payload(
     return observation.to_payload()
 
 
+def _action_delay_payload(
+    legacy_event_type: str,
+    data: Mapping[str, object],
+) -> dict[str, object] | None:
+    if legacy_event_type != "action_delayed":
+        return None
+
+    try:
+        observation = RuntimeActionDelayObservation(
+            target_id=data["target_id"],
+            before_av=data["before_av"],
+            after_av=data["after_av"],
+            base_av=data["base_av"],
+            requested_percent=data["requested_percent"],
+            requested_delta_av=data["requested_delta_av"],
+            applied_delta_av=data["applied_delta_av"],
+        )
+    except (KeyError, TypeError, ValueError) as exc:
+        raise LegacyEventSchemaError(
+            f"invalid {legacy_event_type} action-delay observation: {exc}"
+        ) from exc
+    return observation.to_payload()
+
+
 def adapt_legacy_event(
     event: Event,
     *,
@@ -310,6 +341,7 @@ def adapt_legacy_event(
 
     resource_change = _resource_change_payload(legacy_event.type, legacy_event.data)
     action_advance = _action_advance_payload(legacy_event.type, legacy_event.data)
+    action_delay = _action_delay_payload(legacy_event.type, legacy_event.data)
     payload = {
         "adapter": {
             "adapter_name": "legacy_mvp_event_adapter",
@@ -326,6 +358,8 @@ def adapt_legacy_event(
         payload["resource_change"] = resource_change
     if action_advance is not None:
         payload["action_advance"] = action_advance
+    if action_delay is not None:
+        payload["action_delay"] = action_delay
 
     try:
         return RuntimeEvent(

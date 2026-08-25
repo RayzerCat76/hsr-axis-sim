@@ -1,4 +1,4 @@
-# HSR-RUNTIME-ARCH-031 — Advance Action Runtime Observation Contract
+# HSR-RUNTIME-ARCH-032 — Reviewed Static Advance Action Observation Golden Fixture
 
 ## Status
 
@@ -6,99 +6,89 @@ PASS — proceed
 
 ## Implementation summary
 
-- Added the first deterministic typed runtime observation for production `AdvanceAction` without changing its accepted AV formula or percent input surface.
-- Production mutation remains directly:
-  - `after_av = max(0, before_av - base_av * percent)`.
-- After each target Unit's AV mutation succeeds, production emits one standard legacy `action_advanced` event through `state.emit_event`.
-- The event records exact actor/action/target provenance plus:
-  - `before_av`;
-  - `after_av`;
-  - `base_av`;
-  - `requested_percent`;
-  - `requested_delta_av = -(base_av * requested_percent)`;
-  - `applied_delta_av = after_av - before_av`;
-  - `clamped_to_zero`.
-- `clamped_to_zero` is true only when the requested unclamped result is below zero; reaching exactly zero is not marked as clamped.
-- Added `RuntimeEventType.ACTION_VALUE_ADVANCED`.
-- Added frozen `RuntimeActionAdvanceObservation` with strict finite-number, target, arithmetic, formula, and clamp validation.
-- Bound legacy `action_advanced` to `ACTION_VALUE_ADVANCED`; normalized `action_id`, `actor_id`, and `target_id`; preserved raw `legacy_data`; exposed validated `payload["action_advance"]`.
-- Malformed bound advance observations raise `LegacyEventSchemaError`; they are not downgraded to `CONTENT_DEFINED`.
-- Standard trigger dispatch is intentional: AV is assigned first, then `action_advanced` is appended/dispatched, so matching triggers observe the post-mutation AV.
-- Schema v1 remains unchanged. Advance observation values remain in `RuntimeEvent.payload`, and record-level `numeric_values` remains empty.
-- `DelayAction`, `ChangeSpeed`, `ImmediateAction`, and `GrantExtraTurn` were not given new event semantics.
-- Historical `docs/runtime/LEGACY_EVENT_MAPPING_V1.json` remains the exact ARCH-002 nine-entry historical projection; ARCH-031's additive mapping is not backfilled into it.
+- Added one independently reviewed, manually constructed compact schema-v1 Golden expectation for a deterministic non-clamped production `AdvanceAction`.
+- Static fixture:
+  - `hsr_axis_sim/data/runtime_golden_fixtures/arch_032_reviewed_action_advance_expected.json`;
+  - exactly `2818` bytes;
+  - SHA-256 `ab73c224d06690b379d398a5bc2c4b38a1ed654dfd86866d564417432c29d3ce`;
+  - compact canonical UTF-8 JSON;
+  - no trailing newline;
+  - trace ID `arch-032-reviewed-static-expected`.
+- Reviewed controlled scenario:
+  - fixture id `arch-032-reviewed-static-action-advance`;
+  - stream `arch-032-reviewed-axis`;
+  - actor/target `advance-actor`;
+  - action `reviewed-action-advance`;
+  - speed/base speed `100`;
+  - starting AV `80`;
+  - `AdvanceAction(percent=0.5)`;
+  - `ends_turn=False`;
+  - final AV `30`.
+- Static expected record order is exactly:
+  - `ACTION_START`;
+  - `ACTION_VALUE_ADVANCED`;
+  - `ACTION_END`.
+- Reviewed action-advance observation locks:
+  - `target_id="advance-actor"`;
+  - `before_av=80`;
+  - `after_av=30.0`;
+  - `base_av=100.0`;
+  - `requested_percent=0.5`;
+  - `requested_delta_av=-50.0`;
+  - `applied_delta_av=-50.0`;
+  - `clamped_to_zero=false`.
+- Raw `legacy_data` and structured `action_advance` are both explicitly present in the static fixture.
+- Every record keeps `numeric_values={}` under schema v1.
+- Accepted ARCH-016 production execution matches the reviewed static expected artifact.
+- Controlled production mutation `percent=0.5 -> 0.4` produces a normal Golden mismatch at record index `1`, first path `/event/payload/action_advance/after_av`, expected `30.0`, actual `40.0`.
+- The new fixture remains absent from both regression manifests; standalone runtime lane remains `5/5`.
+- No production/runtime contract/adapter implementation was changed.
 
 ## Files added
 
-- `LUMEN_TASK_HSR_RUNTIME_ARCH_031.md`
-- `docs/runtime/ACTION_ADVANCE_OBSERVATION_V1.md`
-- `hsr_axis_sim/runtime_contracts/action_axis_observations.py`
-- `hsr_axis_sim/tests/test_runtime_arch_031_advance_action_observation.py`
+- `LUMEN_TASK_HSR_RUNTIME_ARCH_032.md`
+- `hsr_axis_sim/data/runtime_golden_fixtures/arch_032_reviewed_action_advance_expected.json`
+- `hsr_axis_sim/tests/test_runtime_arch_032_static_action_advance_golden_fixture.py`
 
 ## Files modified
 
-- `hsr_axis_sim/runtime_contracts/enums.py`
-- `hsr_axis_sim/runtime_contracts/__init__.py`
-- `hsr_axis_sim/runtime_adapters/legacy_events.py`
-- `hsr_axis_sim/sim/effects.py`
-- `hsr_axis_sim/tests/test_runtime_arch_002_preservation.py`
-- `hsr_axis_sim/tests/test_runtime_contract_enums.py`
-- `hsr_axis_sim/tests/test_runtime_legacy_event_mapping.py`
 - `hsr_axis_sim/LUMEN_RESULT.md`
 
-No regression manifest, reviewed static fixture, Golden comparator/divergence implementation, loader/exporter, Delay/ChangeSpeed/ImmediateAction/GrantExtraTurn behavior, or extra-turn/LIFO implementation was changed.
+No `sim/**`, `runtime_contracts/**`, `runtime_adapters/**`, loader/exporter/comparator/divergence/Golden implementation, regression manifest, prior reviewed static fixture, Delay/ChangeSpeed/ImmediateAction/GrantExtraTurn behavior, or extra-turn/LIFO implementation was modified.
 
-## Tests added / updated
+## Tests added
 
-ARCH-031 coverage proves:
+ARCH-032 focused coverage proves:
 
-- `RuntimeActionAdvanceObservation` is frozen and emits the exact schema-v1 payload;
-- target ID and all numeric fields are strict; booleans/nonfinite values are rejected;
-- `base_av` must be positive;
-- requested/applied delta arithmetic is exact;
-- `after_av` must match the accepted clamped advance formula;
-- clamp flag is exact, including the distinction between below-zero clamp and exact zero;
-- negative `requested_percent` remains representable because ARCH-031 does not narrow production input semantics;
-- `action_advanced` maps to `ACTION_VALUE_ADVANCED` with exact actor/action/target normalization;
-- malformed bound advance observations raise `LegacyEventSchemaError`;
-- non-clamped production example remains speed `100`, AV `80`, percent `0.5` -> AV `30`;
-- clamped production example remains speed `100`, AV `40`, percent `1.0` -> AV `0`, requested delta `-100`, applied delta `-40`;
-- legacy event order is `action_started -> action_advanced -> action_finished`;
-- a normal trigger listening to `action_advanced` observes post-mutation AV;
-- ARCH-012 capture is exactly `ACTION_START -> ACTION_VALUE_ADVANCED -> ACTION_END`, with cursor `(3,3)`;
-- runtime target provenance and `payload["action_advance"]` are exact;
-- record-level `numeric_values` remains empty;
-- Delay/ChangeSpeed/ImmediateAction/GrantExtraTurn remain outside this event surface;
+- exact static byte size, digest, compact form, and no trailing newline;
+- strict loader acceptance only with the pinned expected digest;
+- exact schema-v1 trace identity, three-record count, contiguous sequences `0,1,2`;
+- exact event order `ACTION_START -> ACTION_VALUE_ADVANCED -> ACTION_END`;
+- exact action/actor provenance and target only on the advance record;
+- exact raw `legacy_data` and structured `action_advance` values;
+- every record has empty `numeric_values`;
+- accepted ARCH-016 production output matches the static expected bytes at the comparison boundary;
+- final production AV is `30` and final session cursor is `(3,3)`;
+- controlled percent `0.4` mismatch reports record `1`, path `/event/payload/action_advance/after_av`, expected `30.0`, actual `40.0`;
+- controlled mismatch also preserves consistent requested percent/requested delta/applied delta differences;
+- AST/source guard prevents runtime expected-artifact generation helpers or file writes from constructing the expected fixture in the test;
+- new fixture remains absent from both regression manifests;
+- all five earlier reviewed static fixture identities remain unchanged;
+- standalone runtime Golden regression remains `5/5`;
+- legacy regression remains `20/20`;
+- trace evidence remains `2/2`;
 - production LIFO remains `third, second, first`.
 
 ## Exact validation commands and real results
 
-### First PR CI — preservation pins exposed
+### Initial validated PR CI
 
-GitHub Actions workflow `HSR Axis Sim Validation`, PR #36, run #158, job `validate` (`97660846177`).
-
-1. `python -m compileall -q hsr_axis_sim`
-   - PASS.
-2. `python -m pytest -q`
-   - `1335 passed, 4 failed in 8.79s`.
-   - All four failures were stale historical exact-list/count preservation assertions:
-     - ARCH-001 vocabulary preservation had not excluded the newly authorized additive enum;
-     - current exact `RuntimeEventType` list lacked `ACTION_VALUE_ADVANCED`;
-     - legacy mapping registry still expected nine total mappings;
-     - bound mapping count still expected eight.
-   - No ARCH-031 focused production, observation, adapter, trigger-order, or capture test failed.
-3. Later regression steps were skipped because pytest failed.
-
-The fixes updated only those preservation boundaries to explicitly distinguish historical projections from the current additive vocabulary. Production behavior was not changed to satisfy the failures.
-
-### Validated implementation CI
-
-GitHub Actions workflow `HSR Axis Sim Validation`, PR #36, run #162, job `validate` (`97661303978`).
+GitHub Actions workflow `HSR Axis Sim Validation`, PR #37, run #165, job `validate` (`97663301764`).
 
 1. `python -m compileall -q hsr_axis_sim`
    - PASS.
 2. `python -m pytest -q`
-   - PASS: `1340 passed in 8.92s`.
+   - PASS: `1348 passed in 8.62s`.
 3. `python -m hsr_axis_sim.regression.runner --manifest hsr_axis_sim/data/regression_manifest.json --format text`
    - PASS legacy locked regression `20/20`:
      - 12/12 golden replays;
@@ -111,32 +101,36 @@ GitHub Actions workflow `HSR Axis Sim Validation`, PR #36, run #162, job `valida
 5. `python -m hsr_axis_sim.runtime_action_session_regression.runner --manifest hsr_axis_sim/data/runtime_action_session_regression_manifest.json --format text`
    - PASS `5/5` runtime action-session Golden checks with record counts `4,3,3,3,3`.
 
+The first ARCH-032 PR CI was green. No fixture or implementation correction was required after CI.
+
 ## Warnings / errors
 
-- The first PR run exposed four stale preservation assertions; all were corrected without changing production semantics.
-- No remaining compile, advance-formula, structured-observation, adapter, trigger-dispatch, capture, legacy-regression, trace-evidence, or runtime-Golden error is known.
-- Existing GitHub Actions Node 20 deprecation warning remains nonblocking and unrelated to ARCH-031 correctness.
+- No compile, static-byte-integrity, strict-loader, ARCH-016 Golden match, comparator/divergence, legacy-regression, trace-evidence, or runtime-regression error was observed.
+- Existing GitHub Actions Node 20 deprecation warning remains nonblocking and unrelated to ARCH-032 correctness.
 
 ## Acceptance review
 
-- Existing `AdvanceAction` AV results are preserved.
-- Observation data is derived from, and does not replace, the accepted production formula.
-- Advance has a dedicated runtime event instead of being hidden under `CONTENT_DEFINED` or prematurely generalized into a broad action-axis event.
-- Normal simulator event dispatch is preserved; post-mutation trigger visibility is explicit and tested.
-- Schema v1 is unchanged and historical mapping evidence remains intact.
-- No adjacent action-axis mechanics were implemented early.
-- Successful runtime resource regressions remain `5/5`; legacy regression remains `20/20`; trace evidence remains `2/2`.
-- No hidden HSR values or release-game semantics were inferred. Test values are explicit contract-only inputs.
+- Expected bytes are static, manually reviewed, compact, and digest-pinned.
+- The expected artifact is not generated at test runtime from simulator, adapter, exporter, trace-builder, or canonical project helpers.
+- The fixture locks the accepted ARCH-031 production observation without changing ARCH-031 semantics.
+- The reviewed scenario is non-clamped, so clamp behavior remains separately covered by ARCH-031 contract tests rather than silently expanding this static fixture.
+- The controlled mismatch proves the typed structured observation is the earliest deterministic field divergence.
+- Both regression manifests remain unchanged and runtime lane stays `5/5`.
+- Earlier reviewed static fixtures remain byte-identical.
+- No adjacent action-axis mechanic was implemented early.
+- No hidden HSR/release-game values were inferred; speed `100`, AV `80`, and percent `0.5` are explicit contract-only fixture inputs.
 - Production LIFO compatibility remains unchanged.
 
 ## Unresolved issues
 
-None blocking HSR-RUNTIME-ARCH-031 acceptance.
+None blocking HSR-RUNTIME-ARCH-032 acceptance.
 
-Advance observation is now traceable, but no independently reviewed static Golden fixture yet locks its exact exported bytes. Delay, speed change, immediate action, and extra-turn observation remain separate future mechanics.
+The reviewed Advance fixture is intentionally not yet part of the standalone runtime regression manifest. Promotion requires a separate explicit manifest-version milestone.
+
+Delay, ChangeSpeed, ImmediateAction, and GrantExtraTurn still lack equivalent runtime observation contracts.
 
 ## Suggested next milestone
 
-`HSR-RUNTIME-ARCH-032 — Reviewed Static Advance Action Observation Golden Fixture`
+`HSR-RUNTIME-ARCH-033 — Advance Static Golden Regression Promotion`
 
-ARCH-032 should add one independently reviewed, non-circular compact schema-v1 expected trace for a controlled non-clamped self-advance action (for example speed `100`, before AV `80`, percent `0.5`, after AV `30`) and prove production ARCH-016 output matches it. Keep regression-manifest promotion as a separate later milestone, preserve the new ARCH-031 production contract unchanged, and do not add Delay/Speed/ImmediateAction/ExtraTurn semantics.
+ARCH-033 should promote the accepted ARCH-032 fixture into the standalone runtime action-session regression lane through one explicit strict manifest schema evolution. Add only the minimum setup needed for a deterministic Advance action, preserve v1.0-v1.4 grammars exactly, keep the reviewed fixture bytes unchanged, and require runtime regression to become exactly `6/6` before moving to another action-axis mechanic.

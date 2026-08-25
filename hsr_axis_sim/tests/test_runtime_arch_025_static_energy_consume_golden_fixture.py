@@ -293,11 +293,16 @@ def test_changed_consume_amount_reports_resource_divergence_and_signed_values():
     assert expected_resource["unit_id"] == actual_resource["unit_id"] == TARGET_ID
 
 
-def test_energy_consume_fixture_is_not_promoted_into_either_regression_manifest():
-    for manifest in (LEGACY_REGRESSION_MANIFEST, RUNTIME_REGRESSION_MANIFEST):
-        text = manifest.read_text(encoding="utf-8")
-        assert FIXTURE_ID not in text
-        assert EXPECTED_PATH.name not in text
+def test_energy_consume_fixture_is_promoted_only_into_runtime_regression_manifest():
+    legacy = LEGACY_REGRESSION_MANIFEST.read_text(encoding="utf-8")
+    runtime = RUNTIME_REGRESSION_MANIFEST.read_text(encoding="utf-8")
+
+    assert FIXTURE_ID not in legacy
+    assert EXPECTED_PATH.name not in legacy
+    assert FIXTURE_ID in runtime
+    assert EXPECTED_PATH.name in runtime
+    assert runtime.count(FIXTURE_ID) == 1
+    assert runtime.count(EXPECTED_PATH.name) == 1
 
 
 def test_arch_025_test_source_has_no_runtime_expected_generation_path():
@@ -326,7 +331,7 @@ def test_arch_025_test_source_has_no_runtime_expected_generation_path():
     assert called_names.isdisjoint(forbidden_calls)
 
 
-def test_prior_static_fixtures_and_runtime_regression_lane_remain_unchanged():
+def test_prior_static_fixtures_and_current_runtime_regression_lane_remain_accepted():
     assert len(ARCH_017_PATH.read_bytes()) == 3013
     assert hashlib.sha256(ARCH_017_PATH.read_bytes()).hexdigest() == ARCH_017_SHA256
     assert len(ARCH_021_PATH.read_bytes()) == 2759
@@ -338,12 +343,13 @@ def test_prior_static_fixtures_and_runtime_regression_lane_remain_unchanged():
         load_runtime_action_session_regression_manifest(RUNTIME_REGRESSION_MANIFEST)
     )
     assert report.passed is True
-    assert report.total == 3
-    assert report.passed_count == 3
+    assert report.total == 4
+    assert report.passed_count == 4
     assert [result.case_id for result in report.results] == [
         "arch-017-reviewed-static-action-session",
         "arch-021-reviewed-static-clamped-energy",
         "arch-023-reviewed-static-clamped-skill-point",
+        "arch-025-reviewed-static-energy-consume",
     ]
 
 

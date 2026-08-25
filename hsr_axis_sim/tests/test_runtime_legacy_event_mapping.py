@@ -9,7 +9,7 @@ from hsr_axis_sim.runtime_contracts import BindingStatus, EvidenceStatus, Runtim
 
 
 ROOT = Path(__file__).parents[2]
-EXPECTED = {
+HISTORICAL_EXPECTED = {
     "action_finished": (RuntimeEventType.ACTION_END, {"action_id": "action_id", "actor_id": "actor_id"}),
     "action_started": (RuntimeEventType.ACTION_START, {"action_id": "action_id", "actor_id": "actor_id"}),
     "damage_dealt": (RuntimeEventType.DAMAGE_RESOLVED, {"source_id": "source_id", "target_id": "target_id"}),
@@ -26,12 +26,19 @@ EXPECTED = {
     "unit_defeated": (RuntimeEventType.CONTENT_DEFINED, {"target_id": "target_id"}),
     "weakness_break": (RuntimeEventType.WEAKNESS_BROKEN, {"source_id": "source_id", "target_id": "target_id"}),
 }
+ARCH_031_EXPECTED = {
+    "action_advanced": (
+        RuntimeEventType.ACTION_VALUE_ADVANCED,
+        {"action_id": "action_id", "actor_id": "actor_id", "target_id": "target_id"},
+    ),
+}
+CURRENT_EXPECTED = {**HISTORICAL_EXPECTED, **ARCH_031_EXPECTED}
 
 
 def test_exact_immutable_mapping_registry():
-    assert list(LEGACY_EVENT_MAPPINGS) == sorted(EXPECTED)
-    assert len(LEGACY_EVENT_MAPPINGS) == 9
-    for legacy_type, (runtime_type, fields) in EXPECTED.items():
+    assert list(LEGACY_EVENT_MAPPINGS) == sorted(CURRENT_EXPECTED)
+    assert len(LEGACY_EVENT_MAPPINGS) == 10
+    for legacy_type, (runtime_type, fields) in CURRENT_EXPECTED.items():
         mapping = LEGACY_EVENT_MAPPINGS[legacy_type]
         assert mapping.runtime_event_type is runtime_type
         assert dict(mapping.normalized_field_map) == fields
@@ -43,9 +50,9 @@ def test_exact_immutable_mapping_registry():
         LEGACY_EVENT_MAPPINGS["new"] = object()
 
 
-def test_eight_bound_contracts_and_one_unresolved_lifecycle():
+def test_nine_bound_contracts_and_one_unresolved_lifecycle():
     bound = [mapping for mapping in LEGACY_EVENT_MAPPINGS.values() if mapping.legacy_event_type != "unit_defeated"]
-    assert len(bound) == 8
+    assert len(bound) == 9
     for mapping in bound:
         contract = mapping.semantic_contract
         assert contract.evidence_status is EvidenceStatus.CONFIRMED
@@ -60,10 +67,10 @@ def test_eight_bound_contracts_and_one_unresolved_lifecycle():
     assert lifecycle.semantic_contract.selected_policy is None
 
 
-def test_mapping_document_is_exact_sorted_projection():
+def test_arch_002_mapping_document_remains_exact_historical_projection():
     document = json.loads((ROOT / "docs/runtime/LEGACY_EVENT_MAPPING_V1.json").read_text())
     assert len(document) == 9
-    assert [item["legacy_event_type"] for item in document] == sorted(EXPECTED)
+    assert [item["legacy_event_type"] for item in document] == sorted(HISTORICAL_EXPECTED)
     for item in document:
         mapping = LEGACY_EVENT_MAPPINGS[item["legacy_event_type"]]
         contract = mapping.semantic_contract
@@ -74,3 +81,9 @@ def test_mapping_document_is_exact_sorted_projection():
         assert item["selected_policy"] == contract.selected_policy
         assert item["normalized_field_map"] == dict(mapping.normalized_field_map)
         assert item["source_refs"] == list(contract.source_refs)
+
+
+def test_arch_031_mapping_is_additive_and_not_backfilled_into_arch_002_document():
+    assert "action_advanced" in LEGACY_EVENT_MAPPINGS
+    document = json.loads((ROOT / "docs/runtime/LEGACY_EVENT_MAPPING_V1.json").read_text())
+    assert "action_advanced" not in {item["legacy_event_type"] for item in document}

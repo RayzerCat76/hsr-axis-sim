@@ -1,4 +1,4 @@
-# HSR-RUNTIME-ARCH-030 — Insufficient Energy Action Failure Contract
+# HSR-RUNTIME-ARCH-031 — Advance Action Runtime Observation Contract
 
 ## Status
 
@@ -6,87 +6,99 @@ PASS — proceed
 
 ## Implementation summary
 
-- Independently locked the existing production failure semantics for `ConsumeEnergy` when the resolved target Unit has less Energy than requested.
-- This milestone is tests/docs only; no simulator or runtime orchestration production code was changed.
-- Controlled reference scenario:
-  - actor `energy-failure-actor`;
-  - action `insufficient-energy-action`;
-  - target Unit `energy-failure-target`;
-  - target Energy `10 / 100`;
-  - `ConsumeEnergy(target_ids=["energy-failure-target"], amount=20)`.
-- Exact production exception:
-  - `ValueError("Unit 'energy-failure-target' has insufficient energy: 10 available, 20 required.")`.
-- Direct production partial state is locked:
-  - target resolution succeeds;
-  - `Action.execute` sets `TurnContext.should_end_turn` from the action flag and emits `action_started` before effect execution;
-  - target Energy remains exactly `10`;
-  - no `energy_changed` event is emitted;
-  - `TurnContext.actions_taken` remains unchanged;
-  - no `action_finished` or `turn_ended` event is emitted;
-  - end-turn completion is not reached.
-- ARCH-012 behavior is locked:
-  - the Unit-scoped production `ValueError` propagates directly;
-  - pending-event capture is never invoked after failure;
-  - target Energy remains unchanged;
-  - `action_started` remains pending;
-  - no result/cursor advance is fabricated.
-- ARCH-013 behavior is locked for both first-step and later-step failure:
-  - `MultiActionCaptureSessionFailure` reports exact failed index/action ID;
-  - the production Energy `ValueError` is preserved as `__cause__`;
-  - only fully completed prior results are retained;
-  - `last_successful_cursor` remains the last confirmed boundary;
-  - the failed Energy action's `action_started` remains uncaptured beyond that boundary;
-  - later actions do not execute.
-- ARCH-016 end-to-end behavior is locked:
-  - session failure propagates before a complete successful session exists;
-  - session stitching is not invoked;
-  - Golden validation is not invoked;
-  - no failed Energy action is represented as a successful trace artifact or Golden result.
-- Successful runtime resource regression remains `5/5`.
+- Added the first deterministic typed runtime observation for production `AdvanceAction` without changing its accepted AV formula or percent input surface.
+- Production mutation remains directly:
+  - `after_av = max(0, before_av - base_av * percent)`.
+- After each target Unit's AV mutation succeeds, production emits one standard legacy `action_advanced` event through `state.emit_event`.
+- The event records exact actor/action/target provenance plus:
+  - `before_av`;
+  - `after_av`;
+  - `base_av`;
+  - `requested_percent`;
+  - `requested_delta_av = -(base_av * requested_percent)`;
+  - `applied_delta_av = after_av - before_av`;
+  - `clamped_to_zero`.
+- `clamped_to_zero` is true only when the requested unclamped result is below zero; reaching exactly zero is not marked as clamped.
+- Added `RuntimeEventType.ACTION_VALUE_ADVANCED`.
+- Added frozen `RuntimeActionAdvanceObservation` with strict finite-number, target, arithmetic, formula, and clamp validation.
+- Bound legacy `action_advanced` to `ACTION_VALUE_ADVANCED`; normalized `action_id`, `actor_id`, and `target_id`; preserved raw `legacy_data`; exposed validated `payload["action_advance"]`.
+- Malformed bound advance observations raise `LegacyEventSchemaError`; they are not downgraded to `CONTENT_DEFINED`.
+- Standard trigger dispatch is intentional: AV is assigned first, then `action_advanced` is appended/dispatched, so matching triggers observe the post-mutation AV.
+- Schema v1 remains unchanged. Advance observation values remain in `RuntimeEvent.payload`, and record-level `numeric_values` remains empty.
+- `DelayAction`, `ChangeSpeed`, `ImmediateAction`, and `GrantExtraTurn` were not given new event semantics.
+- Historical `docs/runtime/LEGACY_EVENT_MAPPING_V1.json` remains the exact ARCH-002 nine-entry historical projection; ARCH-031's additive mapping is not backfilled into it.
 
 ## Files added
 
-- `LUMEN_TASK_HSR_RUNTIME_ARCH_030.md`
-- `docs/runtime/INSUFFICIENT_ENERGY_FAILURE_CONTRACT_V1.md`
-- `hsr_axis_sim/tests/test_runtime_arch_030_insufficient_energy_failure_contract.py`
+- `LUMEN_TASK_HSR_RUNTIME_ARCH_031.md`
+- `docs/runtime/ACTION_ADVANCE_OBSERVATION_V1.md`
+- `hsr_axis_sim/runtime_contracts/action_axis_observations.py`
+- `hsr_axis_sim/tests/test_runtime_arch_031_advance_action_observation.py`
 
 ## Files modified
 
+- `hsr_axis_sim/runtime_contracts/enums.py`
+- `hsr_axis_sim/runtime_contracts/__init__.py`
+- `hsr_axis_sim/runtime_adapters/legacy_events.py`
+- `hsr_axis_sim/sim/effects.py`
+- `hsr_axis_sim/tests/test_runtime_arch_002_preservation.py`
+- `hsr_axis_sim/tests/test_runtime_contract_enums.py`
+- `hsr_axis_sim/tests/test_runtime_legacy_event_mapping.py`
 - `hsr_axis_sim/LUMEN_RESULT.md`
 
-No `sim/**`, `runtime_action_captures/**`, `runtime_action_sessions/**`, runtime adapter, trace schema/contract, loader/exporter/comparator/divergence implementation, Golden validator, regression manifest, reviewed static fixture, AV/timeline, or extra-turn/LIFO implementation was modified.
+No regression manifest, reviewed static fixture, Golden comparator/divergence implementation, loader/exporter, Delay/ChangeSpeed/ImmediateAction/GrantExtraTurn behavior, or extra-turn/LIFO implementation was changed.
 
-## Tests added
+## Tests added / updated
 
-ARCH-030 focused coverage proves:
+ARCH-031 coverage proves:
 
-- exact Unit-scoped production exception type/message;
-- target Unit identity and Energy `10/100` remain unchanged;
-- exact failed `action_started` actor/action provenance;
-- absence of `energy_changed`, `action_finished`, and `turn_ended`;
-- `actions_taken` remains empty;
-- `should_end_turn` was assigned before the failure;
-- ARCH-012 direct propagation and capture skip;
-- ARCH-012 request cursor remains at the original confirmed boundary;
-- ARCH-013 first-step failure wrapper/cause/initial-cursor provenance;
-- ARCH-013 later-step failure preserves exactly one completed prior result and leaves exactly one failed-action event beyond the confirmed cursor;
-- later actions do not run after failure;
-- ARCH-016 stops before stitch and Golden validation;
-- legacy regression remains `20/20`;
-- trace evidence remains `2/2`;
-- successful runtime action-session Golden regression remains `5/5`;
+- `RuntimeActionAdvanceObservation` is frozen and emits the exact schema-v1 payload;
+- target ID and all numeric fields are strict; booleans/nonfinite values are rejected;
+- `base_av` must be positive;
+- requested/applied delta arithmetic is exact;
+- `after_av` must match the accepted clamped advance formula;
+- clamp flag is exact, including the distinction between below-zero clamp and exact zero;
+- negative `requested_percent` remains representable because ARCH-031 does not narrow production input semantics;
+- `action_advanced` maps to `ACTION_VALUE_ADVANCED` with exact actor/action/target normalization;
+- malformed bound advance observations raise `LegacyEventSchemaError`;
+- non-clamped production example remains speed `100`, AV `80`, percent `0.5` -> AV `30`;
+- clamped production example remains speed `100`, AV `40`, percent `1.0` -> AV `0`, requested delta `-100`, applied delta `-40`;
+- legacy event order is `action_started -> action_advanced -> action_finished`;
+- a normal trigger listening to `action_advanced` observes post-mutation AV;
+- ARCH-012 capture is exactly `ACTION_START -> ACTION_VALUE_ADVANCED -> ACTION_END`, with cursor `(3,3)`;
+- runtime target provenance and `payload["action_advance"]` are exact;
+- record-level `numeric_values` remains empty;
+- Delay/ChangeSpeed/ImmediateAction/GrantExtraTurn remain outside this event surface;
 - production LIFO remains `third, second, first`.
 
 ## Exact validation commands and real results
 
-### Initial validated PR CI
+### First PR CI — preservation pins exposed
 
-GitHub Actions workflow `HSR Axis Sim Validation`, PR #35, run #155, job `validate` (`97657933977`).
+GitHub Actions workflow `HSR Axis Sim Validation`, PR #36, run #158, job `validate` (`97660846177`).
 
 1. `python -m compileall -q hsr_axis_sim`
    - PASS.
 2. `python -m pytest -q`
-   - PASS: `1315 passed in 6.96s`.
+   - `1335 passed, 4 failed in 8.79s`.
+   - All four failures were stale historical exact-list/count preservation assertions:
+     - ARCH-001 vocabulary preservation had not excluded the newly authorized additive enum;
+     - current exact `RuntimeEventType` list lacked `ACTION_VALUE_ADVANCED`;
+     - legacy mapping registry still expected nine total mappings;
+     - bound mapping count still expected eight.
+   - No ARCH-031 focused production, observation, adapter, trigger-order, or capture test failed.
+3. Later regression steps were skipped because pytest failed.
+
+The fixes updated only those preservation boundaries to explicitly distinguish historical projections from the current additive vocabulary. Production behavior was not changed to satisfy the failures.
+
+### Validated implementation CI
+
+GitHub Actions workflow `HSR Axis Sim Validation`, PR #36, run #162, job `validate` (`97661303978`).
+
+1. `python -m compileall -q hsr_axis_sim`
+   - PASS.
+2. `python -m pytest -q`
+   - PASS: `1340 passed in 8.92s`.
 3. `python -m hsr_axis_sim.regression.runner --manifest hsr_axis_sim/data/regression_manifest.json --format text`
    - PASS legacy locked regression `20/20`:
      - 12/12 golden replays;
@@ -97,37 +109,34 @@ GitHub Actions workflow `HSR Axis Sim Validation`, PR #35, run #155, job `valida
 4. `python -m hsr_axis_sim.regression.runner --manifest hsr_axis_sim/data/regression_manifest.json --only trace_evidence --format text`
    - PASS `2/2` trace-evidence checks.
 5. `python -m hsr_axis_sim.runtime_action_session_regression.runner --manifest hsr_axis_sim/data/runtime_action_session_regression_manifest.json --format text`
-   - PASS `5/5` successful runtime action-session Golden regression with record counts `4,3,3,3,3`.
-
-The first ARCH-030 PR CI was green; no implementation correction was required.
+   - PASS `5/5` runtime action-session Golden checks with record counts `4,3,3,3,3`.
 
 ## Warnings / errors
 
-- No compile, Unit-target failure observation, ARCH-012, ARCH-013, ARCH-016, legacy-regression, trace-evidence, or runtime-regression error was observed.
-- Existing GitHub Actions Node 20 deprecation warning remains nonblocking and unrelated to ARCH-030 correctness.
+- The first PR run exposed four stale preservation assertions; all were corrected without changing production semantics.
+- No remaining compile, advance-formula, structured-observation, adapter, trigger-dispatch, capture, legacy-regression, trace-evidence, or runtime-Golden error is known.
+- Existing GitHub Actions Node 20 deprecation warning remains nonblocking and unrelated to ARCH-031 correctness.
 
 ## Acceptance review
 
-- The Energy failure contract is independently documented and tested rather than inferred from the Skill-Point failure path.
-- Target resolution succeeds before the insufficient-Energy check; the exact target Unit is named in the production exception.
-- Failure occurs after action start but before any Energy mutation or successful action completion.
-- The failed action leaves one uncaptured `action_started`; retained session cursors remain confirmed provenance only and are not retry instructions.
-- ARCH-012/013/016 existing non-transactional semantics remain unchanged.
-- No failed-action Golden artifact, generic resource-failure abstraction, rollback, retry, resume, or manifest schema was introduced.
-- Successful ARCH-025/026 Energy consume behavior remains unchanged.
-- No hidden HSR/release-game value was inferred; Energy `10/100` and request `20` are explicit contract-only inputs.
+- Existing `AdvanceAction` AV results are preserved.
+- Observation data is derived from, and does not replace, the accepted production formula.
+- Advance has a dedicated runtime event instead of being hidden under `CONTENT_DEFINED` or prematurely generalized into a broad action-axis event.
+- Normal simulator event dispatch is preserved; post-mutation trigger visibility is explicit and tested.
+- Schema v1 is unchanged and historical mapping evidence remains intact.
+- No adjacent action-axis mechanics were implemented early.
+- Successful runtime resource regressions remain `5/5`; legacy regression remains `20/20`; trace evidence remains `2/2`.
+- No hidden HSR values or release-game semantics were inferred. Test values are explicit contract-only inputs.
 - Production LIFO compatibility remains unchanged.
 
 ## Unresolved issues
 
-None blocking HSR-RUNTIME-ARCH-030 acceptance.
+None blocking HSR-RUNTIME-ARCH-031 acceptance.
 
-Both currently supported consumption resources now have independently locked insufficient-resource failure contracts. A generic failure abstraction is still intentionally absent because it is not needed for correctness.
-
-The next major runtime observability gap is action-axis mutation: `AdvanceAction`, `DelayAction`, `ChangeSpeed`, `ImmediateAction`, and `GrantExtraTurn` mutate deterministic simulator state but do not yet emit equivalent typed runtime observation events.
+Advance observation is now traceable, but no independently reviewed static Golden fixture yet locks its exact exported bytes. Delay, speed change, immediate action, and extra-turn observation remain separate future mechanics.
 
 ## Suggested next milestone
 
-`HSR-RUNTIME-ARCH-031 — Advance Action Runtime Observation Contract`
+`HSR-RUNTIME-ARCH-032 — Reviewed Static Advance Action Observation Golden Fixture`
 
-ARCH-031 should inspect the existing `AdvanceAction` production mutation and accepted runtime event schema/adapter boundaries, then add the smallest deterministic observation needed to make one explicit action-advance transition traceable. It must lock before/after AV, requested advance input, target Unit provenance, and clamping to zero without changing the underlying advance formula. Keep Delay, ChangeSpeed, ImmediateAction, and extra-turn observation separate until AdvanceAction is accepted.
+ARCH-032 should add one independently reviewed, non-circular compact schema-v1 expected trace for a controlled non-clamped self-advance action (for example speed `100`, before AV `80`, percent `0.5`, after AV `30`) and prove production ARCH-016 output matches it. Keep regression-manifest promotion as a separate later milestone, preserve the new ARCH-031 production contract unchanged, and do not add Delay/Speed/ImmediateAction/ExtraTurn semantics.

@@ -27,12 +27,13 @@ from hsr_axis_sim.runtime_golden_replays import GoldenReplayValidationConfig
 from hsr_axis_sim.runtime_loaders import TraceCanonicalFormPolicy
 from hsr_axis_sim.runtime_trace_stitching import CapturedTraceStitchConfig
 from hsr_axis_sim.sim.action import Action
-from hsr_axis_sim.sim.effects import GainEnergy, GainSkillPoint
+from hsr_axis_sim.sim.effects import ConsumeEnergy, GainEnergy, GainSkillPoint
 from hsr_axis_sim.sim.state import BattleState
 from hsr_axis_sim.sim.unit import Unit
 
 from .manifest import (
     RuntimeActionSessionRegressionCase,
+    RuntimeActionSessionRegressionEnergyConsumeSetup,
     RuntimeActionSessionRegressionEnergyGainSetup,
     RuntimeActionSessionRegressionManifest,
     RuntimeActionSessionRegressionSkillPointGainSetup,
@@ -233,7 +234,13 @@ def _build_state(case: RuntimeActionSessionRegressionCase) -> BattleState:
     setup = case.setup
     if setup is None:
         return BattleState([])
-    if isinstance(setup, RuntimeActionSessionRegressionEnergyGainSetup):
+    if isinstance(
+        setup,
+        (
+            RuntimeActionSessionRegressionEnergyGainSetup,
+            RuntimeActionSessionRegressionEnergyConsumeSetup,
+        ),
+    ):
         return BattleState(
             [
                 Unit(
@@ -261,6 +268,11 @@ def _build_action(case: RuntimeActionSessionRegressionCase, index: int) -> Actio
     setup = case.setup
     if isinstance(setup, RuntimeActionSessionRegressionEnergyGainSetup) and setup.action_index == index:
         effects = [GainEnergy(target_ids=[setup.target_id], amount=setup.amount)]
+    elif (
+        isinstance(setup, RuntimeActionSessionRegressionEnergyConsumeSetup)
+        and setup.action_index == index
+    ):
+        effects = [ConsumeEnergy(target_ids=[setup.target_id], amount=setup.amount)]
     elif (
         isinstance(setup, RuntimeActionSessionRegressionSkillPointGainSetup)
         and setup.action_index == index

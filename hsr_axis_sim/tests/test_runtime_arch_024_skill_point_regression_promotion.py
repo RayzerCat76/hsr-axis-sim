@@ -11,6 +11,7 @@ from hsr_axis_sim.runtime_action_session_regression.manifest import (
     RUNTIME_ACTION_SESSION_REGRESSION_VERSION,
     RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_0,
     RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_1,
+    RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_2,
     RuntimeActionSessionRegressionEnergyGainSetup,
     RuntimeActionSessionRegressionManifest,
     RuntimeActionSessionRegressionSkillPointGainSetup,
@@ -104,11 +105,13 @@ def _parse(data):
 def test_manifest_versions_are_explicit_and_ordered():
     assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_0 == "1.0"
     assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_1 == "1.1"
-    assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION == "1.2"
+    assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_2 == "1.2"
+    assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION == "1.3"
     assert RUNTIME_ACTION_SESSION_REGRESSION_SUPPORTED_VERSIONS == (
         "1.0",
         "1.1",
         "1.2",
+        "1.3",
     )
 
 
@@ -127,17 +130,23 @@ def test_v1_1_still_accepts_only_arch022_setup_kinds():
     assert empty.cases[0].setup is None
     assert isinstance(energy.cases[0].setup, RuntimeActionSessionRegressionEnergyGainSetup)
 
-    with pytest.raises(ValueError, match="requires manifest version '1.2'"):
+    with pytest.raises(ValueError, match="requires manifest version '1.2' or later"):
         _parse(_manifest("1.1", _skill_point_setup()))
 
 
 def test_v1_2_requires_setup_and_accepts_all_three_closed_kinds():
     with pytest.raises(ValueError, match="missing required field"):
-        _parse(_manifest("1.2"))
+        _parse(_manifest(RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_2))
 
-    empty = _parse(_manifest("1.2", {"kind": "EMPTY"}))
-    energy = _parse(_manifest("1.2", _energy_setup()))
-    skill_points = _parse(_manifest("1.2", _skill_point_setup()))
+    empty = _parse(
+        _manifest(RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_2, {"kind": "EMPTY"})
+    )
+    energy = _parse(
+        _manifest(RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_2, _energy_setup())
+    )
+    skill_points = _parse(
+        _manifest(RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_2, _skill_point_setup())
+    )
 
     assert empty.cases[0].setup is None
     assert isinstance(energy.cases[0].setup, RuntimeActionSessionRegressionEnergyGainSetup)
@@ -153,17 +162,17 @@ def test_v1_2_skill_point_gain_fields_are_exact():
     extra = _skill_point_setup()
     extra["target_id"] = "forbidden"
     with pytest.raises(ValueError, match="unsupported field"):
-        _parse(_manifest("1.2", extra))
+        _parse(_manifest(RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_2, extra))
 
     missing = _skill_point_setup()
     missing.pop("amount")
     with pytest.raises(ValueError, match="missing required field"):
-        _parse(_manifest("1.2", missing))
+        _parse(_manifest(RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_2, missing))
 
     unknown = _skill_point_setup()
     unknown["kind"] = "GENERIC_EFFECT"
     with pytest.raises(ValueError, match="kind"):
-        _parse(_manifest("1.2", unknown))
+        _parse(_manifest(RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_2, unknown))
 
 
 @pytest.mark.parametrize("field", ["initial_skill_points", "max_skill_points", "amount"])
@@ -173,7 +182,7 @@ def test_skill_point_gain_resource_values_require_exact_integers(field, invalid)
     setup[field] = invalid
 
     with pytest.raises(ValueError, match=field):
-        _parse(_manifest("1.2", setup))
+        _parse(_manifest(RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_2, setup))
 
 
 @pytest.mark.parametrize("invalid", [True, False, -1, 0.0, "0", None])
@@ -182,7 +191,7 @@ def test_skill_point_gain_action_index_requires_exact_nonnegative_integer(invali
     setup["action_index"] = invalid
 
     with pytest.raises(ValueError, match="action_index"):
-        _parse(_manifest("1.2", setup))
+        _parse(_manifest(RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_2, setup))
 
 
 def test_skill_point_gain_action_index_must_address_declared_action():
@@ -190,18 +199,18 @@ def test_skill_point_gain_action_index_must_address_declared_action():
     setup["action_index"] = 1
 
     with pytest.raises(ValueError, match="declared action"):
-        _parse(_manifest("1.2", setup))
+        _parse(_manifest(RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_2, setup))
 
 
-def test_locked_v1_2_manifest_contains_exact_three_reviewed_cases():
+def test_current_manifest_preserves_first_three_reviewed_cases():
     manifest = load_runtime_action_session_regression_manifest(RUNTIME_MANIFEST_PATH)
 
-    assert [case.case_id for case in manifest.cases] == [
+    assert [case.case_id for case in manifest.cases[:3]] == [
         "arch-017-reviewed-static-action-session",
         "arch-021-reviewed-static-clamped-energy",
         "arch-023-reviewed-static-clamped-skill-point",
     ]
-    first, second, third = manifest.cases
+    first, second, third = manifest.cases[:3]
     assert first.setup is None
     assert second.setup == RuntimeActionSessionRegressionEnergyGainSetup(
         target_id="resource-target",
@@ -228,22 +237,22 @@ def test_locked_v1_2_manifest_contains_exact_three_reviewed_cases():
     )
 
 
-def test_locked_runtime_lane_passes_three_of_three_with_expected_record_counts():
+def test_current_runtime_lane_passes_four_of_four_and_preserves_first_three():
     report = run_runtime_action_session_regression(
         load_runtime_action_session_regression_manifest(RUNTIME_MANIFEST_PATH)
     )
 
     assert report.passed is True
-    assert report.total == 3
-    assert report.passed_count == 3
+    assert report.total == 4
+    assert report.passed_count == 4
     assert report.failed_count == 0
-    assert [result.case_id for result in report.results] == [
+    assert [result.case_id for result in report.results[:3]] == [
         "arch-017-reviewed-static-action-session",
         "arch-021-reviewed-static-clamped-energy",
         "arch-023-reviewed-static-clamped-skill-point",
     ]
-    assert [result.details["record_count"] for result in report.results] == [4, 3, 3]
-    assert [result.details["expected_sha256"] for result in report.results] == [
+    assert [result.details["record_count"] for result in report.results[:3]] == [4, 3, 3]
+    assert [result.details["expected_sha256"] for result in report.results[:3]] == [
         ARCH_017_SHA256,
         ARCH_021_SHA256,
         ARCH_023_SHA256,
@@ -274,7 +283,7 @@ def test_skill_point_harness_change_surfaces_reviewed_requested_delta_divergence
     )
 
 
-def test_all_three_reviewed_fixture_byte_identities_remain_exact():
+def test_first_three_reviewed_fixture_byte_identities_remain_exact():
     expected = (
         (ARCH_017_PATH, 3013, ARCH_017_SHA256),
         (ARCH_021_PATH, 2759, ARCH_021_SHA256),

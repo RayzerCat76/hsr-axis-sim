@@ -169,7 +169,7 @@ class AdvanceAction(UnitEffect):
             before_av = unit.current_av
             base_av = unit.base_av
             requested_delta_av = -(base_av * self.percent)
-            unit.current_av = max(0, before_av + requested_delta_av)
+            unit.current_av = max(0, before_av - base_av * self.percent)
             after_av = unit.current_av
             state.emit_event(
                 Event(

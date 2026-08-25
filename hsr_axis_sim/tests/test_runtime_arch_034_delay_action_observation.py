@@ -14,6 +14,7 @@ from hsr_axis_sim.runtime_action_captures import (
 )
 from hsr_axis_sim.runtime_action_session_regression.manifest import (
     RUNTIME_ACTION_SESSION_REGRESSION_VERSION,
+    RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_5,
     load_runtime_action_session_regression_manifest,
 )
 from hsr_axis_sim.runtime_action_session_regression.runner import (
@@ -417,7 +418,7 @@ def test_arch_031_advance_contract_and_production_observation_remain_unchanged()
     assert "action_delayed" not in [event.type for event in state.pending_events]
 
 
-def test_locked_static_fixtures_and_all_regression_lanes_remain_unchanged():
+def test_locked_static_fixtures_and_all_regression_lanes_remain_valid_after_promotion():
     for path, size, digest in LOCKED_FIXTURES:
         payload = path.read_bytes()
         assert len(payload) == size
@@ -435,10 +436,11 @@ def test_locked_static_fixtures_and_all_regression_lanes_remain_unchanged():
     assert trace.passed is True
     assert trace.total == 2
     assert trace.passed_count == 2
-    assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION == "1.5"
+    assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_5 == "1.5"
+    assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION == "1.6"
     assert runtime.passed is True
-    assert runtime.total == 6
-    assert runtime.passed_count == 6
+    assert runtime.total == 7
+    assert runtime.passed_count == 7
     assert runtime.failed_count == 0
 
 

@@ -11,7 +11,8 @@ RUNTIME_ACTION_SESSION_REGRESSION_SCHEMA = "hsr_runtime_action_session_regressio
 RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_0 = "1.0"
 RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_1 = "1.1"
 RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_2 = "1.2"
-RUNTIME_ACTION_SESSION_REGRESSION_VERSION = "1.3"
+RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_3 = "1.3"
+RUNTIME_ACTION_SESSION_REGRESSION_VERSION = "1.4"
 RUNTIME_ACTION_SESSION_REGRESSION_LEGACY_VERSION = (
     RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_0
 )
@@ -19,6 +20,7 @@ RUNTIME_ACTION_SESSION_REGRESSION_SUPPORTED_VERSIONS = (
     RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_0,
     RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_1,
     RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_2,
+    RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_3,
     RUNTIME_ACTION_SESSION_REGRESSION_VERSION,
 )
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -64,6 +66,14 @@ class RuntimeActionSessionRegressionSkillPointGainSetup:
 
 
 @dataclass(frozen=True)
+class RuntimeActionSessionRegressionSkillPointConsumeSetup:
+    initial_skill_points: int
+    max_skill_points: int
+    action_index: int
+    amount: int
+
+
+@dataclass(frozen=True)
 class RuntimeActionSessionRegressionCase:
     case_id: str
     expected_relative_path: str
@@ -76,6 +86,7 @@ class RuntimeActionSessionRegressionCase:
         RuntimeActionSessionRegressionEnergyGainSetup
         | RuntimeActionSessionRegressionEnergyConsumeSetup
         | RuntimeActionSessionRegressionSkillPointGainSetup
+        | RuntimeActionSessionRegressionSkillPointConsumeSetup
         | None
     ) = None
 
@@ -225,6 +236,7 @@ def _setup_from_dict(
     RuntimeActionSessionRegressionEnergyGainSetup
     | RuntimeActionSessionRegressionEnergyConsumeSetup
     | RuntimeActionSessionRegressionSkillPointGainSetup
+    | RuntimeActionSessionRegressionSkillPointConsumeSetup
     | None
 ):
     if not isinstance(data, dict):
@@ -238,6 +250,7 @@ def _setup_from_dict(
     if kind == "SKILL_POINT_GAIN":
         if version not in (
             RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_2,
+            RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_3,
             RUNTIME_ACTION_SESSION_REGRESSION_VERSION,
         ):
             raise ValueError(
@@ -246,19 +259,36 @@ def _setup_from_dict(
             )
         return _skill_point_gain_setup_from_dict(data, label, action_count=action_count)
     if kind == "ENERGY_CONSUME":
-        if version != RUNTIME_ACTION_SESSION_REGRESSION_VERSION:
+        if version not in (
+            RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_3,
+            RUNTIME_ACTION_SESSION_REGRESSION_VERSION,
+        ):
             raise ValueError(
                 f"{label}.kind 'ENERGY_CONSUME' requires manifest version "
-                f"{RUNTIME_ACTION_SESSION_REGRESSION_VERSION!r}."
+                f"{RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_3!r} or later."
             )
         return _energy_consume_setup_from_dict(data, label, action_count=action_count)
+    if kind == "SKILL_POINT_CONSUME":
+        if version != RUNTIME_ACTION_SESSION_REGRESSION_VERSION:
+            raise ValueError(
+                f"{label}.kind 'SKILL_POINT_CONSUME' requires manifest version "
+                f"{RUNTIME_ACTION_SESSION_REGRESSION_VERSION!r}."
+            )
+        return _skill_point_consume_setup_from_dict(
+            data, label, action_count=action_count
+        )
 
     allowed = "'EMPTY' or 'ENERGY_GAIN'"
     if version == RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_2:
         allowed = "'EMPTY', 'ENERGY_GAIN', or 'SKILL_POINT_GAIN'"
-    elif version == RUNTIME_ACTION_SESSION_REGRESSION_VERSION:
+    elif version == RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_3:
         allowed = (
             "'EMPTY', 'ENERGY_GAIN', 'SKILL_POINT_GAIN', or 'ENERGY_CONSUME'"
+        )
+    elif version == RUNTIME_ACTION_SESSION_REGRESSION_VERSION:
+        allowed = (
+            "'EMPTY', 'ENERGY_GAIN', 'SKILL_POINT_GAIN', 'ENERGY_CONSUME', "
+            "or 'SKILL_POINT_CONSUME'"
         )
     raise ValueError(f"{label}.kind must be {allowed}.")
 
@@ -333,6 +363,26 @@ def _skill_point_gain_setup_from_dict(
     *,
     action_count: int,
 ) -> RuntimeActionSessionRegressionSkillPointGainSetup:
+    values = _skill_point_setup_values(data, label, action_count=action_count)
+    return RuntimeActionSessionRegressionSkillPointGainSetup(*values)
+
+
+def _skill_point_consume_setup_from_dict(
+    data: dict[str, Any],
+    label: str,
+    *,
+    action_count: int,
+) -> RuntimeActionSessionRegressionSkillPointConsumeSetup:
+    values = _skill_point_setup_values(data, label, action_count=action_count)
+    return RuntimeActionSessionRegressionSkillPointConsumeSetup(*values)
+
+
+def _skill_point_setup_values(
+    data: dict[str, Any],
+    label: str,
+    *,
+    action_count: int,
+) -> tuple[int, int, int, int]:
     expected_fields = {
         "kind",
         "initial_skill_points",
@@ -351,12 +401,7 @@ def _skill_point_gain_setup_from_dict(
     action_index = _require_action_index(
         data["action_index"], f"{label}.action_index", action_count=action_count
     )
-    return RuntimeActionSessionRegressionSkillPointGainSetup(
-        initial_skill_points=initial_skill_points,
-        max_skill_points=max_skill_points,
-        action_index=action_index,
-        amount=amount,
-    )
+    return initial_skill_points, max_skill_points, action_index, amount
 
 
 def _require_action_index(value: Any, label: str, *, action_count: int) -> int:

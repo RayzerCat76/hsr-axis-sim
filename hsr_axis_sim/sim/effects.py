@@ -230,9 +230,27 @@ class ChangeSpeed(UnitEffect):
             raise ValueError("New speed must be greater than zero.")
 
         for unit in self.target_units(state, action):
-            old_speed = unit.speed
-            unit.current_av = unit.current_av * old_speed / self.new_speed
+            before_speed = unit.speed
+            before_av = unit.current_av
+            unit.current_av = before_av * before_speed / self.new_speed
             unit.speed = self.new_speed
+            after_av = unit.current_av
+            after_speed = unit.speed
+            state.emit_event(
+                Event(
+                    "speed_changed",
+                    {
+                        "actor_id": getattr(action, "actor_id"),
+                        "action_id": getattr(action, "id"),
+                        "target_id": unit.id,
+                        "before_speed": before_speed,
+                        "after_speed": after_speed,
+                        "before_av": before_av,
+                        "after_av": after_av,
+                    },
+                ),
+                turn_context,
+            )
 
 
 @dataclass

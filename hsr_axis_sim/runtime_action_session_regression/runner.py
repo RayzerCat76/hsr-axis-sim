@@ -27,7 +27,7 @@ from hsr_axis_sim.runtime_golden_replays import GoldenReplayValidationConfig
 from hsr_axis_sim.runtime_loaders import TraceCanonicalFormPolicy
 from hsr_axis_sim.runtime_trace_stitching import CapturedTraceStitchConfig
 from hsr_axis_sim.sim.action import Action
-from hsr_axis_sim.sim.effects import GainEnergy
+from hsr_axis_sim.sim.effects import GainEnergy, GainSkillPoint
 from hsr_axis_sim.sim.state import BattleState
 from hsr_axis_sim.sim.unit import Unit
 
@@ -35,6 +35,7 @@ from .manifest import (
     RuntimeActionSessionRegressionCase,
     RuntimeActionSessionRegressionEnergyGainSetup,
     RuntimeActionSessionRegressionManifest,
+    RuntimeActionSessionRegressionSkillPointGainSetup,
     load_runtime_action_session_regression_manifest,
 )
 
@@ -232,20 +233,26 @@ def _build_state(case: RuntimeActionSessionRegressionCase) -> BattleState:
     setup = case.setup
     if setup is None:
         return BattleState([])
-    if not isinstance(setup, RuntimeActionSessionRegressionEnergyGainSetup):
-        raise TypeError("Unsupported runtime action-session regression setup.")
-    return BattleState(
-        [
-            Unit(
-                id=setup.target_id,
-                name=setup.target_name,
-                team=setup.team,
-                base_speed=setup.base_speed,
-                energy=setup.initial_energy,
-                max_energy=setup.max_energy,
-            )
-        ]
-    )
+    if isinstance(setup, RuntimeActionSessionRegressionEnergyGainSetup):
+        return BattleState(
+            [
+                Unit(
+                    id=setup.target_id,
+                    name=setup.target_name,
+                    team=setup.team,
+                    base_speed=setup.base_speed,
+                    energy=setup.initial_energy,
+                    max_energy=setup.max_energy,
+                )
+            ]
+        )
+    if isinstance(setup, RuntimeActionSessionRegressionSkillPointGainSetup):
+        return BattleState(
+            [],
+            skill_points=setup.initial_skill_points,
+            max_skill_points=setup.max_skill_points,
+        )
+    raise TypeError("Unsupported runtime action-session regression setup.")
 
 
 def _build_action(case: RuntimeActionSessionRegressionCase, index: int) -> Action:
@@ -254,6 +261,11 @@ def _build_action(case: RuntimeActionSessionRegressionCase, index: int) -> Actio
     setup = case.setup
     if isinstance(setup, RuntimeActionSessionRegressionEnergyGainSetup) and setup.action_index == index:
         effects = [GainEnergy(target_ids=[setup.target_id], amount=setup.amount)]
+    elif (
+        isinstance(setup, RuntimeActionSessionRegressionSkillPointGainSetup)
+        and setup.action_index == index
+    ):
+        effects = [GainSkillPoint(amount=setup.amount)]
     return Action(
         action.action_id,
         action.name,

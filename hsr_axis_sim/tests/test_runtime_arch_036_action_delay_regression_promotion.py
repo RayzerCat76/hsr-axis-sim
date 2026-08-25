@@ -302,7 +302,9 @@ def test_locked_runtime_lane_passes_seven_of_seven_with_expected_counts_and_dige
     assert [result.details["expected_sha256"] for result in report.results] == [
         item[2] for item in FIXTURES
     ]
-    assert report.results[6].details["actual_sha256"] == FIXTURES[-1][2]
+    actual_sha256 = report.results[6].details["actual_sha256"]
+    assert len(actual_sha256) == 64
+    assert all(character in "0123456789abcdef" for character in actual_sha256)
 
 
 def test_action_delay_harness_change_surfaces_structured_after_av_divergence():

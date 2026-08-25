@@ -12,6 +12,9 @@ from hsr_axis_sim.runtime_contracts import (
     EvidenceStatus,
     RuntimeEvent,
     RuntimeEventType,
+    RuntimeResourceChangeObservation,
+    RuntimeResourceKind,
+    RuntimeResourceScope,
     SemanticContract,
 )
 from hsr_axis_sim.sim.events import Event
@@ -129,6 +132,18 @@ _MAPPINGS = (
         "Preserve amount and formula parts as raw legacy data; infer no hit or attack.",
     ),
     _bound_mapping(
+        "energy_changed", RuntimeEventType.ENERGY_CHANGED,
+        "hsr_axis_sim/sim/effects.py",
+        {"action_id": "action_id", "actor_id": "actor_id", "target_id": "unit_id"},
+        "Validate and expose ARCH-019 resource_change while preserving raw legacy data.",
+    ),
+    _bound_mapping(
+        "skill_points_changed", RuntimeEventType.SKILL_POINTS_CHANGED,
+        "hsr_axis_sim/sim/effects.py",
+        {"action_id": "action_id", "actor_id": "actor_id"},
+        "Validate and expose ARCH-019 resource_change while preserving raw legacy data.",
+    ),
+    _bound_mapping(
         "turn_ended", RuntimeEventType.TURN_END,
         "hsr_axis_sim/sim/timeline.py", {"actor_id": "actor_id"},
     ),
@@ -161,6 +176,13 @@ LEGACY_EVENT_MAPPINGS: Mapping[str, LegacyEventMapping] = MappingProxyType(
     {mapping.legacy_event_type: mapping for mapping in _MAPPINGS}
 )
 
+_RESOURCE_EVENT_KINDS: Mapping[str, RuntimeResourceKind] = MappingProxyType(
+    {
+        "energy_changed": RuntimeResourceKind.ENERGY,
+        "skill_points_changed": RuntimeResourceKind.SKILL_POINTS,
+    }
+)
+
 
 def _validate_event(event: object) -> Event:
     if not isinstance(event, Event):
@@ -180,6 +202,37 @@ def _normalized_ids(mapping: LegacyEventMapping, data: Mapping[str, object]) -> 
             )
         values[runtime_field] = _require_non_empty(data[legacy_field], legacy_field)
     return values
+
+
+def _resource_change_payload(
+    legacy_event_type: str,
+    data: Mapping[str, object],
+) -> dict[str, object] | None:
+    expected_kind = _RESOURCE_EVENT_KINDS.get(legacy_event_type)
+    if expected_kind is None:
+        return None
+
+    try:
+        observation = RuntimeResourceChangeObservation(
+            resource_kind=RuntimeResourceKind(data["resource_kind"]),
+            scope=RuntimeResourceScope(data["scope"]),
+            before=data["before"],
+            after=data["after"],
+            requested_delta=data["requested_delta"],
+            applied_delta=data["applied_delta"],
+            cap=data["cap"],
+            unit_id=data["unit_id"],
+        )
+    except (KeyError, TypeError, ValueError) as exc:
+        raise LegacyEventSchemaError(
+            f"invalid {legacy_event_type} resource observation: {exc}"
+        ) from exc
+
+    if observation.resource_kind is not expected_kind:
+        raise LegacyEventSchemaError(
+            f"{legacy_event_type} requires resource_kind={expected_kind.value}"
+        )
+    return observation.to_payload()
 
 
 def adapt_legacy_event(
@@ -223,6 +276,7 @@ def adapt_legacy_event(
         binding_status = contract.binding_status
         normalized = _normalized_ids(mapping, legacy_event.data)
 
+    resource_change = _resource_change_payload(legacy_event.type, legacy_event.data)
     payload = {
         "adapter": {
             "adapter_name": "legacy_mvp_event_adapter",
@@ -235,6 +289,9 @@ def adapt_legacy_event(
         },
         "legacy_data": legacy_event.data,
     }
+    if resource_change is not None:
+        payload["resource_change"] = resource_change
+
     try:
         return RuntimeEvent(
             event_id=f"legacy:{config.stream_id}:{sequence}",

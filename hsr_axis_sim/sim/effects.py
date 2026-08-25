@@ -42,7 +42,27 @@ class GainEnergy(UnitEffect):
 
     def apply(self, state: BattleState, action: object, turn_context: TurnContext) -> None:
         for unit in self.target_units(state, action):
+            before = unit.energy
             unit.energy = min(unit.max_energy, unit.energy + self.amount)
+            after = unit.energy
+            state.emit_event(
+                Event(
+                    "energy_changed",
+                    {
+                        "actor_id": getattr(action, "actor_id"),
+                        "action_id": getattr(action, "id"),
+                        "resource_kind": "ENERGY",
+                        "scope": "UNIT",
+                        "before": before,
+                        "after": after,
+                        "requested_delta": self.amount,
+                        "applied_delta": after - before,
+                        "cap": unit.max_energy,
+                        "unit_id": unit.id,
+                    },
+                ),
+                turn_context,
+            )
 
 
 @dataclass
@@ -56,7 +76,27 @@ class ConsumeEnergy(UnitEffect):
                     f"Unit {unit.id!r} has insufficient energy: "
                     f"{unit.energy} available, {self.amount} required."
                 )
+            before = unit.energy
             unit.energy -= self.amount
+            after = unit.energy
+            state.emit_event(
+                Event(
+                    "energy_changed",
+                    {
+                        "actor_id": getattr(action, "actor_id"),
+                        "action_id": getattr(action, "id"),
+                        "resource_kind": "ENERGY",
+                        "scope": "UNIT",
+                        "before": before,
+                        "after": after,
+                        "requested_delta": -self.amount,
+                        "applied_delta": after - before,
+                        "cap": unit.max_energy,
+                        "unit_id": unit.id,
+                    },
+                ),
+                turn_context,
+            )
 
 
 @dataclass
@@ -64,7 +104,27 @@ class GainSkillPoint(Effect):
     amount: int = 1
 
     def apply(self, state: BattleState, action: object, turn_context: TurnContext) -> None:
+        before = state.skill_points
         state.skill_points = min(state.max_skill_points, state.skill_points + self.amount)
+        after = state.skill_points
+        state.emit_event(
+            Event(
+                "skill_points_changed",
+                {
+                    "actor_id": getattr(action, "actor_id"),
+                    "action_id": getattr(action, "id"),
+                    "resource_kind": "SKILL_POINTS",
+                    "scope": "TEAM",
+                    "before": before,
+                    "after": after,
+                    "requested_delta": self.amount,
+                    "applied_delta": after - before,
+                    "cap": state.max_skill_points,
+                    "unit_id": None,
+                },
+            ),
+            turn_context,
+        )
 
 
 @dataclass
@@ -77,7 +137,27 @@ class ConsumeSkillPoint(Effect):
                 "Insufficient skill points: "
                 f"{state.skill_points} available, {self.amount} required."
             )
+        before = state.skill_points
         state.skill_points -= self.amount
+        after = state.skill_points
+        state.emit_event(
+            Event(
+                "skill_points_changed",
+                {
+                    "actor_id": getattr(action, "actor_id"),
+                    "action_id": getattr(action, "id"),
+                    "resource_kind": "SKILL_POINTS",
+                    "scope": "TEAM",
+                    "before": before,
+                    "after": after,
+                    "requested_delta": -self.amount,
+                    "applied_delta": after - before,
+                    "cap": state.max_skill_points,
+                    "unit_id": None,
+                },
+            ),
+            turn_context,
+        )
 
 
 @dataclass

@@ -13,6 +13,7 @@ from hsr_axis_sim.runtime_action_session_regression.manifest import (
     RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_1,
     RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_2,
     RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_3,
+    RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_4,
     RuntimeActionSessionRegressionEnergyConsumeSetup,
     RuntimeActionSessionRegressionEnergyGainSetup,
     RuntimeActionSessionRegressionManifest,
@@ -133,18 +134,20 @@ def _parse(data):
     )
 
 
-def test_supported_versions_are_exactly_v1_0_through_v1_4():
+def test_supported_versions_preserve_v1_0_through_v1_4_and_add_v1_5():
     assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_0 == "1.0"
     assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_1 == "1.1"
     assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_2 == "1.2"
     assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_3 == "1.3"
-    assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION == "1.4"
+    assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_4 == "1.4"
+    assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION == "1.5"
     assert RUNTIME_ACTION_SESSION_REGRESSION_SUPPORTED_VERSIONS == (
         "1.0",
         "1.1",
         "1.2",
         "1.3",
         "1.4",
+        "1.5",
     )
 
 
@@ -158,29 +161,45 @@ def test_v1_3_explicitly_rejects_skill_point_consume_as_v1_4_syntax():
         )
 
 
-def test_v1_4_requires_setup_and_accepts_exact_five_closed_kinds():
+def test_historical_v1_4_requires_setup_and_accepts_exact_five_closed_kinds():
     with pytest.raises(ValueError, match="missing required field"):
-        _parse(_manifest(RUNTIME_ACTION_SESSION_REGRESSION_VERSION))
+        _parse(_manifest(RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_4))
 
     empty = _parse(
-        _manifest(RUNTIME_ACTION_SESSION_REGRESSION_VERSION, {"kind": "EMPTY"})
+        _manifest(
+            RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_4,
+            {"kind": "EMPTY"},
+        )
     )
     energy_gain = _parse(
-        _manifest(RUNTIME_ACTION_SESSION_REGRESSION_VERSION, _energy_gain_setup())
+        _manifest(
+            RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_4,
+            _energy_gain_setup(),
+        )
     )
     skill_point_gain = _parse(
-        _manifest(RUNTIME_ACTION_SESSION_REGRESSION_VERSION, _skill_point_gain_setup())
+        _manifest(
+            RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_4,
+            _skill_point_gain_setup(),
+        )
     )
     energy_consume = _parse(
-        _manifest(RUNTIME_ACTION_SESSION_REGRESSION_VERSION, _energy_consume_setup())
+        _manifest(
+            RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_4,
+            _energy_consume_setup(),
+        )
     )
     skill_point_consume = _parse(
-        _manifest(RUNTIME_ACTION_SESSION_REGRESSION_VERSION, _skill_point_consume_setup())
+        _manifest(
+            RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_4,
+            _skill_point_consume_setup(),
+        )
     )
 
     assert empty.cases[0].setup is None
     assert isinstance(
-        energy_gain.cases[0].setup, RuntimeActionSessionRegressionEnergyGainSetup
+        energy_gain.cases[0].setup,
+        RuntimeActionSessionRegressionEnergyGainSetup,
     )
     assert isinstance(
         skill_point_gain.cases[0].setup,
@@ -255,10 +274,10 @@ def test_skill_point_consume_action_index_must_address_declared_action():
         _parse(_manifest("1.4", setup))
 
 
-def test_locked_v1_4_manifest_contains_exact_five_reviewed_cases_in_order():
+def test_arch_028_fifth_reviewed_case_remains_exact_after_later_promotions():
     manifest = load_runtime_action_session_regression_manifest(RUNTIME_MANIFEST_PATH)
 
-    assert [case.case_id for case in manifest.cases] == [
+    assert [case.case_id for case in manifest.cases[:5]] == [
         "arch-017-reviewed-static-action-session",
         "arch-021-reviewed-static-clamped-energy",
         "arch-023-reviewed-static-clamped-skill-point",
@@ -282,30 +301,29 @@ def test_locked_v1_4_manifest_contains_exact_five_reviewed_cases_in_order():
     )
 
 
-def test_locked_runtime_lane_passes_five_of_five_with_expected_counts_and_digests():
+def test_arch_028_first_five_runtime_cases_still_pass_after_later_promotions():
     report = run_runtime_action_session_regression(
         load_runtime_action_session_regression_manifest(RUNTIME_MANIFEST_PATH)
     )
 
     assert report.passed is True
-    assert report.total == 5
-    assert report.passed_count == 5
-    assert report.failed_count == 0
-    assert [result.case_id for result in report.results] == [
+    assert report.total >= 5
+    assert report.passed_count == report.total
+    assert [result.case_id for result in report.results[:5]] == [
         "arch-017-reviewed-static-action-session",
         "arch-021-reviewed-static-clamped-energy",
         "arch-023-reviewed-static-clamped-skill-point",
         "arch-025-reviewed-static-energy-consume",
         "arch-027-reviewed-static-skill-point-consume",
     ]
-    assert [result.details["record_count"] for result in report.results] == [
+    assert [result.details["record_count"] for result in report.results[:5]] == [
         4,
         3,
         3,
         3,
         3,
     ]
-    assert [result.details["expected_sha256"] for result in report.results] == [
+    assert [result.details["expected_sha256"] for result in report.results[:5]] == [
         ARCH_017_SHA256,
         ARCH_021_SHA256,
         ARCH_023_SHA256,
@@ -336,7 +354,7 @@ def test_skill_point_consume_harness_change_surfaces_reviewed_after_divergence()
     assert result.details["first_divergence_path"] == "/event/payload/legacy_data/after"
 
 
-def test_all_five_reviewed_fixture_byte_identities_remain_exact():
+def test_all_first_five_reviewed_fixture_byte_identities_remain_exact():
     expected = (
         (ARCH_017_PATH, 3013, ARCH_017_SHA256),
         (ARCH_021_PATH, 2759, ARCH_021_SHA256),

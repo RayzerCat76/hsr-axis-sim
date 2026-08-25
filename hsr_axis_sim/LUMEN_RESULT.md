@@ -1,4 +1,4 @@
-# HSR-RUNTIME-ARCH-029 — Insufficient Skill-Point Action Failure Contract
+# HSR-RUNTIME-ARCH-030 — Insufficient Energy Action Failure Contract
 
 ## Status
 
@@ -6,53 +6,49 @@ PASS — proceed
 
 ## Implementation summary
 
-- Locked the existing production failure semantics for `ConsumeSkillPoint` when requested Skill Points exceed the team's available Skill Points.
+- Independently locked the existing production failure semantics for `ConsumeEnergy` when the resolved target Unit has less Energy than requested.
 - This milestone is tests/docs only; no simulator or runtime orchestration production code was changed.
 - Controlled reference scenario:
-  - actor `sp-failure-actor`;
-  - action `insufficient-sp-action`;
-  - initial team SP `1`, max SP `5`;
-  - `ConsumeSkillPoint(amount=2)`.
+  - actor `energy-failure-actor`;
+  - action `insufficient-energy-action`;
+  - target Unit `energy-failure-target`;
+  - target Energy `10 / 100`;
+  - `ConsumeEnergy(target_ids=["energy-failure-target"], amount=20)`.
 - Exact production exception:
-  - `ValueError("Insufficient skill points: 1 available, 2 required.")`.
-- Direct production partial state is now locked:
-  - `Action.execute` sets `TurnContext.should_end_turn` from the action flag before effect execution;
-  - exactly one `action_started` event is emitted with exact actor/action provenance;
-  - team SP remains `1`;
-  - no `skill_points_changed` event is emitted;
+  - `ValueError("Unit 'energy-failure-target' has insufficient energy: 10 available, 20 required.")`.
+- Direct production partial state is locked:
+  - target resolution succeeds;
+  - `Action.execute` sets `TurnContext.should_end_turn` from the action flag and emits `action_started` before effect execution;
+  - target Energy remains exactly `10`;
+  - no `energy_changed` event is emitted;
   - `TurnContext.actions_taken` remains unchanged;
   - no `action_finished` or `turn_ended` event is emitted;
-  - `Timeline.end_turn` is not reached.
+  - end-turn completion is not reached.
 - ARCH-012 behavior is locked:
-  - the production `ValueError` propagates directly;
-  - pending-event capture is never invoked after the action exception;
-  - the already emitted `action_started` remains;
-  - no result or cursor advance is fabricated.
-- ARCH-013 first-step failure behavior is locked:
-  - `MultiActionCaptureSessionFailure` at index `0`;
-  - exact failed action ID;
-  - `completed_results == ()`;
-  - `last_successful_cursor` remains the initial cursor;
-  - the production `ValueError` is preserved as `__cause__`;
-  - later actions are not executed.
-- ARCH-013 later-step failure behavior is locked:
-  - one completed prior result is retained;
-  - `last_successful_cursor` equals that result's `next_cursor`;
-  - the insufficient-SP action appends exactly one uncaptured `action_started` after the confirmed boundary;
-  - in the controlled scenario `len(state.pending_events) == last_successful_cursor.pending_event_index + 1`;
-  - later actions are not executed.
+  - the Unit-scoped production `ValueError` propagates directly;
+  - pending-event capture is never invoked after failure;
+  - target Energy remains unchanged;
+  - `action_started` remains pending;
+  - no result/cursor advance is fabricated.
+- ARCH-013 behavior is locked for both first-step and later-step failure:
+  - `MultiActionCaptureSessionFailure` reports exact failed index/action ID;
+  - the production Energy `ValueError` is preserved as `__cause__`;
+  - only fully completed prior results are retained;
+  - `last_successful_cursor` remains the last confirmed boundary;
+  - the failed Energy action's `action_started` remains uncaptured beyond that boundary;
+  - later actions do not execute.
 - ARCH-016 end-to-end behavior is locked:
-  - session failure propagates before a successful session result exists;
+  - session failure propagates before a complete successful session exists;
   - session stitching is not invoked;
   - Golden validation is not invoked;
-  - no failed action is synthesized into a successful trace artifact or Golden result.
-- Successful resource regression remains `5/5`.
+  - no failed Energy action is represented as a successful trace artifact or Golden result.
+- Successful runtime resource regression remains `5/5`.
 
 ## Files added
 
-- `LUMEN_TASK_HSR_RUNTIME_ARCH_029.md`
-- `docs/runtime/INSUFFICIENT_SKILL_POINT_FAILURE_CONTRACT_V1.md`
-- `hsr_axis_sim/tests/test_runtime_arch_029_insufficient_skill_point_failure_contract.py`
+- `LUMEN_TASK_HSR_RUNTIME_ARCH_030.md`
+- `docs/runtime/INSUFFICIENT_ENERGY_FAILURE_CONTRACT_V1.md`
+- `hsr_axis_sim/tests/test_runtime_arch_030_insufficient_energy_failure_contract.py`
 
 ## Files modified
 
@@ -62,36 +58,35 @@ No `sim/**`, `runtime_action_captures/**`, `runtime_action_sessions/**`, runtime
 
 ## Tests added
 
-ARCH-029 focused coverage proves:
+ARCH-030 focused coverage proves:
 
-- exact direct production exception type/message;
-- exact direct partial state with SP unchanged;
-- exact `action_started` actor/action provenance;
-- absence of `skill_points_changed`, `action_finished`, and `turn_ended`;
+- exact Unit-scoped production exception type/message;
+- target Unit identity and Energy `10/100` remain unchanged;
+- exact failed `action_started` actor/action provenance;
+- absence of `energy_changed`, `action_finished`, and `turn_ended`;
 - `actions_taken` remains empty;
 - `should_end_turn` was assigned before the failure;
-- ARCH-012 direct propagation of the production `ValueError`;
-- ARCH-012 capture helper is never called after the action failure;
-- ARCH-012 request cursor remains the original confirmed boundary;
-- ARCH-013 first-step failure wrapper, exact cause, empty completed results, and initial-cursor provenance;
-- ARCH-013 failure after one successful action preserves exactly one completed result and leaves exactly one failed-action event beyond the confirmed cursor;
-- later declared session actions do not run after failure;
+- ARCH-012 direct propagation and capture skip;
+- ARCH-012 request cursor remains at the original confirmed boundary;
+- ARCH-013 first-step failure wrapper/cause/initial-cursor provenance;
+- ARCH-013 later-step failure preserves exactly one completed prior result and leaves exactly one failed-action event beyond the confirmed cursor;
+- later actions do not run after failure;
 - ARCH-016 stops before stitch and Golden validation;
 - legacy regression remains `20/20`;
 - trace evidence remains `2/2`;
-- standalone successful runtime Golden regression remains `5/5`;
+- successful runtime action-session Golden regression remains `5/5`;
 - production LIFO remains `third, second, first`.
 
 ## Exact validation commands and real results
 
 ### Initial validated PR CI
 
-GitHub Actions workflow `HSR Axis Sim Validation`, PR #34, run #152, job `validate` (`97657216366`).
+GitHub Actions workflow `HSR Axis Sim Validation`, PR #35, run #155, job `validate` (`97657933977`).
 
 1. `python -m compileall -q hsr_axis_sim`
    - PASS.
 2. `python -m pytest -q`
-   - PASS: `1309 passed in 7.18s`.
+   - PASS: `1315 passed in 6.96s`.
 3. `python -m hsr_axis_sim.regression.runner --manifest hsr_axis_sim/data/regression_manifest.json --format text`
    - PASS legacy locked regression `20/20`:
      - 12/12 golden replays;
@@ -104,35 +99,35 @@ GitHub Actions workflow `HSR Axis Sim Validation`, PR #34, run #152, job `valida
 5. `python -m hsr_axis_sim.runtime_action_session_regression.runner --manifest hsr_axis_sim/data/runtime_action_session_regression_manifest.json --format text`
    - PASS `5/5` successful runtime action-session Golden regression with record counts `4,3,3,3,3`.
 
-The first ARCH-029 PR CI was green; no implementation correction was required.
+The first ARCH-030 PR CI was green; no implementation correction was required.
 
 ## Warnings / errors
 
-- No compile, production-failure observation, ARCH-012, ARCH-013, ARCH-016, legacy-regression, trace-evidence, or runtime-regression error was observed.
-- Existing GitHub Actions Node 20 deprecation warning remains nonblocking and unrelated to ARCH-029 correctness.
+- No compile, Unit-target failure observation, ARCH-012, ARCH-013, ARCH-016, legacy-regression, trace-evidence, or runtime-regression error was observed.
+- Existing GitHub Actions Node 20 deprecation warning remains nonblocking and unrelated to ARCH-030 correctness.
 
 ## Acceptance review
 
-- The failure contract documents and tests the existing non-transactional behavior without modifying it.
-- The insufficient-SP exception occurs after action start but before any SP mutation or successful action completion.
-- The failed action leaves one observable uncaptured `action_started`; therefore a failed-session cursor is confirmed provenance only and must not be treated as the live end of `pending_events` or as automatically retry-safe.
-- ARCH-012 and ARCH-013 existing failure semantics remain unchanged and are now locked with a real production resource failure.
-- ARCH-016 cannot create a stitch or Golden result from this failed action path.
-- No failed-action Golden artifact, failure manifest schema, rollback, retry, or generic failure DSL was introduced.
-- Successful ARCH-027/028 Skill-Point consume behavior remains unchanged.
-- No hidden HSR/release-game value was inferred; SP `1`, max `5`, and requested `2` are explicit contract-only test inputs.
+- The Energy failure contract is independently documented and tested rather than inferred from the Skill-Point failure path.
+- Target resolution succeeds before the insufficient-Energy check; the exact target Unit is named in the production exception.
+- Failure occurs after action start but before any Energy mutation or successful action completion.
+- The failed action leaves one uncaptured `action_started`; retained session cursors remain confirmed provenance only and are not retry instructions.
+- ARCH-012/013/016 existing non-transactional semantics remain unchanged.
+- No failed-action Golden artifact, generic resource-failure abstraction, rollback, retry, resume, or manifest schema was introduced.
+- Successful ARCH-025/026 Energy consume behavior remains unchanged.
+- No hidden HSR/release-game value was inferred; Energy `10/100` and request `20` are explicit contract-only inputs.
 - Production LIFO compatibility remains unchanged.
 
 ## Unresolved issues
 
-None blocking HSR-RUNTIME-ARCH-029 acceptance.
+None blocking HSR-RUNTIME-ARCH-030 acceptance.
 
-Insufficient Energy has a structurally similar production check, but it remains intentionally separate until its exact unit-targeted failure provenance is independently reviewed and locked.
+Both currently supported consumption resources now have independently locked insufficient-resource failure contracts. A generic failure abstraction is still intentionally absent because it is not needed for correctness.
 
-Failed-session resumption/recovery remains deliberately undefined. The current cursor is provenance only, not a retry instruction.
+The next major runtime observability gap is action-axis mutation: `AdvanceAction`, `DelayAction`, `ChangeSpeed`, `ImmediateAction`, and `GrantExtraTurn` mutate deterministic simulator state but do not yet emit equivalent typed runtime observation events.
 
 ## Suggested next milestone
 
-`HSR-RUNTIME-ARCH-030 — Insufficient Energy Action Failure Contract`
+`HSR-RUNTIME-ARCH-031 — Advance Action Runtime Observation Contract`
 
-ARCH-030 should independently lock the production `ConsumeEnergy` insufficient-resource failure path using one explicit Unit target. Confirm the exact unit-scoped exception text, unchanged Energy, `action_started` partial event, absence of `energy_changed`/`action_finished`, ARCH-012 direct propagation, ARCH-013 cause/provenance behavior, and ARCH-016 stitch/Golden short-circuit. Do not merge the SP and Energy failure paths into a generic failure abstraction unless a later task explicitly justifies it.
+ARCH-031 should inspect the existing `AdvanceAction` production mutation and accepted runtime event schema/adapter boundaries, then add the smallest deterministic observation needed to make one explicit action-advance transition traceable. It must lock before/after AV, requested advance input, target Unit provenance, and clamping to zero without changing the underlying advance formula. Keep Delay, ChangeSpeed, ImmediateAction, and extra-turn observation separate until AdvanceAction is accepted.

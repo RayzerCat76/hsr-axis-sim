@@ -1,6 +1,6 @@
 {
   "schema": "hsr_runtime_action_session_regression",
-  "version": "1.6",
+  "version": "1.7",
   "manifest_id": "HSR_RUNTIME_ACTION_SESSION_REGRESSION_001",
   "cases": [
     {
@@ -163,6 +163,30 @@
         "initial_av": 30,
         "action_index": 0,
         "percent": 0.25
+      }
+    },
+    {
+      "id": "arch-038-reviewed-static-change-speed",
+      "expected_path": "hsr_axis_sim/data/runtime_golden_fixtures/arch_038_reviewed_change_speed_expected.json",
+      "expected_sha256": "c23b34e0afffdfe4bee53d028e5ff21d946623300b169ba57e5ddfb69478df2a",
+      "stream_id": "arch-038-reviewed-axis",
+      "actor_id": "speed-actor",
+      "actions": [
+        {
+          "action_id": "reviewed-change-speed",
+          "name": "reviewed-change-speed",
+          "ends_turn": false
+        }
+      ],
+      "setup": {
+        "kind": "CHANGE_SPEED",
+        "target_id": "speed-actor",
+        "target_name": "Speed Actor",
+        "team": "ally",
+        "base_speed": 100,
+        "initial_av": 80,
+        "action_index": 0,
+        "new_speed": 200
       }
     }
   ]

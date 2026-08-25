@@ -9,7 +9,6 @@ from hsr_axis_sim.regression.manifest import load_regression_manifest
 from hsr_axis_sim.regression.runner import run_regression
 from hsr_axis_sim.runtime_action_session_regression.manifest import (
     RUNTIME_ACTION_SESSION_REGRESSION_LEGACY_VERSION,
-    RUNTIME_ACTION_SESSION_REGRESSION_VERSION,
     RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_1,
     RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_2,
     RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_3,
@@ -120,7 +119,6 @@ def test_manifest_versions_preserve_v1_0_and_explicit_v1_1_contract():
     assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_3 == "1.3"
     assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_4 == "1.4"
     assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_5 == "1.5"
-    assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION == "1.6"
 
     parsed = _parse(_manifest("1.0"))
 

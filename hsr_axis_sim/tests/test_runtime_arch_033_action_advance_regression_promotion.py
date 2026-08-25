@@ -9,7 +9,6 @@ from hsr_axis_sim.regression.manifest import load_regression_manifest
 from hsr_axis_sim.regression.runner import run_regression
 from hsr_axis_sim.runtime_action_session_regression.manifest import (
     RUNTIME_ACTION_SESSION_REGRESSION_SUPPORTED_VERSIONS,
-    RUNTIME_ACTION_SESSION_REGRESSION_VERSION,
     RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_4,
     RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_5,
     RuntimeActionSessionRegressionActionAdvanceSetup,
@@ -132,7 +131,6 @@ def _parse(data):
 def test_arch_033_v1_5_remains_in_supported_version_history():
     assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_4 == "1.4"
     assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_5 == "1.5"
-    assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION == "1.6"
     assert RUNTIME_ACTION_SESSION_REGRESSION_SUPPORTED_VERSIONS[:6] == (
         "1.0",
         "1.1",
@@ -370,7 +368,6 @@ def test_action_advance_regression_harness_remains_closed_and_explicit():
     assert "target_ids=[setup.target_id]" in runner_source
 
     for forbidden in (
-        "ChangeSpeed",
         "ImmediateAction",
         "GrantExtraTurn",
         "importlib",

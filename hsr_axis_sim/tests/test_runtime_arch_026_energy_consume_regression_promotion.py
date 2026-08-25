@@ -13,6 +13,7 @@ from hsr_axis_sim.runtime_action_session_regression.manifest import (
     RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_0,
     RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_1,
     RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_2,
+    RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_3,
     RuntimeActionSessionRegressionEnergyConsumeSetup,
     RuntimeActionSessionRegressionEnergyGainSetup,
     RuntimeActionSessionRegressionManifest,
@@ -120,16 +121,18 @@ def _parse(data):
     )
 
 
-def test_manifest_versions_are_exactly_v1_0_through_v1_3():
+def test_manifest_versions_are_exactly_v1_0_through_v1_4():
     assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_0 == "1.0"
     assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_1 == "1.1"
     assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_2 == "1.2"
-    assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION == "1.3"
+    assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_3 == "1.3"
+    assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION == "1.4"
     assert RUNTIME_ACTION_SESSION_REGRESSION_SUPPORTED_VERSIONS == (
         "1.0",
         "1.1",
         "1.2",
         "1.3",
+        "1.4",
     )
 
 
@@ -140,12 +143,20 @@ def test_v1_2_explicitly_rejects_energy_consume_as_v1_3_syntax():
 
 def test_v1_3_requires_setup_and_accepts_exact_four_closed_kinds():
     with pytest.raises(ValueError, match="missing required field"):
-        _parse(_manifest("1.3"))
+        _parse(_manifest(RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_3))
 
-    empty = _parse(_manifest("1.3", {"kind": "EMPTY"}))
-    energy_gain = _parse(_manifest("1.3", _energy_gain_setup()))
-    skill_point_gain = _parse(_manifest("1.3", _skill_point_setup()))
-    energy_consume = _parse(_manifest("1.3", _energy_consume_setup()))
+    empty = _parse(
+        _manifest(RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_3, {"kind": "EMPTY"})
+    )
+    energy_gain = _parse(
+        _manifest(RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_3, _energy_gain_setup())
+    )
+    skill_point_gain = _parse(
+        _manifest(RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_3, _skill_point_setup())
+    )
+    energy_consume = _parse(
+        _manifest(RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_3, _energy_consume_setup())
+    )
 
     assert empty.cases[0].setup is None
     assert isinstance(
@@ -186,17 +197,17 @@ def test_v1_3_energy_consume_fields_are_exact_and_unknown_kind_is_rejected():
     extra = _energy_consume_setup()
     extra["mode"] = "consume"
     with pytest.raises(ValueError, match="unsupported field"):
-        _parse(_manifest("1.3", extra))
+        _parse(_manifest(RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_3, extra))
 
     missing = _energy_consume_setup()
     missing.pop("amount")
     with pytest.raises(ValueError, match="missing required field"):
-        _parse(_manifest("1.3", missing))
+        _parse(_manifest(RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_3, missing))
 
     unknown = _energy_consume_setup()
     unknown["kind"] = "GENERIC_RESOURCE_EFFECT"
     with pytest.raises(ValueError, match="kind"):
-        _parse(_manifest("1.3", unknown))
+        _parse(_manifest(RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_3, unknown))
 
 
 @pytest.mark.parametrize(
@@ -209,7 +220,7 @@ def test_energy_consume_numeric_fields_require_finite_non_boolean_numbers(field,
     setup[field] = invalid
 
     with pytest.raises(ValueError, match=field):
-        _parse(_manifest("1.3", setup))
+        _parse(_manifest(RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_3, setup))
 
 
 @pytest.mark.parametrize("invalid", [0, -1, -100])
@@ -218,7 +229,7 @@ def test_energy_consume_base_speed_must_be_positive(invalid):
     setup["base_speed"] = invalid
 
     with pytest.raises(ValueError, match="base_speed"):
-        _parse(_manifest("1.3", setup))
+        _parse(_manifest(RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_3, setup))
 
 
 @pytest.mark.parametrize("invalid", [True, False, -1, 0.0, "0", None])
@@ -227,7 +238,7 @@ def test_energy_consume_action_index_requires_exact_nonnegative_integer(invalid)
     setup["action_index"] = invalid
 
     with pytest.raises(ValueError, match="action_index"):
-        _parse(_manifest("1.3", setup))
+        _parse(_manifest(RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_3, setup))
 
 
 def test_energy_consume_action_index_must_address_declared_action():
@@ -235,7 +246,7 @@ def test_energy_consume_action_index_must_address_declared_action():
     setup["action_index"] = 1
 
     with pytest.raises(ValueError, match="declared action"):
-        _parse(_manifest("1.3", setup))
+        _parse(_manifest(RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_3, setup))
 
 
 @pytest.mark.parametrize("field", ["target_id", "target_name", "team"])
@@ -245,13 +256,13 @@ def test_energy_consume_string_fields_require_nonempty_strings(field, invalid):
     setup[field] = invalid
 
     with pytest.raises(ValueError, match=field):
-        _parse(_manifest("1.3", setup))
+        _parse(_manifest(RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_3, setup))
 
 
-def test_locked_v1_3_manifest_contains_exact_four_reviewed_cases_in_order():
+def test_current_manifest_preserves_arch026_first_four_reviewed_cases_in_order():
     manifest = load_runtime_action_session_regression_manifest(RUNTIME_MANIFEST_PATH)
 
-    assert [case.case_id for case in manifest.cases] == [
+    assert [case.case_id for case in manifest.cases[:4]] == [
         "arch-017-reviewed-static-action-session",
         "arch-021-reviewed-static-clamped-energy",
         "arch-023-reviewed-static-clamped-skill-point",
@@ -278,23 +289,23 @@ def test_locked_v1_3_manifest_contains_exact_four_reviewed_cases_in_order():
     )
 
 
-def test_locked_runtime_lane_passes_four_of_four_with_expected_counts_and_digests():
+def test_current_runtime_lane_passes_five_of_five_and_preserves_arch026_prefix():
     report = run_runtime_action_session_regression(
         load_runtime_action_session_regression_manifest(RUNTIME_MANIFEST_PATH)
     )
 
     assert report.passed is True
-    assert report.total == 4
-    assert report.passed_count == 4
+    assert report.total == 5
+    assert report.passed_count == 5
     assert report.failed_count == 0
-    assert [result.case_id for result in report.results] == [
+    assert [result.case_id for result in report.results[:4]] == [
         "arch-017-reviewed-static-action-session",
         "arch-021-reviewed-static-clamped-energy",
         "arch-023-reviewed-static-clamped-skill-point",
         "arch-025-reviewed-static-energy-consume",
     ]
-    assert [result.details["record_count"] for result in report.results] == [4, 3, 3, 3]
-    assert [result.details["expected_sha256"] for result in report.results] == [
+    assert [result.details["record_count"] for result in report.results[:4]] == [4, 3, 3, 3]
+    assert [result.details["expected_sha256"] for result in report.results[:4]] == [
         ARCH_017_SHA256,
         ARCH_021_SHA256,
         ARCH_023_SHA256,
@@ -324,7 +335,7 @@ def test_energy_consume_harness_change_surfaces_reviewed_after_divergence():
     assert result.details["first_divergence_path"] == "/event/payload/legacy_data/after"
 
 
-def test_all_four_reviewed_fixture_byte_identities_remain_exact():
+def test_all_four_arch026_reviewed_fixture_byte_identities_remain_exact():
     expected = (
         (ARCH_017_PATH, 3013, ARCH_017_SHA256),
         (ARCH_021_PATH, 2759, ARCH_021_SHA256),

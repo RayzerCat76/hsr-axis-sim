@@ -361,10 +361,15 @@ def test_arch_012_capture_contains_exact_typed_three_record_advance_trace():
     assert result.next_cursor == PendingEventCaptureCursor(3, 3)
 
 
-def test_arch_031_scope_does_not_add_observation_emission_to_other_axis_effects():
-    for effect_type in (DelayAction, ChangeSpeed, ImmediateAction, GrantExtraTurn):
+def test_arch_031_scope_preserves_non_delay_axis_effects_after_arch_034():
+    delay_source = inspect.getsource(DelayAction)
+    assert "action_advanced" not in delay_source
+    assert "action_delayed" in delay_source
+
+    for effect_type in (ChangeSpeed, ImmediateAction, GrantExtraTurn):
         source = inspect.getsource(effect_type)
         assert "action_advanced" not in source
+        assert "action_delayed" not in source
         assert "emit_event" not in source
 
 

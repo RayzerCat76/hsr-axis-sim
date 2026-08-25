@@ -27,10 +27,13 @@ from hsr_axis_sim.runtime_golden_replays import GoldenReplayValidationConfig
 from hsr_axis_sim.runtime_loaders import TraceCanonicalFormPolicy
 from hsr_axis_sim.runtime_trace_stitching import CapturedTraceStitchConfig
 from hsr_axis_sim.sim.action import Action
+from hsr_axis_sim.sim.effects import GainEnergy
 from hsr_axis_sim.sim.state import BattleState
+from hsr_axis_sim.sim.unit import Unit
 
 from .manifest import (
     RuntimeActionSessionRegressionCase,
+    RuntimeActionSessionRegressionEnergyGainSetup,
     RuntimeActionSessionRegressionManifest,
     load_runtime_action_session_regression_manifest,
 )
@@ -144,16 +147,10 @@ def _run_case(
         "expected_sha256": case.expected_sha256,
     }
     try:
+        state = _build_state(case)
         steps = tuple(
-            ExplicitActionCaptureStep(
-                Action(
-                    action.action_id,
-                    action.name,
-                    case.actor_id,
-                    ends_turn=action.ends_turn,
-                )
-            )
-            for action in case.actions
+            ExplicitActionCaptureStep(_build_action(case, index))
+            for index in range(len(case.actions))
         )
         adapter_config = LegacyEventAdapterConfig(
             case.stream_id,
@@ -191,7 +188,7 @@ def _run_case(
             100_000,
         )
         result = run_action_session_validation(
-            BattleState([]),
+            state,
             steps,
             session_config=session_config,
             stitch_config=stitch_config,
@@ -229,6 +226,41 @@ def _run_case(
             details=details,
             error=str(exc),
         )
+
+
+def _build_state(case: RuntimeActionSessionRegressionCase) -> BattleState:
+    setup = case.setup
+    if setup is None:
+        return BattleState([])
+    if not isinstance(setup, RuntimeActionSessionRegressionEnergyGainSetup):
+        raise TypeError("Unsupported runtime action-session regression setup.")
+    return BattleState(
+        [
+            Unit(
+                id=setup.target_id,
+                name=setup.target_name,
+                team=setup.team,
+                base_speed=setup.base_speed,
+                energy=setup.initial_energy,
+                max_energy=setup.max_energy,
+            )
+        ]
+    )
+
+
+def _build_action(case: RuntimeActionSessionRegressionCase, index: int) -> Action:
+    action = case.actions[index]
+    effects = []
+    setup = case.setup
+    if isinstance(setup, RuntimeActionSessionRegressionEnergyGainSetup) and setup.action_index == index:
+        effects = [GainEnergy(target_ids=[setup.target_id], amount=setup.amount)]
+    return Action(
+        action.action_id,
+        action.name,
+        case.actor_id,
+        effects=effects,
+        ends_turn=action.ends_turn,
+    )
 
 
 def _build_report(

@@ -11,6 +11,7 @@ from hsr_axis_sim.runtime_action_session_regression.manifest import (
     RUNTIME_ACTION_SESSION_REGRESSION_SUPPORTED_VERSIONS,
     RUNTIME_ACTION_SESSION_REGRESSION_VERSION,
     RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_4,
+    RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_5,
     RuntimeActionSessionRegressionActionAdvanceSetup,
     RuntimeActionSessionRegressionEnergyConsumeSetup,
     RuntimeActionSessionRegressionEnergyGainSetup,
@@ -66,7 +67,7 @@ FIXTURES = (
     ),
 )
 
-CASE_IDS = [
+ARCH_033_CASE_IDS = [
     "arch-017-reviewed-static-action-session",
     "arch-021-reviewed-static-clamped-energy",
     "arch-023-reviewed-static-clamped-skill-point",
@@ -128,9 +129,10 @@ def _parse(data):
     )
 
 
-def test_supported_versions_are_exactly_v1_0_through_v1_5():
+def test_supported_versions_now_extend_v1_5_history_with_v1_6():
     assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_4 == "1.4"
-    assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION == "1.5"
+    assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_5 == "1.5"
+    assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION == "1.6"
     assert RUNTIME_ACTION_SESSION_REGRESSION_SUPPORTED_VERSIONS == (
         "1.0",
         "1.1",
@@ -138,6 +140,7 @@ def test_supported_versions_are_exactly_v1_0_through_v1_5():
         "1.3",
         "1.4",
         "1.5",
+        "1.6",
     )
 
 
@@ -153,11 +156,11 @@ def test_v1_4_explicitly_rejects_action_advance_as_v1_5_syntax():
 
 def test_v1_5_requires_setup_and_accepts_sixth_closed_action_advance_kind():
     with pytest.raises(ValueError, match="missing required field"):
-        _parse(_manifest(RUNTIME_ACTION_SESSION_REGRESSION_VERSION))
+        _parse(_manifest(RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_5))
 
     parsed = _parse(
         _manifest(
-            RUNTIME_ACTION_SESSION_REGRESSION_VERSION,
+            RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_5,
             _action_advance_setup(),
         )
     )
@@ -171,18 +174,18 @@ def test_v1_5_requires_setup_and_accepts_sixth_closed_action_advance_kind():
         percent=0.5,
     )
 
-    prior = load_runtime_action_session_regression_manifest(RUNTIME_MANIFEST_PATH)
-    assert isinstance(prior.cases[1].setup, RuntimeActionSessionRegressionEnergyGainSetup)
+    current = load_runtime_action_session_regression_manifest(RUNTIME_MANIFEST_PATH)
+    assert isinstance(current.cases[1].setup, RuntimeActionSessionRegressionEnergyGainSetup)
     assert isinstance(
-        prior.cases[2].setup,
+        current.cases[2].setup,
         RuntimeActionSessionRegressionSkillPointGainSetup,
     )
     assert isinstance(
-        prior.cases[3].setup,
+        current.cases[3].setup,
         RuntimeActionSessionRegressionEnergyConsumeSetup,
     )
     assert isinstance(
-        prior.cases[4].setup,
+        current.cases[4].setup,
         RuntimeActionSessionRegressionSkillPointConsumeSetup,
     )
 
@@ -278,21 +281,18 @@ def test_action_advance_action_index_must_address_declared_action():
         _parse(_manifest("1.5", setup))
 
 
-def test_locked_v1_5_manifest_contains_exact_six_reviewed_cases_in_order():
+def test_current_manifest_preserves_exact_arch_033_six_case_prefix():
     manifest = load_runtime_action_session_regression_manifest(RUNTIME_MANIFEST_PATH)
 
-    assert [case.case_id for case in manifest.cases] == CASE_IDS
+    assert len(manifest.cases) == 7
+    assert [case.case_id for case in manifest.cases[:6]] == ARCH_033_CASE_IDS
     sixth = manifest.cases[5]
     assert sixth.expected_path == FIXTURES[-1][0].resolve()
     assert sixth.expected_sha256 == FIXTURES[-1][2]
     assert sixth.stream_id == "arch-032-reviewed-axis"
     assert sixth.actor_id == "advance-actor"
-    assert [action.action_id for action in sixth.actions] == [
-        "reviewed-action-advance"
-    ]
-    assert [action.name for action in sixth.actions] == [
-        "reviewed-action-advance"
-    ]
+    assert [action.action_id for action in sixth.actions] == ["reviewed-action-advance"]
+    assert [action.name for action in sixth.actions] == ["reviewed-action-advance"]
     assert [action.ends_turn for action in sixth.actions] == [False]
     assert sixth.setup == RuntimeActionSessionRegressionActionAdvanceSetup(
         target_id="advance-actor",
@@ -305,17 +305,17 @@ def test_locked_v1_5_manifest_contains_exact_six_reviewed_cases_in_order():
     )
 
 
-def test_locked_runtime_lane_passes_six_of_six_with_expected_counts_and_digests():
+def test_current_runtime_lane_preserves_arch_033_six_case_prefix_results():
     report = run_runtime_action_session_regression(
         load_runtime_action_session_regression_manifest(RUNTIME_MANIFEST_PATH)
     )
 
     assert report.passed is True
-    assert report.total == 6
-    assert report.passed_count == 6
+    assert report.total == 7
+    assert report.passed_count == 7
     assert report.failed_count == 0
-    assert [result.case_id for result in report.results] == CASE_IDS
-    assert [result.details["record_count"] for result in report.results] == [
+    assert [result.case_id for result in report.results[:6]] == ARCH_033_CASE_IDS
+    assert [result.details["record_count"] for result in report.results[:6]] == [
         4,
         3,
         3,
@@ -323,9 +323,10 @@ def test_locked_runtime_lane_passes_six_of_six_with_expected_counts_and_digests(
         3,
         3,
     ]
-    assert [result.details["expected_sha256"] for result in report.results] == [
+    assert [result.details["expected_sha256"] for result in report.results[:6]] == [
         item[2] for item in FIXTURES
     ]
+    assert report.results[6].case_id == "arch-035-reviewed-static-action-delay"
 
 
 def test_action_advance_harness_change_surfaces_structured_after_av_divergence():
@@ -353,14 +354,14 @@ def test_action_advance_harness_change_surfaces_structured_after_av_divergence()
     )
 
 
-def test_all_six_reviewed_fixture_byte_identities_remain_exact():
+def test_arch_033_six_reviewed_fixture_byte_identities_remain_exact():
     for path, size, digest in FIXTURES:
         payload = path.read_bytes()
         assert len(payload) == size
         assert hashlib.sha256(payload).hexdigest() == digest
 
 
-def test_action_advance_regression_harness_is_closed_and_explicitly_targeted():
+def test_action_advance_regression_harness_remains_explicit_after_delay_extension():
     manifest_source = (
         ROOT / "hsr_axis_sim" / "runtime_action_session_regression" / "manifest.py"
     ).read_text(encoding="utf-8")
@@ -375,7 +376,6 @@ def test_action_advance_regression_harness_is_closed_and_explicitly_targeted():
     assert "target_ids=[setup.target_id]" in runner_source
 
     for forbidden in (
-        "DelayAction",
         "ChangeSpeed",
         "ImmediateAction",
         "GrantExtraTurn",

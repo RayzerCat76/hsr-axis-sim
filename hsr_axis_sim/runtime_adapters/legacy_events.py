@@ -10,6 +10,7 @@ from typing import Iterable, Mapping
 from hsr_axis_sim.runtime_contracts import (
     BindingStatus,
     EvidenceStatus,
+    RuntimeActionAdvanceObservation,
     RuntimeEvent,
     RuntimeEventType,
     RuntimeResourceChangeObservation,
@@ -118,6 +119,12 @@ def _bound_mapping(
 
 
 _MAPPINGS = (
+    _bound_mapping(
+        "action_advanced", RuntimeEventType.ACTION_VALUE_ADVANCED,
+        "hsr_axis_sim/sim/effects.py",
+        {"action_id": "action_id", "actor_id": "actor_id", "target_id": "target_id"},
+        "Validate and expose ARCH-031 action_advance while preserving raw legacy data.",
+    ),
     _bound_mapping(
         "action_finished", RuntimeEventType.ACTION_END,
         "hsr_axis_sim/sim/action.py", {"action_id": "action_id", "actor_id": "actor_id"},
@@ -235,6 +242,31 @@ def _resource_change_payload(
     return observation.to_payload()
 
 
+def _action_advance_payload(
+    legacy_event_type: str,
+    data: Mapping[str, object],
+) -> dict[str, object] | None:
+    if legacy_event_type != "action_advanced":
+        return None
+
+    try:
+        observation = RuntimeActionAdvanceObservation(
+            target_id=data["target_id"],
+            before_av=data["before_av"],
+            after_av=data["after_av"],
+            base_av=data["base_av"],
+            requested_percent=data["requested_percent"],
+            requested_delta_av=data["requested_delta_av"],
+            applied_delta_av=data["applied_delta_av"],
+            clamped_to_zero=data["clamped_to_zero"],
+        )
+    except (KeyError, TypeError, ValueError) as exc:
+        raise LegacyEventSchemaError(
+            f"invalid {legacy_event_type} action-advance observation: {exc}"
+        ) from exc
+    return observation.to_payload()
+
+
 def adapt_legacy_event(
     event: Event,
     *,
@@ -277,6 +309,7 @@ def adapt_legacy_event(
         normalized = _normalized_ids(mapping, legacy_event.data)
 
     resource_change = _resource_change_payload(legacy_event.type, legacy_event.data)
+    action_advance = _action_advance_payload(legacy_event.type, legacy_event.data)
     payload = {
         "adapter": {
             "adapter_name": "legacy_mvp_event_adapter",
@@ -291,6 +324,8 @@ def adapt_legacy_event(
     }
     if resource_change is not None:
         payload["resource_change"] = resource_change
+    if action_advance is not None:
+        payload["action_advance"] = action_advance
 
     try:
         return RuntimeEvent(

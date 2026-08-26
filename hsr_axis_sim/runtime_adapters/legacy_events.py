@@ -14,6 +14,7 @@ from hsr_axis_sim.runtime_contracts import (
     RuntimeActionDelayObservation,
     RuntimeEvent,
     RuntimeEventType,
+    RuntimeImmediateActionObservation,
     RuntimeResourceChangeObservation,
     RuntimeResourceKind,
     RuntimeResourceScope,
@@ -136,6 +137,12 @@ _MAPPINGS = (
     _bound_mapping(
         "action_finished", RuntimeEventType.ACTION_END,
         "hsr_axis_sim/sim/action.py", {"action_id": "action_id", "actor_id": "actor_id"},
+    ),
+    _bound_mapping(
+        "action_immediate", RuntimeEventType.ACTION_VALUE_IMMEDIATE,
+        "hsr_axis_sim/sim/effects.py",
+        {"action_id": "action_id", "actor_id": "actor_id", "target_id": "target_id"},
+        "Validate and expose ARCH-040 immediate_action while preserving raw legacy data.",
     ),
     _bound_mapping(
         "action_started", RuntimeEventType.ACTION_START,
@@ -305,6 +312,26 @@ def _action_delay_payload(
     return observation.to_payload()
 
 
+def _immediate_action_payload(
+    legacy_event_type: str,
+    data: Mapping[str, object],
+) -> dict[str, object] | None:
+    if legacy_event_type != "action_immediate":
+        return None
+
+    try:
+        observation = RuntimeImmediateActionObservation(
+            target_id=data["target_id"],
+            before_av=data["before_av"],
+            after_av=data["after_av"],
+        )
+    except (KeyError, TypeError, ValueError) as exc:
+        raise LegacyEventSchemaError(
+            f"invalid {legacy_event_type} immediate-action observation: {exc}"
+        ) from exc
+    return observation.to_payload()
+
+
 def _speed_change_payload(
     legacy_event_type: str,
     data: Mapping[str, object],
@@ -371,6 +398,7 @@ def adapt_legacy_event(
     resource_change = _resource_change_payload(legacy_event.type, legacy_event.data)
     action_advance = _action_advance_payload(legacy_event.type, legacy_event.data)
     action_delay = _action_delay_payload(legacy_event.type, legacy_event.data)
+    immediate_action = _immediate_action_payload(legacy_event.type, legacy_event.data)
     speed_change = _speed_change_payload(legacy_event.type, legacy_event.data)
     payload = {
         "adapter": {
@@ -390,6 +418,8 @@ def adapt_legacy_event(
         payload["action_advance"] = action_advance
     if action_delay is not None:
         payload["action_delay"] = action_delay
+    if immediate_action is not None:
+        payload["immediate_action"] = immediate_action
     if speed_change is not None:
         payload["speed_change"] = speed_change
 

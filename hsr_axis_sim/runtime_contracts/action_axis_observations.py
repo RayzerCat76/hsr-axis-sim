@@ -136,6 +136,33 @@ class RuntimeActionDelayObservation:
 
 
 @dataclass(frozen=True)
+class RuntimeImmediateActionObservation:
+    """One completed production ImmediateAction AV-to-zero mutation for one target Unit."""
+
+    target_id: str
+    before_av: Number
+    after_av: Number
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.target_id, str) or not self.target_id.strip():
+            raise ValueError("target_id must be a non-empty string")
+
+        _require_finite_number(self.before_av, "before_av")
+        _require_finite_number(self.after_av, "after_av")
+        if self.after_av != 0:
+            raise ValueError("after_av must equal zero")
+
+    def to_payload(self) -> dict[str, Any]:
+        """Return the exact schema-v1 event-payload representation."""
+
+        return {
+            "target_id": self.target_id,
+            "before_av": self.before_av,
+            "after_av": self.after_av,
+        }
+
+
+@dataclass(frozen=True)
 class RuntimeSpeedChangeObservation:
     """One completed production ChangeSpeed mutation for one target Unit."""
 

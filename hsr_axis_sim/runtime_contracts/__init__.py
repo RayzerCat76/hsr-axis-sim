@@ -3,6 +3,7 @@
 from .action_axis_observations import (
     RuntimeActionAdvanceObservation,
     RuntimeActionDelayObservation,
+    RuntimeImmediateActionObservation,
     RuntimeSpeedChangeObservation,
 )
 from .contexts import ActionContext, AttackContext, HitContext

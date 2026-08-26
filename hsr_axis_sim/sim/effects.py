@@ -257,7 +257,22 @@ class ChangeSpeed(UnitEffect):
 class ImmediateAction(UnitEffect):
     def apply(self, state: BattleState, action: object, turn_context: TurnContext) -> None:
         for unit in self.target_units(state, action):
+            before_av = unit.current_av
             unit.current_av = 0
+            after_av = unit.current_av
+            state.emit_event(
+                Event(
+                    "action_immediate",
+                    {
+                        "actor_id": getattr(action, "actor_id"),
+                        "action_id": getattr(action, "id"),
+                        "target_id": unit.id,
+                        "before_av": before_av,
+                        "after_av": after_av,
+                    },
+                ),
+                turn_context,
+            )
 
 
 @dataclass

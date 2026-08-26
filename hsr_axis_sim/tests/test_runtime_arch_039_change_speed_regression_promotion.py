@@ -9,9 +9,9 @@ from hsr_axis_sim.regression.manifest import load_regression_manifest
 from hsr_axis_sim.regression.runner import run_regression
 from hsr_axis_sim.runtime_action_session_regression.manifest import (
     RUNTIME_ACTION_SESSION_REGRESSION_SUPPORTED_VERSIONS,
-    RUNTIME_ACTION_SESSION_REGRESSION_VERSION,
     RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_5,
     RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_6,
+    RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_7,
     RuntimeActionSessionRegressionActionDelaySetup,
     RuntimeActionSessionRegressionChangeSpeedSetup,
     RuntimeActionSessionRegressionManifest,
@@ -150,10 +150,10 @@ def _parse(data):
     )
 
 
-def test_supported_versions_are_exactly_v1_0_through_v1_7():
+def test_arch_039_version_boundary_is_explicitly_v1_7():
     assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_6 == "1.6"
-    assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION == "1.7"
-    assert RUNTIME_ACTION_SESSION_REGRESSION_SUPPORTED_VERSIONS == (
+    assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_7 == "1.7"
+    assert RUNTIME_ACTION_SESSION_REGRESSION_SUPPORTED_VERSIONS[:8] == (
         "1.0",
         "1.1",
         "1.2",
@@ -177,7 +177,7 @@ def test_v1_6_explicitly_rejects_change_speed_as_v1_7_syntax():
 
 def test_v1_7_accepts_exact_frozen_change_speed_setup():
     parsed = _parse(
-        _manifest(RUNTIME_ACTION_SESSION_REGRESSION_VERSION, _change_speed_setup())
+        _manifest(RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_7, _change_speed_setup())
     )
     assert parsed.cases[0].setup == RuntimeActionSessionRegressionChangeSpeedSetup(
         target_id="speed-actor",
@@ -201,7 +201,10 @@ def test_action_delay_remains_v1_6_and_v1_7_syntax_but_not_v1_5():
             )
         )
 
-    for version in (RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_6, "1.7"):
+    for version in (
+        RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_6,
+        RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_7,
+    ):
         parsed = _parse(_manifest(version, _delay_setup()))
         assert isinstance(
             parsed.cases[0].setup,
@@ -274,11 +277,11 @@ def test_change_speed_initial_av_is_finite_but_not_newly_range_restricted(initia
     assert parsed.cases[0].setup.initial_av == initial_av
 
 
-def test_locked_v1_7_manifest_contains_exact_eight_reviewed_cases_in_order():
+def test_current_manifest_preserves_exact_arch_039_eight_case_prefix():
     manifest = load_runtime_action_session_regression_manifest(RUNTIME_MANIFEST_PATH)
 
-    assert len(manifest.cases) == 8
-    assert [case.case_id for case in manifest.cases] == CASE_IDS
+    assert len(manifest.cases) >= 8
+    assert [case.case_id for case in manifest.cases[:8]] == CASE_IDS
     eighth = manifest.cases[7]
     assert eighth.expected_path == FIXTURES[-1][0].resolve()
     assert eighth.expected_sha256 == FIXTURES[-1][2]
@@ -298,10 +301,14 @@ def test_locked_v1_7_manifest_contains_exact_eight_reviewed_cases_in_order():
     )
 
 
-def test_locked_runtime_lane_passes_eight_of_eight_with_expected_counts_and_digests():
-    report = run_runtime_action_session_regression(
-        load_runtime_action_session_regression_manifest(RUNTIME_MANIFEST_PATH)
+def test_arch_039_historical_eight_case_prefix_still_passes_eight_of_eight():
+    current = load_runtime_action_session_regression_manifest(RUNTIME_MANIFEST_PATH)
+    historical = RuntimeActionSessionRegressionManifest(
+        manifest_id="arch-039-historical-v1-7-prefix",
+        path=ROOT / "arch_039_historical_v1_7_prefix.json",
+        cases=current.cases[:8],
     )
+    report = run_runtime_action_session_regression(historical)
 
     assert report.passed is True
     assert report.total == 8
@@ -358,7 +365,7 @@ def test_all_eight_reviewed_fixture_byte_identities_remain_exact():
         assert hashlib.sha256(payload).hexdigest() == digest
 
 
-def test_change_speed_regression_harness_is_closed_and_explicitly_targeted():
+def test_change_speed_regression_branch_remains_explicit_after_later_setup_extensions():
     manifest_source = (
         ROOT / "hsr_axis_sim" / "runtime_action_session_regression" / "manifest.py"
     ).read_text(encoding="utf-8")
@@ -374,9 +381,10 @@ def test_change_speed_regression_harness_is_closed_and_explicitly_targeted():
         "ChangeSpeed(target_ids=[setup.target_id], new_speed=setup.new_speed)"
         in runner_source
     )
-
+    # ARCH-042 may add another explicit setup branch, but it must not turn the
+    # harness into a generic effect loader and must not authorize GrantExtraTurn.
+    assert "ImmediateAction(target_ids=[setup.target_id])" in runner_source
     for forbidden in (
-        "ImmediateAction",
         "GrantExtraTurn",
         "importlib",
         "eval(",

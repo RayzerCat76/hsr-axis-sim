@@ -14,6 +14,7 @@ from hsr_axis_sim.runtime_contracts import (
     RuntimeActionDelayObservation,
     RuntimeEvent,
     RuntimeEventType,
+    RuntimeExtraTurnQueuedObservation,
     RuntimeImmediateActionObservation,
     RuntimeResourceChangeObservation,
     RuntimeResourceKind,
@@ -158,6 +159,12 @@ _MAPPINGS = (
         "hsr_axis_sim/sim/effects.py",
         {"action_id": "action_id", "actor_id": "actor_id", "target_id": "unit_id"},
         "Validate and expose ARCH-019 resource_change while preserving raw legacy data.",
+    ),
+    _bound_mapping(
+        "extra_turn_queued", RuntimeEventType.EXTRA_TURN_QUEUED,
+        "hsr_axis_sim/sim/effects.py",
+        {"action_id": "action_id", "actor_id": "actor_id", "target_id": "target_id"},
+        "Validate and expose ARCH-043 extra_turn_queue while preserving raw legacy data; infer no game priority.",
     ),
     _bound_mapping(
         "skill_points_changed", RuntimeEventType.SKILL_POINTS_CHANGED,
@@ -332,6 +339,26 @@ def _immediate_action_payload(
     return observation.to_payload()
 
 
+def _extra_turn_queue_payload(
+    legacy_event_type: str,
+    data: Mapping[str, object],
+) -> dict[str, object] | None:
+    if legacy_event_type != "extra_turn_queued":
+        return None
+
+    try:
+        observation = RuntimeExtraTurnQueuedObservation(
+            target_id=data["target_id"],
+            stack_depth_before=data["stack_depth_before"],
+            stack_depth_after=data["stack_depth_after"],
+        )
+    except (KeyError, TypeError, ValueError) as exc:
+        raise LegacyEventSchemaError(
+            f"invalid {legacy_event_type} extra-turn queue observation: {exc}"
+        ) from exc
+    return observation.to_payload()
+
+
 def _speed_change_payload(
     legacy_event_type: str,
     data: Mapping[str, object],
@@ -399,6 +426,7 @@ def adapt_legacy_event(
     action_advance = _action_advance_payload(legacy_event.type, legacy_event.data)
     action_delay = _action_delay_payload(legacy_event.type, legacy_event.data)
     immediate_action = _immediate_action_payload(legacy_event.type, legacy_event.data)
+    extra_turn_queue = _extra_turn_queue_payload(legacy_event.type, legacy_event.data)
     speed_change = _speed_change_payload(legacy_event.type, legacy_event.data)
     payload = {
         "adapter": {
@@ -420,6 +448,8 @@ def adapt_legacy_event(
         payload["action_delay"] = action_delay
     if immediate_action is not None:
         payload["immediate_action"] = immediate_action
+    if extra_turn_queue is not None:
+        payload["extra_turn_queue"] = extra_turn_queue
     if speed_change is not None:
         payload["speed_change"] = speed_change
 

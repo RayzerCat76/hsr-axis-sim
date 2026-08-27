@@ -1,7 +1,6 @@
 from dataclasses import FrozenInstanceError
 import hashlib
 import inspect
-from math import inf, nan
 from pathlib import Path
 
 import pytest
@@ -28,7 +27,7 @@ from hsr_axis_sim.runtime_adapters import (
 from hsr_axis_sim.runtime_capture_cursors import PendingEventCaptureCursor
 from hsr_axis_sim.runtime_contracts import (
     RuntimeEventType,
-    RuntimeImmediateActionObservation,
+    RuntimeExtraTurnQueuedObservation,
 )
 from hsr_axis_sim.runtime_exports import (
     EmptyTracePolicy,
@@ -66,12 +65,13 @@ FIXTURES = (
     ("arch_032_reviewed_action_advance_expected.json", 2818, "ab73c224d06690b379d398a5bc2c4b38a1ed654dfd86866d564417432c29d3ce"),
     ("arch_035_reviewed_action_delay_expected.json", 2728, "9efbb65defb5eacc12150d31d0530d9a94b43a42e2303ebca643911f98094c4d"),
     ("arch_038_reviewed_change_speed_expected.json", 2604, "c23b34e0afffdfe4bee53d028e5ff21d946623300b169ba57e5ddfb69478df2a"),
+    ("arch_041_reviewed_immediate_action_expected.json", 2620, "7fd1594362b5bf9a95eec6f6472b2f17afa9dcfe10196d81ec6c970eab86eea1"),
 )
 
 
 def _adapter_config() -> LegacyEventAdapterConfig:
     return LegacyEventAdapterConfig(
-        "immediate-observation-stream",
+        "extra-turn-observation-stream",
         UnknownLegacyEventPolicy.REJECT,
         AmbiguousLegacyEventPolicy.REJECT,
     )
@@ -84,201 +84,186 @@ def _capture_request() -> SingleActionEventCaptureRequest:
             _adapter_config(),
             0,
             TraceExportConfig(
-                "immediate-observation-trace",
+                "extra-turn-observation-trace",
                 TraceSequencePolicy.CONTIGUOUS,
                 EmptyTracePolicy.REJECT,
-                {"source": "arch-040"},
+                {"source": "arch-043"},
             ),
             False,
         ),
     )
 
 
-def _immediate_event_data(**overrides):
+def _queued_event_data(**overrides):
     data = {
         "actor_id": "actor",
-        "action_id": "make-immediate",
+        "action_id": "grant-extra",
         "target_id": "target",
-        "before_av": 80,
-        "after_av": 0,
+        "stack_depth_before": 0,
+        "stack_depth_after": 1,
     }
     data.update(overrides)
     return data
 
 
-def test_immediate_action_observation_is_frozen_strict_and_exact():
-    observation = RuntimeImmediateActionObservation(
+def test_extra_turn_queue_observation_is_frozen_strict_and_exact():
+    observation = RuntimeExtraTurnQueuedObservation(
         target_id="target",
-        before_av=80,
-        after_av=0,
+        stack_depth_before=0,
+        stack_depth_after=1,
     )
     assert observation.to_payload() == {
         "target_id": "target",
-        "before_av": 80,
-        "after_av": 0,
+        "stack_depth_before": 0,
+        "stack_depth_after": 1,
     }
     with pytest.raises(FrozenInstanceError):
-        observation.after_av = 1
-
-    assert RuntimeImmediateActionObservation(
-        target_id="target", before_av=-20, after_av=0
-    ).before_av == -20
-    assert RuntimeImmediateActionObservation(
-        target_id="target", before_av=0, after_av=0
-    ).after_av == 0
+        observation.stack_depth_after = 2
 
 
 @pytest.mark.parametrize(
     "kwargs, error_type",
     [
         ({"target_id": ""}, ValueError),
-        ({"before_av": True}, TypeError),
-        ({"after_av": False}, TypeError),
-        ({"before_av": inf}, ValueError),
-        ({"before_av": nan}, ValueError),
-        ({"after_av": inf}, ValueError),
-        ({"after_av": 1}, ValueError),
-        ({"after_av": -1}, ValueError),
+        ({"target_id": 1}, ValueError),
+        ({"stack_depth_before": True}, TypeError),
+        ({"stack_depth_after": False}, TypeError),
+        ({"stack_depth_before": 0.0}, TypeError),
+        ({"stack_depth_after": 1.0}, TypeError),
+        ({"stack_depth_before": "0"}, TypeError),
+        ({"stack_depth_before": -1}, ValueError),
+        ({"stack_depth_after": -1}, ValueError),
+        ({"stack_depth_before": 1, "stack_depth_after": 1}, ValueError),
+        ({"stack_depth_before": 1, "stack_depth_after": 3}, ValueError),
     ],
 )
-def test_immediate_action_observation_rejects_malformed_contract(kwargs, error_type):
-    values = {"target_id": "target", "before_av": 80, "after_av": 0}
+def test_extra_turn_queue_observation_rejects_malformed_contract(kwargs, error_type):
+    values = {
+        "target_id": "target",
+        "stack_depth_before": 0,
+        "stack_depth_after": 1,
+    }
     values.update(kwargs)
     with pytest.raises(error_type):
-        RuntimeImmediateActionObservation(**values)
+        RuntimeExtraTurnQueuedObservation(**values)
 
 
-def test_legacy_action_immediate_maps_to_dedicated_runtime_event_and_payload():
-    data = _immediate_event_data()
+def test_legacy_extra_turn_queued_maps_to_dedicated_runtime_event_and_payload():
+    data = _queued_event_data()
     result = adapt_legacy_event(
-        Event("action_immediate", data), sequence=5, config=_adapter_config()
+        Event("extra_turn_queued", data), sequence=5, config=_adapter_config()
     )
 
-    assert result.event_type is RuntimeEventType.ACTION_VALUE_IMMEDIATE
-    assert result.action_id == "make-immediate"
+    assert result.event_type is RuntimeEventType.EXTRA_TURN_QUEUED
+    assert result.action_id == "grant-extra"
     assert result.actor_id == "actor"
     assert result.target_id == "target"
     assert dict(result.payload["legacy_data"]) == data
-    assert dict(result.payload["immediate_action"]) == {
+    assert dict(result.payload["extra_turn_queue"]) == {
         "target_id": "target",
-        "before_av": 80,
-        "after_av": 0,
+        "stack_depth_before": 0,
+        "stack_depth_after": 1,
     }
-    assert "action_advance" not in result.payload
     assert result.payload["adapter"]["mapping_status"] == "BOUND"
-    assert result.payload["adapter"]["mechanic_id"] == "LEGACY_EVENT.ACTION_IMMEDIATE"
+    assert result.payload["adapter"]["mechanic_id"] == "LEGACY_EVENT.EXTRA_TURN_QUEUED"
 
 
 @pytest.mark.parametrize(
     "mutation",
     [
-        lambda data: data.pop("after_av"),
-        lambda data: data.__setitem__("after_av", 1),
-        lambda data: data.__setitem__("before_av", nan),
+        lambda data: data.pop("stack_depth_after"),
+        lambda data: data.__setitem__("stack_depth_before", True),
+        lambda data: data.__setitem__("stack_depth_after", 2),
         lambda data: data.__setitem__("target_id", ""),
     ],
 )
-def test_malformed_action_immediate_is_rejected_not_degraded(mutation):
-    data = _immediate_event_data()
+def test_malformed_extra_turn_queued_is_rejected_not_degraded(mutation):
+    data = _queued_event_data()
     mutation(data)
     with pytest.raises(LegacyEventSchemaError):
         adapt_legacy_event(
-            Event("action_immediate", data), sequence=0, config=_adapter_config()
+            Event("extra_turn_queued", data), sequence=0, config=_adapter_config()
         )
 
 
-def test_production_immediate_action_preserves_av_to_zero_and_exact_event_order():
+def test_production_grant_extra_turn_preserves_append_and_exact_event_order():
     actor = Unit("actor", "Actor", "ally", 100, current_av=20)
     target = Unit("target", "Target", "ally", 100, current_av=80)
     state = BattleState([actor, target])
 
     Action(
-        "make-immediate",
-        "Make Immediate",
+        "grant-extra",
+        "Grant Extra",
         "actor",
-        effects=[ImmediateAction(target_ids=["target"])],
+        effects=[GrantExtraTurn(target_ids=["target"])],
         ends_turn=False,
     ).execute(state)
 
-    assert target.current_av == 0
-    assert state.extra_turn_stack == []
+    assert state.extra_turn_stack == ["target"]
+    assert target.current_av == 80
     assert [event.type for event in state.pending_events] == [
         "action_started",
-        "action_immediate",
+        "extra_turn_queued",
         "action_finished",
     ]
     assert state.pending_events[1].data == {
         "actor_id": "actor",
-        "action_id": "make-immediate",
+        "action_id": "grant-extra",
         "target_id": "target",
-        "before_av": 80,
-        "after_av": 0,
+        "stack_depth_before": 0,
+        "stack_depth_after": 1,
     }
 
 
-@pytest.mark.parametrize("before_av", [0, -20])
-def test_zero_or_negative_before_av_still_sets_zero_and_emits_observation(before_av):
-    actor = Unit("actor", "Actor", "ally", 100, current_av=20)
-    target = Unit("target", "Target", "ally", 100, current_av=before_av)
-    state = BattleState([actor, target])
-
-    Action(
-        "make-immediate",
-        "Make Immediate",
-        "actor",
-        effects=[ImmediateAction(target_ids=["target"])],
-        ends_turn=False,
-    ).execute(state)
-
-    assert target.current_av == 0
-    assert state.pending_events[1].type == "action_immediate"
-    assert state.pending_events[1].data["before_av"] == before_av
-    assert state.pending_events[1].data["after_av"] == 0
-
-
-class ObserveImmediateTargetAv(Effect):
+class ObserveQueuedStack(Effect):
     def apply(self, state, action, turn_context):
-        target = state.get_unit(action.event_data["target_id"])
-        state.logs.append(f"observed-immediate-av:{target.current_av}")
+        state.logs.append(
+            "observed-extra-stack:"
+            f"{list(state.extra_turn_stack)}:"
+            f"{action.event_data['stack_depth_after']}"
+        )
 
 
-def test_action_immediate_trigger_observes_post_mutation_zero_av():
+def test_extra_turn_queued_trigger_observes_post_append_stack():
     actor = Unit("actor", "Actor", "ally", 100, current_av=20)
     target = Unit("target", "Target", "ally", 100, current_av=80)
     state = BattleState(
         [actor, target],
         triggers=[
             Trigger(
-                id="observe-immediate",
+                id="observe-extra-turn",
                 owner_id="actor",
-                event_type="action_immediate",
+                event_type="extra_turn_queued",
                 condition={"type": "always"},
-                effects=[ObserveImmediateTargetAv()],
+                effects=[ObserveQueuedStack()],
             )
         ],
     )
 
     Action(
-        "make-immediate",
-        "Make Immediate",
+        "grant-extra",
+        "Grant Extra",
         "actor",
-        effects=[ImmediateAction(target_ids=["target"])],
+        effects=[GrantExtraTurn(target_ids=["target"])],
         ends_turn=False,
     ).execute(state)
 
-    assert target.current_av == 0
-    assert state.logs == ["trigger:observe-immediate", "observed-immediate-av:0"]
+    assert state.extra_turn_stack == ["target"]
+    assert state.logs == [
+        "trigger:observe-extra-turn",
+        "observed-extra-stack:['target']:1",
+    ]
 
 
-def test_arch_012_capture_contains_exact_typed_three_record_immediate_trace():
+def test_arch_012_capture_contains_exact_typed_three_record_extra_turn_trace():
     actor = Unit("actor", "Actor", "ally", 100, current_av=20)
     target = Unit("target", "Target", "ally", 100, current_av=80)
     state = BattleState([actor, target])
     action = Action(
-        "make-immediate",
-        "Make Immediate",
+        "grant-extra",
+        "Grant Extra",
         "actor",
-        effects=[ImmediateAction(target_ids=["target"])],
+        effects=[GrantExtraTurn(target_ids=["target"])],
         ends_turn=False,
     )
 
@@ -290,91 +275,98 @@ def test_arch_012_capture_contains_exact_typed_three_record_immediate_trace():
     assert [record.sequence for record in records] == [0, 1, 2]
     assert [record.event.event_type for record in records] == [
         RuntimeEventType.ACTION_START,
-        RuntimeEventType.ACTION_VALUE_IMMEDIATE,
+        RuntimeEventType.EXTRA_TURN_QUEUED,
         RuntimeEventType.ACTION_END,
     ]
-    immediate = records[1].event
-    assert immediate.action_id == "make-immediate"
-    assert immediate.actor_id == "actor"
-    assert immediate.target_id == "target"
-    assert dict(immediate.payload["immediate_action"]) == {
+    queued = records[1].event
+    assert queued.action_id == "grant-extra"
+    assert queued.actor_id == "actor"
+    assert queued.target_id == "target"
+    assert dict(queued.payload["extra_turn_queue"]) == {
         "target_id": "target",
-        "before_av": 80,
-        "after_av": 0,
+        "stack_depth_before": 0,
+        "stack_depth_after": 1,
     }
+    assert dict(queued.payload["legacy_data"]) == _queued_event_data()
+    assert queued.payload["adapter"]["mechanic_id"] == "LEGACY_EVENT.EXTRA_TURN_QUEUED"
     assert records[1].numeric_values == {}
     assert result.next_cursor == PendingEventCaptureCursor(3, 3)
 
 
-def test_self_target_immediate_action_preserves_actor_target_identity():
+def test_self_target_extra_turn_preserves_actor_target_identity_and_depth():
     actor = Unit("actor", "Actor", "ally", 100, current_av=80)
     state = BattleState([actor])
 
     Action(
-        "self-immediate",
-        "Self Immediate",
+        "self-extra",
+        "Self Extra",
         "actor",
-        effects=[ImmediateAction(target_ids=["actor"])],
+        effects=[GrantExtraTurn(target_ids=["actor"])],
         ends_turn=False,
     ).execute(state)
 
-    assert actor.current_av == 0
+    assert state.extra_turn_stack == ["actor"]
     event = state.pending_events[1]
-    assert event.type == "action_immediate"
-    assert event.data["actor_id"] == "actor"
-    assert event.data["target_id"] == "actor"
-    assert event.data["before_av"] == 80
-    assert event.data["after_av"] == 0
+    assert event.type == "extra_turn_queued"
+    assert event.data == {
+        "actor_id": "actor",
+        "action_id": "self-extra",
+        "target_id": "actor",
+        "stack_depth_before": 0,
+        "stack_depth_after": 1,
+    }
 
 
-def test_multi_target_immediate_observations_preserve_declared_target_order():
-    actor = Unit("actor", "Actor", "ally", 100, current_av=20)
-    first = Unit("first", "First", "ally", 100, current_av=70)
-    second = Unit("second", "Second", "ally", 100, current_av=40)
+def test_multi_target_queue_events_preserve_append_order_then_resolve_lifo():
+    actor = Unit("actor", "Actor", "ally", 100, current_av=90)
+    first = Unit("first", "First", "ally", 100, current_av=80)
+    second = Unit("second", "Second", "ally", 100, current_av=70)
     state = BattleState([actor, first, second])
 
     Action(
-        "multi-immediate",
-        "Multi Immediate",
+        "multi-extra",
+        "Multi Extra",
         "actor",
-        effects=[ImmediateAction(target_ids=["second", "first"])],
+        effects=[GrantExtraTurn(target_ids=["first", "second"])],
         ends_turn=False,
     ).execute(state)
 
-    immediate_events = [
-        event for event in state.pending_events if event.type == "action_immediate"
-    ]
-    assert [event.data["target_id"] for event in immediate_events] == ["second", "first"]
-    assert [event.data["before_av"] for event in immediate_events] == [40, 70]
-    assert first.current_av == second.current_av == 0
+    queued = [event for event in state.pending_events if event.type == "extra_turn_queued"]
+    assert [event.data["target_id"] for event in queued] == ["first", "second"]
+    assert [
+        (event.data["stack_depth_before"], event.data["stack_depth_after"])
+        for event in queued
+    ] == [(0, 1), (1, 2)]
+    assert state.extra_turn_stack == ["first", "second"]
+
+    before_av = {unit.id: unit.current_av for unit in state.units}
+    first_turn = Timeline.next_turn(state)
+    second_turn = Timeline.next_turn(state)
+    assert [first_turn.actor_id, second_turn.actor_id] == ["second", "first"]
+    assert first_turn.is_extra_turn is True
+    assert second_turn.is_extra_turn is True
+    assert state.global_av == 0
+    assert {unit.id: unit.current_av for unit in state.units} == before_av
 
 
-def test_advance_delay_and_change_speed_observations_remain_distinct():
-    assert RuntimeEventType.ACTION_VALUE_IMMEDIATE is not RuntimeEventType.ACTION_VALUE_ADVANCED
-    assert "action_advanced" in inspect.getsource(AdvanceAction)
-    assert "action_delayed" in inspect.getsource(DelayAction)
-    assert "speed_changed" in inspect.getsource(ChangeSpeed)
-    immediate_source = inspect.getsource(ImmediateAction)
-    assert "action_immediate" in immediate_source
-    assert "action_advanced" not in immediate_source
-    assert "action_delayed" not in immediate_source
-    assert "speed_changed" not in immediate_source
-
-
-def test_grant_extra_turn_remains_separate_observed_and_lifo_unchanged():
+def test_grant_extra_turn_observation_remains_distinct_from_axis_mutations():
     source = inspect.getsource(GrantExtraTurn)
-    assert "action_immediate" not in source
     assert "extra_turn_queued" in source
-    assert "emit_event" in source
+    assert "extra_turn_stack.append" in source
+    assert "action_advanced" not in source
+    assert "action_delayed" not in source
+    assert "speed_changed" not in source
+    assert "action_immediate" not in source
+    assert "current_av" not in source
+    assert "priority" not in source.lower()
 
-    state = BattleState([])
-    state.extra_turn_stack.extend(["first", "second", "third"])
-    assert state.extra_turn_stack.pop() == "third"
-    assert state.extra_turn_stack.pop() == "second"
-    assert state.extra_turn_stack.pop() == "first"
+    assert "extra_turn_queued" not in inspect.getsource(AdvanceAction)
+    assert "extra_turn_queued" not in inspect.getsource(DelayAction)
+    assert "extra_turn_queued" not in inspect.getsource(ChangeSpeed)
+    assert "extra_turn_queued" not in inspect.getsource(ImmediateAction)
 
 
-def test_all_eight_reviewed_fixture_byte_identities_remain_exact():
+def test_all_nine_reviewed_fixture_byte_identities_remain_exact():
     for filename, size, digest in FIXTURES:
         payload = (FIXTURE_DIR / filename).read_bytes()
         assert len(payload) == size

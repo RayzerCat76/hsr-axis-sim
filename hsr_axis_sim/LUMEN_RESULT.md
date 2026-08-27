@@ -1,4 +1,4 @@
-# HSR-RUNTIME-ARCH-042 — ImmediateAction Static Golden Regression Promotion
+# HSR-RUNTIME-ARCH-043 — GrantExtraTurn Runtime Observation Contract
 
 ## Status
 
@@ -6,110 +6,142 @@ PASS — proceed
 
 ## Task ID
 
-`HSR-RUNTIME-ARCH-042`
+`HSR-RUNTIME-ARCH-043`
 
 ## Current confirmed base
 
-- Accepted `main` before this task: `e8492f8dd35a11b0f47fd1315e871cc5500b335c`.
-- Baseline validation before this task:
-  - pytest: **1635 passed in 10.25s**;
+- Accepted `main` before this task: `23be13799facfe63152d727459f345f03e87fac6`.
+- Baseline post-merge validation before this task, GitHub Actions run #257:
+  - pytest: **1687 passed in 10.16s**;
   - legacy regression: **20/20**;
   - trace evidence: **2/2**;
-  - standalone runtime action-session Golden regression: **8/8**.
+  - standalone runtime action-session Golden regression: **9/9**.
 
 ## Objective completed
 
-Promoted the already accepted ARCH-041 reviewed static ImmediateAction Golden into the dedicated standalone runtime action-session regression lane as the ninth locked reviewed case, without changing production ImmediateAction semantics or the accepted Golden fixture bytes.
+Made the already-existing production `GrantExtraTurn` extra-turn-stack append observable through the runtime trace pipeline without changing target resolution, append order, LIFO resolution, Timeline selection, action-value behavior, or the nine accepted reviewed Golden fixtures.
 
-## Implementation summary
+This task observes the simulator's deterministic queue mutation only. It does **not** claim or infer real Honkai: Star Rail priority values, interrupt windows, ultimate priority, extra-action/follow-up behavior, or any undocumented scheduling rule.
 
-- Evolved the standalone `runtime_action_session_regression` manifest grammar from v1.7 to v1.8.
-- Added explicit historical constant `RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_7 = "1.7"` and retained the exact supported version chain from v1.0 through v1.8.
-- Preserved historical grammar boundaries:
-  - `ACTION_ADVANCE` remains v1.5+;
-  - `ACTION_DELAY` remains v1.6+;
-  - `CHANGE_SPEED` remains v1.7+;
-  - `IMMEDIATE_ACTION` is accepted only in v1.8.
-- Added frozen `RuntimeActionSessionRegressionImmediateActionSetup` with exact fields:
-  - `target_id`;
-  - `target_name`;
-  - `team`;
-  - `base_speed`;
-  - `initial_av`;
-  - `action_index`.
-- ImmediateAction setup validation remains closed and strict:
-  - exact fields only;
-  - non-empty target/name/team strings;
-  - finite non-boolean `base_speed` and `initial_av`;
-  - positive `base_speed`;
-  - exact nonnegative in-range integer `action_index`;
-  - no new lower bound on `initial_av`.
-- Extended the runner only with explicit production construction:
-  - `ImmediateAction(target_ids=[setup.target_id])` at the declared action index.
-- Added no generic effect/action-axis DSL, dynamic import, class lookup, `eval`, `exec`, or generic kwargs path.
-- Updated the standalone runtime manifest to v1.8 and appended the accepted ARCH-041 case as case 9 after the existing eight.
-- Preserved the first eight case IDs/order and all reviewed Golden fixture byte identities.
-- Updated stale historical/current tests only where later authorized promotion made their old global-current assumptions obsolete; historical milestone prefixes remain independently asserted.
+## Accepted simulator semantics preserved
 
-## Ninth locked case
+For each target resolved by the existing `UnitEffect.target_units()` path, `GrantExtraTurn.apply()` now records the queue depth around the existing append while preserving the append itself:
 
-- Case ID: `arch-041-reviewed-static-immediate-action`
-- Expected file: `hsr_axis_sim/data/runtime_golden_fixtures/arch_041_reviewed_immediate_action_expected.json`
-- Expected size: **2620 bytes**
-- Expected SHA-256: **`7fd1594362b5bf9a95eec6f6472b2f17afa9dcfe10196d81ec6c970eab86eea1`**
-- Stream ID: `arch-041-reviewed-axis`
-- Actor/target ID: `immediate-actor`
-- Action: `reviewed-immediate-action`, `ends_turn=False`
-- Setup: `IMMEDIATE_ACTION`, base speed `100`, initial AV `80`, action index `0`
-- Runtime record count: **3**
-- Accepted actual runtime trace SHA-256 in green PR CI run #255: **`b41181b9bb09ec516d27f78a99ef455a69c2b5e678d93f8eaa5f94effdde8cb7`**.
+```python
+stack_depth_before = len(state.extra_turn_stack)
+state.extra_turn_stack.append(unit.id)
+stack_depth_after = len(state.extra_turn_stack)
+```
 
-The generated actual trace digest is provenance for the runtime-produced actual trace. It is not claimed to equal the pinned expected-file digest; the existing Golden comparison validates the expected and actual record streams under the existing validation semantics.
+It then emits one post-mutation legacy event:
+
+`extra_turn_queued`
+
+with exactly:
+
+- `actor_id`;
+- `action_id`;
+- `target_id`;
+- `stack_depth_before`;
+- `stack_depth_after`.
+
+The event is emitted after the append, so triggers observe the already-mutated stack. Target order is unchanged. `Timeline.next_turn()` remains unchanged and still resolves the accepted simulator stack by `pop()` from the end, so targets appended `[first, second]` resolve as `second`, then `first`.
+
+Extra-turn selection still does not advance global AV or mutate the normal timeline AV snapshot merely by selecting the queued turn.
+
+## Runtime contract added
+
+Added frozen `RuntimeExtraTurnQueuedObservation` in:
+
+`hsr_axis_sim/runtime_contracts/turn_order_observations.py`
+
+Exact fields:
+
+- `target_id: str`;
+- `stack_depth_before: int`;
+- `stack_depth_after: int`.
+
+Validation requires:
+
+- non-empty string target ID;
+- exact integers for both depth fields, rejecting booleans and floats;
+- nonnegative depths;
+- `stack_depth_after == stack_depth_before + 1`.
+
+`to_payload()` returns exactly those three fields. The contract is exported from `hsr_axis_sim/runtime_contracts/__init__.py`.
+
+## Runtime adapter binding
+
+The existing runtime vocabulary value `RuntimeEventType.EXTRA_TURN_QUEUED` is reused; `runtime_contracts/enums.py` is unchanged.
+
+Added deterministic legacy mapping:
+
+`extra_turn_queued -> EXTRA_TURN_QUEUED`
+
+Normalized IDs:
+
+- `action_id <- action_id`;
+- `actor_id <- actor_id`;
+- `target_id <- target_id`.
+
+For valid events the adapter preserves:
+
+- exact raw input in `payload["legacy_data"]`;
+- validated structured queue observation in `payload["extra_turn_queue"]`;
+- existing adapter provenance.
+
+Malformed structured queue events raise `LegacyEventSchemaError`; they do not degrade to `CONTENT_DEFINED` and are not silently repaired.
+
+The current mapping registry is 14 entries with 13 bound mappings and the pre-existing unresolved `unit_defeated` lifecycle mapping. The historical ARCH-002 mapping document remains its exact nine-entry historical projection and does not backfill `extra_turn_queued`.
 
 ## Files added
 
-- `LUMEN_TASK_HSR_RUNTIME_ARCH_042.md`
-- `hsr_axis_sim/tests/test_runtime_arch_042_immediate_action_regression_promotion.py`
+- `LUMEN_TASK_HSR_RUNTIME_ARCH_043.md`
+- `hsr_axis_sim/runtime_contracts/turn_order_observations.py`
+- `hsr_axis_sim/tests/test_runtime_arch_043_extra_turn_observation.py`
 
 ## Files modified
 
 - `hsr_axis_sim/LUMEN_RESULT.md`
-- `hsr_axis_sim/data/runtime_action_session_regression_manifest.json`
-- `hsr_axis_sim/runtime_action_session_regression/manifest.py`
-- `hsr_axis_sim/runtime_action_session_regression/runner.py`
-- `hsr_axis_sim/tests/test_runtime_arch_018_standalone_regression.py`
-- `hsr_axis_sim/tests/test_runtime_arch_033_action_advance_regression_promotion.py`
-- `hsr_axis_sim/tests/test_runtime_arch_035_static_action_delay_golden_fixture.py`
-- `hsr_axis_sim/tests/test_runtime_arch_036_action_delay_regression_promotion.py`
-- `hsr_axis_sim/tests/test_runtime_arch_038_static_change_speed_golden_fixture.py`
-- `hsr_axis_sim/tests/test_runtime_arch_039_change_speed_regression_promotion.py`
+- `hsr_axis_sim/runtime_contracts/__init__.py`
+- `hsr_axis_sim/runtime_adapters/legacy_events.py`
+- `hsr_axis_sim/sim/effects.py`
+- `hsr_axis_sim/tests/test_runtime_legacy_event_mapping.py`
+- `hsr_axis_sim/tests/test_runtime_arch_031_advance_action_observation.py`
+- `hsr_axis_sim/tests/test_runtime_arch_034_delay_action_observation.py`
+- `hsr_axis_sim/tests/test_runtime_arch_037_change_speed_observation.py`
 - `hsr_axis_sim/tests/test_runtime_arch_040_immediate_action_observation.py`
-- `hsr_axis_sim/tests/test_runtime_arch_041_static_immediate_action_golden_fixture.py`
 
-## Tests added / updated
+## Focused tests added / updated
 
-Focused ARCH-042 coverage verifies:
+ARCH-043 coverage proves:
 
-- supported manifest versions are exactly v1.0 through v1.8;
-- v1.7 remains explicit historical grammar and rejects `IMMEDIATE_ACTION`;
-- v1.8 accepts the exact frozen ImmediateAction setup;
-- missing/unknown fields are rejected;
-- identity strings are strict non-empty strings;
-- numeric fields are finite and reject booleans;
-- `base_speed` must be positive;
-- `action_index` must be an exact nonnegative in-range integer;
-- zero and negative finite initial AV remain representable;
-- `CHANGE_SPEED` remains valid in v1.7/v1.8 and rejected before v1.7;
-- current manifest contains exactly nine cases in the accepted order;
-- ninth case has the exact accepted ARCH-041 path, digest, identity and setup;
-- runtime lane passes exactly `9/9` with record counts `[4, 3, 3, 3, 3, 3, 3, 3, 3]`;
-- controlled harness-only `initial_av=60` mutation produces first divergence at record index `1`, path `/event/payload/immediate_action/before_av`, expected `80`, actual `60`;
-- reviewed Golden fixture byte identities remain exact;
-- regression harness remains explicit and closed, with no `GrantExtraTurn` support or generic loader;
-- ARCH-033, ARCH-036 and ARCH-039 historical prefixes remain independently protected;
-- legacy regression remains `20/20`;
-- trace evidence remains `2/2`;
-- production extra-turn LIFO remains unchanged.
+1. `RuntimeExtraTurnQueuedObservation` is frozen and serializes the exact three-field payload;
+2. empty/non-string target IDs are rejected;
+3. bool/float/string/negative queue-depth values are rejected;
+4. depth transitions other than exact `before + 1` are rejected;
+5. `extra_turn_queued` maps to `RuntimeEventType.EXTRA_TURN_QUEUED`;
+6. normalized action/actor/target IDs are exact;
+7. raw `legacy_data` is preserved exactly;
+8. typed `extra_turn_queue` payload is exact;
+9. malformed structured legacy events raise `LegacyEventSchemaError`;
+10. one-target production event order is exactly `action_started -> extra_turn_queued -> action_finished`;
+11. the event data contains exactly the five specified legacy fields;
+12. an `extra_turn_queued` trigger sees the already-appended target and post-append depth;
+13. self-target actor/target identity and depth are exact;
+14. multi-target events preserve declared append order;
+15. multi-target depth transitions are `0 -> 1` then `1 -> 2`;
+16. subsequent `Timeline.next_turn()` calls resolve the accepted stack LIFO in reverse append order;
+17. extra-turn selection leaves global AV and normal unit AV snapshots unchanged;
+18. ARCH-012 capture produces exactly `ACTION_START -> EXTRA_TURN_QUEUED -> ACTION_END`;
+19. `GrantExtraTurn` remains distinct from Advance/Delay/ChangeSpeed/ImmediateAction observation families;
+20. all nine reviewed Golden fixture byte identities remain exact;
+21. legacy regression remains `20/20`;
+22. trace evidence remains `2/2`;
+23. standalone runtime action-session Golden regression remains `9/9`;
+24. pre-existing production LIFO compatibility remains explicit and passing.
+
+Historical ARCH-031/034/037/040 source guards were updated narrowly to permit the later-authorized `extra_turn_queued` observation while continuing to assert that `GrantExtraTurn` does not emit their action-axis event types.
 
 ## Exact commands executed by CI
 
@@ -125,15 +157,15 @@ python -m hsr_axis_sim.runtime_action_session_regression.runner --manifest hsr_a
 
 Authoritative green PR validation before this completion-report update:
 
-GitHub Actions `HSR Axis Sim Validation`, PR #47, run **#255** (`33026657321`), job **`98369501065`**, branch head `0e378dca3f89e9c5d3772f9366e77166b4b66124`:
+GitHub Actions `HSR Axis Sim Validation`, PR #48, run **#262** (`33027644428`), job **`98372622604`**, branch head `4851c6e551313082dc38c2b3ae8a763357e8624d`:
 
 - compile: **PASS**;
-- pytest: **1687 passed in 9.81s**;
+- pytest: **1713 passed in 9.85s**;
 - legacy locked regression: **20/20**;
 - trace evidence: **2/2**;
 - standalone runtime action-session Golden regression: **9/9**.
 
-Runtime record counts were exactly:
+The nine runtime action-session reviewed cases and their accepted record counts remain:
 
 1. `arch-017-reviewed-static-action-session` — 4;
 2. `arch-021-reviewed-static-clamped-energy` — 3;
@@ -145,67 +177,71 @@ Runtime record counts were exactly:
 8. `arch-038-reviewed-static-change-speed` — 3;
 9. `arch-041-reviewed-static-immediate-action` — 3.
 
+No tenth runtime regression case was added.
+
 ## Validation history / resolved failures
 
-A verified intermediate PR CI run **#248** (`32920547726`), job **`98033145142`**, compiled successfully and produced **7 failed, 1680 passed in 8.58s**. All seven failures were stale historical/current test boundaries after the authorized ninth-case promotion:
+Initial PR validation run **#258** (`33027318210`), job **`98371603615`**, branch head `bd44f11ee3b34502aac525fd94748e867a83fba7`:
 
-1. ARCH-033 source guard still forbade later-authorized `ImmediateAction`;
-2. ARCH-035 still expected the current runtime lane to total 8;
-3. ARCH-036 source guard still forbade later-authorized `ImmediateAction`;
-4. ARCH-038 still expected the current runtime lane to total 8;
-5. ARCH-040 still expected the current runtime lane to total 8;
-6. ARCH-041 still required its fixture to be absent from the runtime manifest;
-7. ARCH-041 still expected the current runtime lane to total 8.
+- compile: **PASS**;
+- pytest: **4 failed, 1709 passed in 10.76s**;
+- downstream regression lanes were skipped because the pytest gate failed.
 
-Those tests were updated narrowly so each historical milestone continues to protect its original prefix/closed grammar while allowing the explicitly authorized ARCH-042 promotion. No core ARCH-042 setup/parser/runner/manifest/Golden behavior failed in that run. Run #255 then passed the complete workflow.
+All four failures were stale historical source guards that still required `GrantExtraTurn` to emit no event at all:
 
-Earlier development CI also exposed stale ARCH-018/current-version and ARCH-039 historical-boundary assumptions. Those were corrected before the fully verified run #248 history above; this report does not assign unverified exact run/count metadata to those earlier iterations.
+1. ARCH-031 action-advance observation scope guard;
+2. ARCH-034 action-delay observation scope guard;
+3. ARCH-037 speed-change observation scope guard;
+4. ARCH-040 ImmediateAction observation scope guard.
 
-## Controlled first-divergence proof
+No new ARCH-043 contract, adapter, production queue mutation, trigger, capture, self-target, multi-target, LIFO, or regression-identity test failed in that run.
 
-Changing only case 9 setup initial AV from `80` to `60` leaves production ImmediateAction final AV at `0`, while the existing Golden comparison returns:
-
-- record index: **1**;
-- path: **`/event/payload/immediate_action/before_av`**;
-- expected: **80**;
-- actual: **60**.
-
-No comparator or first-divergence semantics were changed.
+The four historical guards were then updated narrowly so they continue to reject cross-mechanic action-axis events but explicitly allow the newly authorized `extra_turn_queued` observation. Run #262 then passed the complete workflow.
 
 ## Locked areas confirmed unchanged
 
-- `hsr_axis_sim/sim/**` unchanged.
-- `hsr_axis_sim/runtime_contracts/**` unchanged.
-- `hsr_axis_sim/runtime_adapters/**` unchanged.
+- `hsr_axis_sim/runtime_contracts/enums.py` unchanged; the pre-existing `EXTRA_TURN_QUEUED` value is reused.
+- `hsr_axis_sim/sim/timeline.py` unchanged.
+- `hsr_axis_sim/sim/action.py` unchanged.
+- `hsr_axis_sim/sim/state.py` unchanged.
+- `hsr_axis_sim/sim/unit.py` unchanged.
+- runtime resource and action-axis observation semantics unchanged.
+- runtime action-session regression manifest, grammar, and runner unchanged.
+- `hsr_axis_sim/data/runtime_action_session_regression_manifest.json` unchanged at v1.8 / 9 cases.
 - `hsr_axis_sim/data/regression_manifest.json` unchanged.
-- all files under `hsr_axis_sim/data/runtime_golden_fixtures/**` unchanged, including ARCH-041.
-- Golden validator/comparator/divergence implementation unchanged.
+- every reviewed Golden fixture under `hsr_axis_sim/data/runtime_golden_fixtures/` unchanged.
+- Golden validator/comparator/first-divergence implementation unchanged.
 - trace schema/version unchanged.
-- production Advance/Delay/ChangeSpeed/ImmediateAction behavior and events unchanged.
-- `GrantExtraTurn` semantics unchanged and still unsupported by this regression grammar.
-- Timeline semantics unchanged.
-- production extra-turn LIFO unchanged.
+- ownership/SP/energy semantics unchanged.
+- Advance/Delay/ChangeSpeed/ImmediateAction production semantics unchanged.
+
+The only production simulator modification is observation emission around the pre-existing append inside `GrantExtraTurn.apply()`.
 
 ## Warnings / errors
 
-- No compile, pytest, legacy-regression, trace-evidence, or runtime-action-session-regression failure remains in run #255.
+- No compile, pytest, legacy-regression, trace-evidence, or runtime-action-session-regression failure remains in run #262.
 - Existing nonblocking GitHub Actions warning remains: `actions/checkout@v4` and `actions/setup-python@v5` target Node 20 and are forced onto Node 24.
 - Existing upstream Node `punycode` and `url.parse()` deprecation notices remain unrelated to simulator correctness.
 
 ## Unresolved issues
 
-None blocking HSR-RUNTIME-ARCH-042 acceptance.
+None blocking HSR-RUNTIME-ARCH-043 acceptance.
 
-`GrantExtraTurn` remains intentionally outside this runtime regression grammar. Actual HSR scheduling semantics remain separate from the simulator's accepted deterministic LIFO implementation and must not be inferred without a dedicated evidence-backed task.
+Real HSR extra-turn scheduling/priority semantics remain intentionally unresolved. This task only exposes the already accepted simulator LIFO stack mutation and must not be used as evidence that the game implements the same hidden scheduler.
 
 ## Exclusions confirmation
 
-Respected: no Golden fixture generation or modification, no legacy manifest promotion, no simulator changes, no runtime observation contract/adapter changes, no generic effect/action-axis DSL, no ImmediateAction formula/observation changes, no GrantExtraTurn support, no automatic action selection, no priority/action-family/interrupt/extra-turn inference, no comparator/divergence/Golden changes, no trace schema bump, no video parsing/scraping, no character database expansion, no AI optimization, and no unrelated UI/refactor work.
+Respected: no real-HSR priority inference, no interrupt windows, no ultimate-priority rules, no extra-action/follow-up semantics, no FIFO alternative, no generalized scheduler/priority queue, no Timeline change, no queue deduplication/replacement, no automatic action selection, no static GrantExtraTurn Golden, no runtime regression promotion, no manifest v1.9, no generic effect DSL, no enum change, no trace schema bump, no comparator/divergence change, no video parsing/scraping, no character database expansion, no damage formula work, no AI optimization, and no unrelated UI/refactor work.
 
 ## Suggested next milestone
 
-Do not begin a new milestone until ARCH-042 is accepted on canonical `main` with post-merge CI.
+Do not begin a new milestone until ARCH-043 is accepted on canonical `main` with post-merge CI.
 
-After acceptance, inspect the repository frontier before assigning the next task. A likely candidate is a dedicated `GrantExtraTurn` runtime observation contract, but it must be scoped separately from actual HSR scheduling semantics and must preserve the accepted production LIFO behavior unless an explicit evidence-backed task authorizes otherwise.
+After acceptance, the smallest safe continuation is expected to be **HSR-RUNTIME-ARCH-044 — Reviewed Static GrantExtraTurn Golden Fixture**: manually construct and review one deterministic static Golden for the accepted queue observation and existing LIFO simulator behavior, prove production match and controlled first divergence, and do **not** promote it into the runtime regression lane in the same task.
 
-Recommended routing if that becomes the next task: ChatGPT **GPT-5.6 Sol**; Codex reasoning **High**, because extra-turn queue semantics are core deterministic turn-order behavior.
+Recommended routing for ARCH-044 after ARCH-043 acceptance:
+
+- ChatGPT: **GPT-5.6 Terra**;
+- Codex reasoning: **High**.
+
+The production semantics are already locked; ARCH-044 is deterministic fixture construction and validation rather than a new scheduler-semantic change.

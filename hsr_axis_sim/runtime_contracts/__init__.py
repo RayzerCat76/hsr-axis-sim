@@ -38,5 +38,6 @@ from .gates import SemanticContract, UnresolvedMechanicError
 from .resource_observations import RuntimeResourceChangeObservation
 from .serialization import canonical_json_bytes, canonical_json_dumps, to_canonical_data
 from .trace import RuntimeTraceRecord, TraceNumericValue
+from .turn_order_observations import RuntimeExtraTurnQueuedObservation
 
 __all__ = [name for name in globals() if not name.startswith("_")]

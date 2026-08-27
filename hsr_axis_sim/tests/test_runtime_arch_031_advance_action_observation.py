@@ -382,7 +382,8 @@ def test_arch_031_scope_preserves_later_authorized_axis_effects():
     assert "action_delayed" not in extra_turn_source
     assert "speed_changed" not in extra_turn_source
     assert "action_immediate" not in extra_turn_source
-    assert "emit_event" not in extra_turn_source
+    assert "extra_turn_queued" in extra_turn_source
+    assert "emit_event" in extra_turn_source
 
 
 def test_production_extra_turn_lifo_compatibility_is_unchanged():

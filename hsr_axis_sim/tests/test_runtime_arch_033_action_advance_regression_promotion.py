@@ -366,9 +366,11 @@ def test_action_advance_regression_harness_remains_closed_and_explicit():
     assert "RuntimeActionSessionRegressionActionAdvanceSetup" in manifest_source
     assert "AdvanceAction" in runner_source
     assert "target_ids=[setup.target_id]" in runner_source
+    # Later authorized explicit setup kinds may be added without weakening ARCH-033.
+    assert 'kind == "IMMEDIATE_ACTION"' in manifest_source
+    assert "ImmediateAction" in runner_source
 
     for forbidden in (
-        "ImmediateAction",
         "GrantExtraTurn",
         "importlib",
         "eval(",

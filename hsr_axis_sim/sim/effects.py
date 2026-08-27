@@ -279,7 +279,22 @@ class ImmediateAction(UnitEffect):
 class GrantExtraTurn(UnitEffect):
     def apply(self, state: BattleState, action: object, turn_context: TurnContext) -> None:
         for unit in self.target_units(state, action):
+            stack_depth_before = len(state.extra_turn_stack)
             state.extra_turn_stack.append(unit.id)
+            stack_depth_after = len(state.extra_turn_stack)
+            state.emit_event(
+                Event(
+                    "extra_turn_queued",
+                    {
+                        "actor_id": getattr(action, "actor_id"),
+                        "action_id": getattr(action, "id"),
+                        "target_id": unit.id,
+                        "stack_depth_before": stack_depth_before,
+                        "stack_depth_after": stack_depth_after,
+                    },
+                ),
+                turn_context,
+            )
 
 
 class DoesNotEndTurn(Effect):

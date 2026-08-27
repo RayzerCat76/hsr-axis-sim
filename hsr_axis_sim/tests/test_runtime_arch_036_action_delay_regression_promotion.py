@@ -360,9 +360,11 @@ def test_action_delay_regression_harness_is_closed_and_explicitly_targeted():
     assert "RuntimeActionSessionRegressionActionDelaySetup" in manifest_source
     assert "DelayAction" in runner_source
     assert "DelayAction(target_ids=[setup.target_id], percent=setup.percent)" in runner_source
+    # Later authorized explicit setup kinds may be added without weakening ARCH-036.
+    assert 'kind == "IMMEDIATE_ACTION"' in manifest_source
+    assert "ImmediateAction" in runner_source
 
     for forbidden in (
-        "ImmediateAction",
         "GrantExtraTurn",
         "importlib",
         "eval(",

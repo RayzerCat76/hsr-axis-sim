@@ -361,10 +361,11 @@ def test_advance_delay_and_change_speed_observations_remain_distinct():
     assert "speed_changed" not in immediate_source
 
 
-def test_grant_extra_turn_remains_separate_unobserved_and_lifo_unchanged():
+def test_grant_extra_turn_remains_separate_observed_and_lifo_unchanged():
     source = inspect.getsource(GrantExtraTurn)
     assert "action_immediate" not in source
-    assert "emit_event" not in source
+    assert "extra_turn_queued" in source
+    assert "emit_event" in source
 
     state = BattleState([])
     state.extra_turn_stack.extend(["first", "second", "third"])

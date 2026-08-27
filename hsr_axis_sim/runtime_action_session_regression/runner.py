@@ -35,6 +35,7 @@ from hsr_axis_sim.sim.effects import (
     DelayAction,
     GainEnergy,
     GainSkillPoint,
+    GrantExtraTurn,
     ImmediateAction,
 )
 from hsr_axis_sim.sim.state import BattleState
@@ -47,6 +48,7 @@ from .manifest import (
     RuntimeActionSessionRegressionCase,
     RuntimeActionSessionRegressionEnergyConsumeSetup,
     RuntimeActionSessionRegressionEnergyGainSetup,
+    RuntimeActionSessionRegressionGrantExtraTurnSetup,
     RuntimeActionSessionRegressionImmediateActionSetup,
     RuntimeActionSessionRegressionManifest,
     RuntimeActionSessionRegressionSkillPointConsumeSetup,
@@ -299,6 +301,17 @@ def _build_state(case: RuntimeActionSessionRegressionCase) -> BattleState:
                 )
             ]
         )
+    if isinstance(setup, RuntimeActionSessionRegressionGrantExtraTurnSetup):
+        return BattleState(
+            [
+                Unit(
+                    id=setup.target_id,
+                    name=setup.target_name,
+                    team=setup.team,
+                    base_speed=setup.base_speed,
+                )
+            ]
+        )
     raise TypeError("Unsupported runtime action-session regression setup.")
 
 
@@ -345,6 +358,11 @@ def _build_action(case: RuntimeActionSessionRegressionCase, index: int) -> Actio
         and setup.action_index == index
     ):
         effects = [ImmediateAction(target_ids=[setup.target_id])]
+    elif (
+        isinstance(setup, RuntimeActionSessionRegressionGrantExtraTurnSetup)
+        and setup.action_index == index
+    ):
+        effects = [GrantExtraTurn(target_ids=[setup.target_id])]
     return Action(
         action.action_id,
         action.name,

@@ -395,8 +395,8 @@ def test_existing_regression_lanes_remain_accepted():
     assert trace.total == 2
     assert trace.passed_count == 2
     assert runtime.passed is True
-    assert runtime.total == 8
-    assert runtime.passed_count == 8
+    assert runtime.total == 9
+    assert runtime.passed_count == 9
 
 
 def test_production_extra_turn_lifo_compatibility_is_unchanged():

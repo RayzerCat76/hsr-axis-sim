@@ -1,6 +1,6 @@
 {
   "schema": "hsr_runtime_action_session_regression",
-  "version": "1.7",
+  "version": "1.8",
   "manifest_id": "HSR_RUNTIME_ACTION_SESSION_REGRESSION_001",
   "cases": [
     {
@@ -187,6 +187,29 @@
         "initial_av": 80,
         "action_index": 0,
         "new_speed": 200
+      }
+    },
+    {
+      "id": "arch-041-reviewed-static-immediate-action",
+      "expected_path": "hsr_axis_sim/data/runtime_golden_fixtures/arch_041_reviewed_immediate_action_expected.json",
+      "expected_sha256": "7fd1594362b5bf9a95eec6f6472b2f17afa9dcfe10196d81ec6c970eab86eea1",
+      "stream_id": "arch-041-reviewed-axis",
+      "actor_id": "immediate-actor",
+      "actions": [
+        {
+          "action_id": "reviewed-immediate-action",
+          "name": "reviewed-immediate-action",
+          "ends_turn": false
+        }
+      ],
+      "setup": {
+        "kind": "IMMEDIATE_ACTION",
+        "target_id": "immediate-actor",
+        "target_name": "Immediate Actor",
+        "team": "ally",
+        "base_speed": 100,
+        "initial_av": 80,
+        "action_index": 0
       }
     }
   ]

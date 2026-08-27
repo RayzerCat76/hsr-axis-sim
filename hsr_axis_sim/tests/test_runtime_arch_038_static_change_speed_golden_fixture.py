@@ -356,8 +356,8 @@ def test_prior_static_fixture_identities_and_runtime_lane_remain_accepted():
         load_runtime_action_session_regression_manifest(RUNTIME_REGRESSION_MANIFEST)
     )
     assert report.passed is True
-    assert report.total == 8
-    assert report.passed_count == 8
+    assert report.total == 9
+    assert report.passed_count == 9
     assert [result.case_id for result in report.results] == [
         "arch-017-reviewed-static-action-session",
         "arch-021-reviewed-static-clamped-energy",
@@ -367,6 +367,7 @@ def test_prior_static_fixture_identities_and_runtime_lane_remain_accepted():
         "arch-032-reviewed-static-action-advance",
         "arch-035-reviewed-static-action-delay",
         "arch-038-reviewed-static-change-speed",
+        "arch-041-reviewed-static-immediate-action",
     ]
 
 

@@ -370,7 +370,8 @@ def test_arch_037_scope_preserves_other_axis_effect_observations_and_exclusions(
     extra_turn_source = inspect.getsource(GrantExtraTurn)
     assert "speed_changed" not in extra_turn_source
     assert "action_immediate" not in extra_turn_source
-    assert "emit_event" not in extra_turn_source
+    assert "extra_turn_queued" in extra_turn_source
+    assert "emit_event" in extra_turn_source
 
 
 def test_all_seven_reviewed_fixture_byte_identities_remain_exact():

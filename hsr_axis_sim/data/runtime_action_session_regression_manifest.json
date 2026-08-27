@@ -1,6 +1,6 @@
 {
   "schema": "hsr_runtime_action_session_regression",
-  "version": "1.8",
+  "version": "1.9",
   "manifest_id": "HSR_RUNTIME_ACTION_SESSION_REGRESSION_001",
   "cases": [
     {
@@ -209,6 +209,28 @@
         "team": "ally",
         "base_speed": 100,
         "initial_av": 80,
+        "action_index": 0
+      }
+    },
+    {
+      "id": "arch-044-reviewed-static-grant-extra-turn",
+      "expected_path": "hsr_axis_sim/data/runtime_golden_fixtures/arch_044_reviewed_grant_extra_turn_expected.json",
+      "expected_sha256": "57eefb521cb5cf1840e49c36e5c9c85a08281a7014c23ece0e3d5df1e6dfefdd",
+      "stream_id": "arch-044-reviewed-axis",
+      "actor_id": "extra-turn-actor",
+      "actions": [
+        {
+          "action_id": "reviewed-grant-extra-turn",
+          "name": "reviewed-grant-extra-turn",
+          "ends_turn": false
+        }
+      ],
+      "setup": {
+        "kind": "GRANT_EXTRA_TURN",
+        "target_id": "extra-turn-target",
+        "target_name": "Extra Turn Target",
+        "team": "ally",
+        "base_speed": 100,
         "action_index": 0
       }
     }

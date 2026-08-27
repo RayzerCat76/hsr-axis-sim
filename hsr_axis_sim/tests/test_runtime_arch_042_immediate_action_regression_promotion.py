@@ -9,9 +9,9 @@ from hsr_axis_sim.regression.manifest import load_regression_manifest
 from hsr_axis_sim.regression.runner import run_regression
 from hsr_axis_sim.runtime_action_session_regression.manifest import (
     RUNTIME_ACTION_SESSION_REGRESSION_SUPPORTED_VERSIONS,
-    RUNTIME_ACTION_SESSION_REGRESSION_VERSION,
     RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_6,
     RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_7,
+    RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_8,
     RuntimeActionSessionRegressionChangeSpeedSetup,
     RuntimeActionSessionRegressionImmediateActionSetup,
     RuntimeActionSessionRegressionManifest,
@@ -155,10 +155,10 @@ def _parse(data):
     )
 
 
-def test_supported_versions_are_exactly_v1_0_through_v1_8():
+def test_arch_042_version_boundary_remains_v1_8():
     assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_7 == "1.7"
-    assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION == "1.8"
-    assert RUNTIME_ACTION_SESSION_REGRESSION_SUPPORTED_VERSIONS == (
+    assert RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_8 == "1.8"
+    assert RUNTIME_ACTION_SESSION_REGRESSION_SUPPORTED_VERSIONS[:9] == (
         "1.0",
         "1.1",
         "1.2",
@@ -183,7 +183,7 @@ def test_v1_7_explicitly_rejects_immediate_action_as_v1_8_syntax():
 
 def test_v1_8_accepts_exact_frozen_immediate_action_setup():
     parsed = _parse(
-        _manifest(RUNTIME_ACTION_SESSION_REGRESSION_VERSION, _immediate_setup())
+        _manifest(RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_8, _immediate_setup())
     )
     assert parsed.cases[0].setup == RuntimeActionSessionRegressionImmediateActionSetup(
         target_id="immediate-actor",
@@ -276,11 +276,10 @@ def test_immediate_action_initial_av_is_finite_but_not_newly_range_restricted(in
     assert parsed.cases[0].setup.initial_av == initial_av
 
 
-def test_locked_v1_8_manifest_contains_exact_nine_reviewed_cases_in_order():
+def test_locked_manifest_preserves_exact_first_nine_reviewed_cases_in_order():
     manifest = load_runtime_action_session_regression_manifest(RUNTIME_MANIFEST_PATH)
 
-    assert len(manifest.cases) == 9
-    assert [case.case_id for case in manifest.cases] == CASE_IDS
+    assert [case.case_id for case in manifest.cases[:9]] == CASE_IDS
     ninth = manifest.cases[8]
     assert ninth.expected_path == FIXTURES[-1][0].resolve()
     assert ninth.expected_sha256 == FIXTURES[-1][2]
@@ -299,9 +298,14 @@ def test_locked_v1_8_manifest_contains_exact_nine_reviewed_cases_in_order():
     )
 
 
-def test_locked_runtime_lane_passes_nine_of_nine_with_expected_counts_and_digests():
+def test_arch_042_first_nine_runtime_cases_still_pass_nine_of_nine():
+    locked = load_runtime_action_session_regression_manifest(RUNTIME_MANIFEST_PATH)
     report = run_runtime_action_session_regression(
-        load_runtime_action_session_regression_manifest(RUNTIME_MANIFEST_PATH)
+        RuntimeActionSessionRegressionManifest(
+            manifest_id="arch-042-first-nine-preservation",
+            path=RUNTIME_MANIFEST_PATH,
+            cases=locked.cases[:9],
+        )
     )
 
     assert report.passed is True
@@ -375,7 +379,6 @@ def test_immediate_action_regression_harness_is_closed_and_explicitly_targeted()
     assert "ImmediateAction(target_ids=[setup.target_id])" in runner_source
 
     for forbidden in (
-        "GrantExtraTurn",
         "importlib",
         "eval(",
         "exec(",

@@ -1,0 +1,128 @@
+TASK ID: HSR-RUNTIME-ARCH-045
+TITLE: GrantExtraTurn Static Golden Regression Promotion
+
+CURRENT CONFIRMED STATE
+- Repository: RayzerCat76/hsr-axis-sim
+- Work only on branch: feature/hsr-runtime-arch-045-extra-turn-regression-promotion
+- Starting accepted main: edd8664b6d49ea0d09417ac33c88b569eb16a433
+- Read AGENTS.md and LUMEN_TASK_HSR_RUNTIME_ARCH_045.md before editing.
+- ARCH-044 is accepted and merged.
+- Last canonical CI: run #267: 1721 passed in 7.72s; legacy 20/20; trace evidence 2/2; runtime Golden 9/9.
+- Locked ARCH-044 fixture:
+  hsr_axis_sim/data/runtime_golden_fixtures/arch_044_reviewed_grant_extra_turn_expected.json
+  2658 bytes
+  SHA-256 57eefb521cb5cf1840e49c36e5c9c85a08281a7014c23ece0e3d5df1e6dfefdd
+
+OBJECTIVE
+Promote the already-reviewed ARCH-044 GrantExtraTurn static Golden fixture into the standalone runtime action-session regression lane as case 10. Extend only the regression grammar/runner from v1.8 to v1.9 with one explicit GRANT_EXTRA_TURN setup. Do not change production scheduling semantics.
+
+REQUIRED IMPLEMENTATION
+1. Inspect the repository before editing. Preserve all passing behavior and all locked simulator semantics.
+2. In hsr_axis_sim/runtime_action_session_regression/manifest.py:
+   - add RUNTIME_ACTION_SESSION_REGRESSION_VERSION_1_8 = "1.8";
+   - set current RUNTIME_ACTION_SESSION_REGRESSION_VERSION = "1.9";
+   - supported versions must be exactly 1.0..1.9;
+   - preserve all prior setup kinds at all accepted versions;
+   - IMMEDIATE_ACTION remains accepted in v1.8 and v1.9, rejected in v1.7;
+   - add frozen RuntimeActionSessionRegressionGrantExtraTurnSetup with exactly:
+     target_id, target_name, team, base_speed, initial_av, action_index;
+   - add exact closed GRANT_EXTRA_TURN parser syntax, v1.9 only;
+   - validation follows existing axis setup rules: non-empty identity strings, finite non-bool numerics, base_speed > 0, strict action_index, no invented initial_av range restriction;
+   - do not add generic effect class/kwargs/reflection syntax.
+3. In hsr_axis_sim/runtime_action_session_regression/runner.py:
+   - import new setup and production GrantExtraTurn;
+   - build target Unit from setup;
+   - on matching action_index attach exactly GrantExtraTurn(target_ids=[setup.target_id]);
+   - do not preload extra_turn_stack;
+   - do not change Timeline or production GrantExtraTurn.
+4. Update hsr_axis_sim/data/runtime_action_session_regression_manifest.json:
+   - version 1.9;
+   - preserve first nine cases in exact order and semantics;
+   - append case 10 exactly:
+     id arch-044-reviewed-static-grant-extra-turn
+     expected_path hsr_axis_sim/data/runtime_golden_fixtures/arch_044_reviewed_grant_extra_turn_expected.json
+     expected_sha256 57eefb521cb5cf1840e49c36e5c9c85a08281a7014c23ece0e3d5df1e6dfefdd
+     stream_id arch-044-reviewed-axis
+     actor_id extra-turn-actor
+     one action id/name reviewed-grant-extra-turn, ends_turn false
+     setup kind GRANT_EXTRA_TURN, target_id extra-turn-target, target_name "Extra Turn Target", team ally, base_speed 100, initial_av 80, action_index 0.
+5. Add hsr_axis_sim/tests/test_runtime_arch_045_grant_extra_turn_regression_promotion.py. Follow the accepted ARCH-042 promotion pattern and LUMEN_TASK_HSR_RUNTIME_ARCH_045.md. It must prove:
+   - versions exactly 1.0..1.9;
+   - v1.8 rejects GRANT_EXTRA_TURN; v1.9 accepts exact frozen setup;
+   - IMMEDIATE_ACTION compatibility in v1.8 and v1.9, v1.7 rejection;
+   - exact fields and strict validation;
+   - manifest exactly 10 cases;
+   - case 10 exact fixture/digest/stream/actor/action/setup;
+   - runtime lane exactly 10/10 with record counts [4,3,3,3,3,3,3,3,3,3];
+   - all 10 fixture byte identities exact;
+   - first 9 actual runtime SHA-256 values remain exactly:
+     452d52be7dec07ddebe0ca5ec0ca3cf58d695bd2312ada684d70aa22891435d0
+     80dda34881d32267ff819e985d7ed95256185e0c539f6e1b313aa67afcab9d3a
+     0004d8947f3b7ce8e692af527f40579db94609e4ed3ae0b63bf40397ec4af043
+     230e21dc23da2c37d89f26903dbd636463f5b0ec9adc7298e99331f3e24efb5f
+     7a945e7016ffa4a6c074f563d7f0edf288239e92f596810cd434922e8fd5c525
+     13d26b8efcb0db450445c036f49b31eec4ca346ca9d714f7e221bc084941a6ca
+     c47754957a756bd03624aafdcd78e14ecbaed059cce0c99fddb0d116c88bde77
+     a75555d3544a27638781a274a01ff8ee031e6394369be5c3c93c32dfed4c6698
+     b41181b9bb09ec516d27f78a99ef455a69c2b5e678d93f8eaa5f94effdde8cb7
+   - controlled mismatch must actually alter captured GrantExtraTurn output. Prefer changing setup target_id consistently in a one-case variant while retaining the locked expected fixture, then assert the exact deterministic first-divergence path/value after observing the real comparator result. Do not use initial_av as the mismatch because GrantExtraTurn does not observe AV.
+   - closed explicit harness: no importlib/eval/exec/generic effect class/kwargs;
+   - legacy regression stays 20/20; trace evidence stays 2/2; LIFO compatibility unchanged.
+6. Narrowly update stale historical guards only where this authorized promotion makes them false:
+   - test_runtime_arch_042_immediate_action_regression_promotion.py: retain historical v1.8 contract; update latest-version assumptions; allow later-authorized GrantExtraTurn only in regression harness while preserving dynamic-harness prohibitions.
+   - test_runtime_arch_044_static_grant_extra_turn_golden_fixture.py: change the stale "not promoted" runtime assertion to exact tenth-case promotion; runtime lane expectation 9/9 -> 10/10; preserve prior-nine identity assertions.
+   - If CI exposes another directly related stale count/version/source guard, patch only that guard and explain it. No unrelated refactors.
+7. Do not alter hsr_axis_sim/runtime_action_session_regression/__init__.py unless a focused public-export requirement is demonstrated by an existing convention/test. The focused test may import the setup directly from .manifest, matching ARCH-042.
+8. Update hsr_axis_sim/LUMEN_RESULT.md only after real commands have been run. Report real results only.
+
+ACCEPTANCE CRITERIA
+- v1.9 current; v1.0-v1.8 backward-compatible.
+- explicit closed GRANT_EXTRA_TURN v1.9-only grammar.
+- ARCH-044 exactly tenth runtime case.
+- runtime regression 10/10.
+- first nine expected identities, record counts, order, and actual SHAs unchanged.
+- tenth case matches locked ARCH-044 fixture.
+- no sim/** changes; no Timeline changes; no fixture-byte changes; no legacy manifest changes.
+- legacy 20/20, trace 2/2, full pytest pass.
+- LUMEN_RESULT.md updated.
+
+FILES/AREAS THAT MUST REMAIN UNCHANGED
+- hsr_axis_sim/sim/**
+- hsr_axis_sim/runtime_contracts/**
+- hsr_axis_sim/runtime_adapters/**
+- hsr_axis_sim/runtime_action_sessions/**
+- hsr_axis_sim/runtime_action_session_validation/**
+- comparator/divergence logic
+- trace schema/export/load logic
+- hsr_axis_sim/data/runtime_golden_fixtures/arch_044_reviewed_grant_extra_turn_expected.json
+- hsr_axis_sim/data/regression_manifest.json
+- every other Golden fixture
+
+EXPLICIT EXCLUSIONS
+No production GrantExtraTurn change. No LIFO change. No real-HSR priority claim. No extra-turn priority/interrupt model. No generic effect grammar. No auto Golden generation. No new fixture. No unrelated refactor/docs/data/UI/scraping/video/optimization work.
+
+COMMANDS TO RUN
+python -m compileall -q hsr_axis_sim
+python -m pytest -q
+python -m hsr_axis_sim.regression.runner --manifest hsr_axis_sim/data/regression_manifest.json --format text
+python -m hsr_axis_sim.regression.runner --manifest hsr_axis_sim/data/regression_manifest.json --only trace_evidence --format text
+python -m hsr_axis_sim.runtime_action_session_regression.runner --manifest hsr_axis_sim/data/runtime_action_session_regression_manifest.json --format text
+
+FINAL REPORT FORMAT
+1. Task ID
+2. Implementation summary
+3. Files added/modified
+4. Tests added/updated
+5. Exact commands executed
+6. Exact pass/fail results
+7. Runtime regression 10/10 and actual digests
+8. Unresolved issues
+9. Confirmation exclusions respected
+10. Suggested next smallest milestone
+11. Confirmation LUMEN_RESULT.md updated
+
+MODEL ROUTING
+ChatGPT: GPT-5.6 Terra
+Codex reasoning: High
+
+Do not start any next milestone. Stop after ARCH-045 implementation, tests, and LUMEN_RESULT.md report.
